@@ -27,8 +27,11 @@ exports.handler = async function(event, context) {
         method: 'POST',
         headers: {
             'Authorization': `Bearer ${FACILZAP_TOKEN}`,
-            'Accept': 'application/json'
-        }
+            'Accept': 'application/json',
+            'Content-Type': 'application/json' // Adicionado por boa prática
+        },
+        // AJUSTE DE DEBUG: Algumas APIs exigem um corpo, mesmo que vazio, para requisições POST.
+        body: JSON.stringify({}) 
     };
 
     try {
@@ -38,17 +41,30 @@ exports.handler = async function(event, context) {
             fetch(INACTIVE_ENDPOINT, fetchOptions)
         ]);
 
-        // Processa os resultados de ambas as chamadas. Se uma falhar, retorna uma lista vazia para ela.
-        const activeData = activeResponse.ok ? await activeResponse.json() : { data: [] };
-        const inactiveData = inactiveResponse.ok ? await inactiveResponse.json() : { data: [] };
+        // --- LOGS DE DIAGNÓSTICO ---
+        // Pega a resposta bruta como texto para podermos ver exatamente o que a API retornou.
+        const activeBodyText = await activeResponse.text();
+        const inactiveBodyText = await inactiveResponse.text();
+        
+        console.log("--- INÍCIO DO DIAGNÓSTICO FACILZAP ---");
+        console.log("Status da Resposta (Ativos):", activeResponse.status);
+        console.log("Resposta Bruta da API (Ativos):", activeBodyText);
+        console.log("Status da Resposta (Inativos):", inactiveResponse.status);
+        console.log("Resposta Bruta da API (Inativos):", inactiveBodyText);
+        console.log("--- FIM DO DIAGNÓSTICO FACILZAP ---");
+
+        // Processa os resultados. Agora usamos o texto que já lemos.
+        const activeData = activeResponse.ok ? JSON.parse(activeBodyText) : { data: [] };
+        const inactiveData = inactiveResponse.ok ? JSON.parse(inactiveBodyText) : { data: [] };
 
         // Adiciona um campo 'status' para identificar a origem de cada produto.
-        // O seu index.html usará esse campo para exibir a tag correta.
         const activeProducts = (activeData.data || []).map(p => ({ ...p, status: 'ativo' }));
         const inactiveProducts = (inactiveData.data || []).map(p => ({ ...p, status: 'inativo' }));
 
         // Combina as duas listas em uma só
         const allProducts = [...activeProducts, ...inactiveProducts];
+        
+        console.log(`Total de produtos combinados: ${allProducts.length}`);
 
         // Retorna a lista unificada com sucesso
         return {
@@ -59,7 +75,7 @@ exports.handler = async function(event, context) {
 
     } catch (error) {
         // Captura erros de rede ou outros problemas na execução
-        console.error("Erro ao tentar conectar com a API FacilZap:", error);
+        console.error("Erro geral no proxy ao conectar com a API FacilZap:", error);
         return {
             statusCode: 500,
             headers: responseHeaders,
