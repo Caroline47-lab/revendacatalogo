@@ -218,6 +218,7 @@
         }
         .product-card__image-container {
             position: relative;
+            cursor: pointer;
         }
         .product-card img {
             width: 100%;
@@ -306,6 +307,34 @@
             margin-bottom: 20px;
             text-align: center;
         }
+        
+        /* --- Modal Galeria de Imagens --- */
+        #gallery-main-image {
+            width: 100%;
+            max-height: 400px;
+            object-fit: contain;
+            border-radius: var(--borda-suave);
+            margin-bottom: 15px;
+        }
+        #gallery-thumbnails {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        .thumbnail {
+            width: 60px;
+            height: 60px;
+            object-fit: cover;
+            border-radius: 8px;
+            cursor: pointer;
+            border: 2px solid transparent;
+            transition: border-color 0.2s;
+        }
+        .thumbnail.active {
+            border-color: var(--rosa-pink);
+        }
+
     </style>
 </head>
 <body>
@@ -385,6 +414,39 @@
             </div>
         </div>
     </div>
+
+    <!-- MODAL DE EDIÇÃO DE PRODUTO (ADMIN) -->
+    <div id="adminEditModal" class="modal-overlay" onclick="closeModal('adminEditModal')">
+        <div class="modal-content" onclick="event.stopPropagation()">
+            <h3>Editar Produto</h3>
+            <form id="admin-edit-form" onsubmit="event.preventDefault(); handleUpdateProduct();">
+                <div class="form-group">
+                    <label for="edit-product-name">Nome do Produto</label>
+                    <input type="text" id="edit-product-name" class="form-control" required>
+                </div>
+                <div class="form-group">
+                    <label for="edit-product-desc">Descrição</label>
+                    <textarea id="edit-product-desc" class="form-control" rows="3"></textarea>
+                </div>
+                <div class="form-group">
+                    <label for="edit-product-price">Preço Sugerido (R$)</label>
+                    <input type="number" id="edit-product-price" class="form-control" step="0.01" required>
+                </div>
+                <div style="display: flex; gap: 10px; justify-content: flex-end;">
+                    <button type="button" class="btn btn-outline" onclick="closeModal('adminEditModal')">Cancelar</button>
+                    <button type="submit" class="btn btn-primary">Salvar Alterações</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <!-- MODAL GALERIA DE IMAGENS -->
+    <div id="imageGalleryModal" class="modal-overlay" onclick="closeModal('imageGalleryModal')">
+        <div class="modal-content" onclick="event.stopPropagation()">
+            <img id="gallery-main-image" src="" alt="Imagem principal do produto">
+            <div id="gallery-thumbnails"></div>
+        </div>
+    </div>
     
     <!-- TOAST NOTIFICATION -->
     <div id="toast" style="position: fixed; bottom: -100px; left: 50%; transform: translateX(-50%); background-color: #333; color: white; padding: 15px 25px; border-radius: 50px; transition: bottom 0.5s ease; z-index: 3000;">
@@ -396,6 +458,7 @@
     let allApiProducts = []; // Armazena todos os produtos sincronizados da API
     let publishedProductIds = []; // Armazena os IDs dos produtos que o admin liberou
     let customPrices = {}; // Armazena os preços personalizados da revendedora
+    let editingProductId = null;
 
     // --- INICIALIZAÇÃO DA APLICAÇÃO ---
     document.addEventListener('DOMContentLoaded', () => {
@@ -462,32 +525,40 @@
             showToast('Por favor, insira um token válido.', 'error');
         }
     }
-
+    
     async function syncFromFacilZap() {
         showToast('Sincronizando produtos...');
         try {
+            // Chamando nosso próprio proxy na Netlify.
             const response = await fetch('/api/facilzap-proxy');
 
+            // CORREÇÃO: Verifica o tipo de conteúdo antes de tentar converter para JSON.
             const contentType = response.headers.get("content-type");
             if (!response.ok || !contentType || !contentType.includes("application/json")) {
+                 // Tenta ler a resposta como texto para dar mais detalhes do erro
                 const errorText = await response.text();
                 console.error("Resposta inesperada do servidor:", errorText);
-                throw new Error('A resposta do servidor não foi válida. Verifique a configuração da função na Netlify.');
+                throw new Error('A resposta do servidor não foi válida. Verifique os logs da função na Netlify.');
             }
 
             const data = await response.json();
             
             const productsFromApi = data.data || [];
 
+            // Mapeia os dados da API para a nossa estrutura de produto
             allApiProducts = productsFromApi.map(p => ({
                 id: p.id,
                 nome: p.nome,
+                descricao: p.descricao || "Sem descrição.", // Adiciona uma descrição padrão
                 preco_original: p.preco,
-                imagem: p.imagem,
+                preco_sugerido: p.preco, // Preço sugerido começa igual ao original
+                imagem_principal: p.imagem,
+                imagens: p.imagens && p.imagens.length > 0 ? p.imagens : [p.imagem], // Garante que 'imagens' seja sempre um array
                 variacoes: p.estoque,
                 disponivel: p.total_estoque > 0
             }));
 
+            // Salva os produtos sincronizados no localStorage para persistência
             localStorage.setItem('allApiProducts', JSON.stringify(allApiProducts));
 
             renderAdminProducts();
@@ -540,19 +611,23 @@
             card.className = 'card product-card';
             
             card.innerHTML = `
-                <div class="product-card__image-container">
-                    <img src="${p.imagem}" alt="${p.nome}" onerror="this.src='https://via.placeholder.com/300?text=Sem+Imagem'">
+                <div class="product-card__image-container" onclick="openImageGallery(${p.id})">
+                    <img src="${p.imagem_principal}" alt="${p.nome}" onerror="this.src='https://via.placeholder.com/300?text=Sem+Imagem'">
                     <span class="product-card__status-badge ${p.disponivel ? 'disponivel' : 'indisponivel'}">${p.disponivel ? 'Disponível' : 'Esgotado'}</span>
                 </div>
                 <div class="product-card__content">
                     <h3 class="product-card__name">${p.nome}</h3>
                     <p class="product-card__price">Preço Original: R$ ${parseFloat(p.preco_original).toFixed(2)}</p>
+                    <p class="product-card__price">Preço Sugerido: R$ ${parseFloat(p.preco_sugerido).toFixed(2)}</p>
                 </div>
-                <div class="selection-control">
-                    <label>
-                        <input type="checkbox" onchange="togglePublishedProduct(${p.id})" ${isPublished ? 'checked' : ''}>
-                        Divulgar para Revendedoras
-                    </label>
+                <div class="product-card__price-section" style="display:flex; gap:10px;">
+                     <button class="btn btn-outline" style="flex:1;" onclick="openAdminEditModal(${p.id})"><i data-feather="edit-2" style="width:16px;"></i> Editar</button>
+                     <div class="selection-control" style="flex:1; padding:0;">
+                        <label style="justify-content:center; padding: 8px 10px; border: 2px solid var(--cinza-borda); border-radius: 50px;">
+                            <input type="checkbox" onchange="togglePublishedProduct(${p.id})" ${isPublished ? 'checked' : ''} style="width:16px; height:16px;">
+                            Divulgar
+                        </label>
+                    </div>
                 </div>
             `;
             grid.appendChild(card);
@@ -578,15 +653,15 @@
 
             card.innerHTML = `
                 <div class="product-card__image-container">
-                    <img src="${p.imagem}" alt="${p.nome}" onerror="this.src='https://via.placeholder.com/300?text=Sem+Imagem'">
+                    <img src="${p.imagem_principal}" alt="${p.nome}" onerror="this.src='https://via.placeholder.com/300?text=Sem+Imagem'">
                 </div>
                 <div class="product-card__content">
                     <h3 class="product-card__name">${p.nome}</h3>
                 </div>
                 <div class="product-card__price-section">
                     <div class="form-group">
-                        <label>Preço Original</label>
-                        <input type="text" class="form-control" value="R$ ${parseFloat(p.preco_original).toFixed(2)}" readonly style="background-color: #f0f0f0;">
+                        <label>Preço Sugerido</label>
+                        <input type="text" class="form-control" value="R$ ${parseFloat(p.preco_sugerido).toFixed(2)}" readonly style="background-color: #f0f0f0;">
                     </div>
                     <div class="form-group">
                          <label for="price-${p.id}">Seu Preço de Venda (R$)</label>
@@ -648,6 +723,61 @@
         if (savedTime) {
             document.getElementById('last-sync-time').textContent = `Última sincronização: ${savedTime}`;
         }
+    }
+
+    // --- LÓGICA DE EDIÇÃO E GALERIA ---
+    function openAdminEditModal(productId) {
+        editingProductId = productId;
+        const product = allApiProducts.find(p => p.id === productId);
+        if (!product) return;
+
+        document.getElementById('edit-product-name').value = product.nome;
+        document.getElementById('edit-product-desc').value = product.descricao;
+        document.getElementById('edit-product-price').value = parseFloat(product.preco_sugerido).toFixed(2);
+        
+        document.getElementById('adminEditModal').classList.add('active');
+    }
+
+    function handleUpdateProduct() {
+        const productIndex = allApiProducts.findIndex(p => p.id === editingProductId);
+        if (productIndex === -1) return;
+
+        allApiProducts[productIndex].nome = document.getElementById('edit-product-name').value;
+        allApiProducts[productIndex].descricao = document.getElementById('edit-product-desc').value;
+        allApiProducts[productIndex].preco_sugerido = parseFloat(document.getElementById('edit-product-price').value);
+
+        localStorage.setItem('allApiProducts', JSON.stringify(allApiProducts));
+        renderAdminProducts();
+        closeModal('adminEditModal');
+        showToast('Produto atualizado com sucesso!', 'success');
+    }
+
+    function openImageGallery(productId) {
+        const product = allApiProducts.find(p => p.id === productId);
+        if (!product || !product.imagens) return;
+
+        const mainImage = document.getElementById('gallery-main-image');
+        const thumbnailsContainer = document.getElementById('gallery-thumbnails');
+        thumbnailsContainer.innerHTML = '';
+
+        mainImage.src = product.imagens[0];
+
+        product.imagens.forEach((imgSrc, index) => {
+            const thumb = document.createElement('img');
+            thumb.src = imgSrc;
+            thumb.className = 'thumbnail';
+            if (index === 0) {
+                thumb.classList.add('active');
+            }
+            thumb.onclick = () => {
+                mainImage.src = imgSrc;
+                document.querySelectorAll('.thumbnail').forEach(t => t.classList.remove('active'));
+                thumb.classList.add('active');
+            };
+            thumbnailsContainer.appendChild(thumb);
+        });
+
+        document.getElementById('imageGalleryModal').classList.add('active');
     }
 
     // --- FUNÇÕES UTILITÁRIAS ---
