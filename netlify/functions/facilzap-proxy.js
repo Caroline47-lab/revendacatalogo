@@ -3,9 +3,8 @@ const fetch = require('node-fetch');
 exports.handler = async function(event, context) {
     const FACILZAP_TOKEN = process.env.FACILZAP_TOKEN;
     
-    // Endpoints da API da FacilZap que vamos consultar
-    const ACTIVE_ENDPOINT = 'https://api.facilzap.app.br/listar-ativos';
-    const INACTIVE_ENDPOINT = 'https://api.facilzap.app.br/listar-inativos';
+    // TENTATIVA 3: Usando um endpoint genérico que pode existir, como você sugeriu.
+    const API_ENDPOINT = 'https://api.facilzap.app.br/produtos';
 
     // Cabeçalhos padrão para todas as respostas
     const responseHeaders = {
@@ -22,55 +21,46 @@ exports.handler = async function(event, context) {
         };
     }
 
-    // Opções padrão para as requisições à API (usando POST)
+    // Opções padrão para as requisições à API (usando POST, que é uma prática comum)
     const fetchOptions = {
         method: 'POST',
         headers: {
             'Authorization': `Bearer ${FACILZAP_TOKEN}`,
             'Accept': 'application/json',
-            'Content-Type': 'application/json' // Adicionado por boa prática
+            'Content-Type': 'application/json'
         },
-        // AJUSTE DE DEBUG: Algumas APIs exigem um corpo, mesmo que vazio, para requisições POST.
         body: JSON.stringify({}) 
     };
 
     try {
-        // Faz as duas chamadas à API em paralelo para mais eficiência
-        const [activeResponse, inactiveResponse] = await Promise.all([
-            fetch(ACTIVE_ENDPOINT, fetchOptions),
-            fetch(INACTIVE_ENDPOINT, fetchOptions)
-        ]);
+        // Faz uma única chamada ao novo endpoint /produtos
+        const response = await fetch(API_ENDPOINT, fetchOptions);
 
         // --- LOGS DE DIAGNÓSTICO ---
-        // Pega a resposta bruta como texto para podermos ver exatamente o que a API retornou.
-        const activeBodyText = await activeResponse.text();
-        const inactiveBodyText = await inactiveResponse.text();
+        const responseBodyText = await response.text();
+        console.log("--- INÍCIO DO DIAGNÓSTICO (Tentativa com /produtos) ---");
+        console.log("Endpoint Testado:", API_ENDPOINT);
+        console.log("Status da Resposta:", response.status);
+        console.log("Resposta Bruta da API:", responseBodyText);
+        console.log("--- FIM DO DIAGNÓSTICO ---");
+
+        // Se a resposta não for bem-sucedida, repassa o erro
+        if (!response.ok) {
+             return {
+                statusCode: response.status,
+                headers: responseHeaders,
+                body: responseBodyText // Retorna o erro exato da API
+            };
+        }
+
+        // Processa e retorna os dados que a API enviou.
+        // O seu index.html já está preparado para receber e processar isso.
+        const data = JSON.parse(responseBodyText);
         
-        console.log("--- INÍCIO DO DIAGNÓSTICO FACILZAP ---");
-        console.log("Status da Resposta (Ativos):", activeResponse.status);
-        console.log("Resposta Bruta da API (Ativos):", activeBodyText);
-        console.log("Status da Resposta (Inativos):", inactiveResponse.status);
-        console.log("Resposta Bruta da API (Inativos):", inactiveBodyText);
-        console.log("--- FIM DO DIAGNÓSTICO FACILZAP ---");
-
-        // Processa os resultados. Agora usamos o texto que já lemos.
-        const activeData = activeResponse.ok ? JSON.parse(activeBodyText) : { data: [] };
-        const inactiveData = inactiveResponse.ok ? JSON.parse(inactiveBodyText) : { data: [] };
-
-        // Adiciona um campo 'status' para identificar a origem de cada produto.
-        const activeProducts = (activeData.data || []).map(p => ({ ...p, status: 'ativo' }));
-        const inactiveProducts = (inactiveData.data || []).map(p => ({ ...p, status: 'inativo' }));
-
-        // Combina as duas listas em uma só
-        const allProducts = [...activeProducts, ...inactiveProducts];
-        
-        console.log(`Total de produtos combinados: ${allProducts.length}`);
-
-        // Retorna a lista unificada com sucesso
         return {
             statusCode: 200,
             headers: responseHeaders,
-            body: JSON.stringify({ data: allProducts })
+            body: JSON.stringify(data)
         };
 
     } catch (error) {
