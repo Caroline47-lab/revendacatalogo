@@ -294,10 +294,25 @@
         let totalFetched = 0;
         const PRODUCTS_PER_PAGE_API = 100;
 
-        while (keepFetching) {
+        // *** NOVA LÓGICA DE SINCRONIZAÇÃO PARA NÃO TRAVAR O NAVEGADOR ***
+        const fetchNextPage = async () => {
+            if (!keepFetching) {
+                // Fim da sincronização
+                if (allApiProducts.length > 0) {
+                    renderAdminProducts(); 
+                    showToast(`Sincronização finalizada! ${allApiProducts.length} produtos carregados.`, 'success');
+                } else {
+                    showToast('Sincronização concluída, mas nenhum produto foi encontrado.', 'info');
+                    document.getElementById('admin-product-grid').innerHTML = `<p style="text-align:center; grid-column: 1 / -1;">Nenhum produto encontrado na API.</p>`;
+                }
+                localStorage.setItem('allApiProducts', JSON.stringify(allApiProducts));
+                updateLastSyncTime();
+                if (syncButton) syncButton.disabled = false;
+                return; // Encerra a função recursiva
+            }
+
             try {
                 const response = await fetch(`/api/facilzap-proxy?page=${currentPage}`);
-
                 if (!response.ok) {
                     const errorData = await response.json().catch(() => ({ error: `Falha ao buscar página ${currentPage}. Status: ${response.status}` }));
                     throw new Error(errorData.message || errorData.error || `Erro desconhecido na página ${currentPage}.`);
@@ -339,24 +354,20 @@
                 } else {
                     keepFetching = false;
                 }
+                // Chama a próxima busca em um pequeno intervalo para não bloquear a UI
+                setTimeout(fetchNextPage, 50);
+
             } catch (error) {
                 showToast(`Erro: ${error.message}`, 'error');
                 keepFetching = false;
+                if (syncButton) syncButton.disabled = false;
             }
-        }
-
-        if (allApiProducts.length > 0) {
-            renderAdminProducts(); 
-            showToast(`Sincronização finalizada! ${allApiProducts.length} produtos carregados.`, 'success');
-        } else {
-            showToast('Sincronização concluída, mas nenhum produto foi encontrado.', 'info');
-            document.getElementById('admin-product-grid').innerHTML = `<p style="text-align:center; grid-column: 1 / -1;">Nenhum produto encontrado na API.</p>`;
-        }
-
-        localStorage.setItem('allApiProducts', JSON.stringify(allApiProducts));
-        updateLastSyncTime();
-        if (syncButton) syncButton.disabled = false;
+        };
+        
+        // Inicia o processo de busca
+        fetchNextPage();
     }
+
 
     function updateLastSyncTime() {
         const now = new Date().toLocaleString('pt-BR');
