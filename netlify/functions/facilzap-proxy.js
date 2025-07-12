@@ -2,14 +2,17 @@ const fetch = require('node-fetch');
 
 exports.handler = async function(event, context) {
     const FACILZAP_TOKEN = process.env.FACILZAP_TOKEN;
-    const API_ENDPOINT = 'https://api.facilzap.app.br/listar-ativos';
+    
+    // Endpoints da API da FacilZap que vamos consultar
+    const ACTIVE_ENDPOINT = 'https://api.facilzap.app.br/listar-ativos';
+    const INACTIVE_ENDPOINT = 'https://api.facilzap.app.br/listar-inativos';
 
-    // Cabeçalhos padrão para todas as respostas, garantindo que o front-end sempre receba JSON.
+    // Cabeçalhos padrão para todas as respostas
     const responseHeaders = {
         'Content-Type': 'application/json'
     };
 
-    // 1. Verifica se o token da API foi configurado no ambiente da Netlify.
+    // Verifica se o token da API foi configurado no ambiente da Netlify
     if (!FACILZAP_TOKEN) {
         console.error("Erro Crítico: A variável de ambiente FACILZAP_TOKEN não foi encontrada.");
         return {
@@ -19,41 +22,43 @@ exports.handler = async function(event, context) {
         };
     }
 
-    try {
-        // 2. Faz a chamada para a API real da FacilZap, usando o método POST.
-        const apiResponse = await fetch(API_ENDPOINT, {
-            method: 'POST', // <-- CORREÇÃO: A API exige o método POST.
-            headers: {
-                'Authorization': `Bearer ${FACILZAP_TOKEN}`,
-                'Accept': 'application/json'
-            }
-        });
-
-        // Pega o corpo da resposta como texto para poder incluí-lo nos logs de erro se necessário.
-        const responseBody = await apiResponse.text();
-
-        // 3. Verifica se a resposta da API FacilZap foi bem-sucedida (status 2xx).
-        if (!apiResponse.ok) {
-            console.error(`Erro da API FacilZap: Status ${apiResponse.status}. Corpo: ${responseBody}`);
-            return {
-                statusCode: apiResponse.status,
-                headers: responseHeaders,
-                body: JSON.stringify({ 
-                    error: `A API da FacilZap retornou um erro: ${apiResponse.statusText}`, 
-                    details: responseBody 
-                })
-            };
+    // Opções padrão para as requisições à API (usando POST)
+    const fetchOptions = {
+        method: 'POST',
+        headers: {
+            'Authorization': `Bearer ${FACILZAP_TOKEN}`,
+            'Accept': 'application/json'
         }
-        
-        // 4. Sucesso! Retorna os dados recebidos da API diretamente para o front-end.
+    };
+
+    try {
+        // Faz as duas chamadas à API em paralelo para mais eficiência
+        const [activeResponse, inactiveResponse] = await Promise.all([
+            fetch(ACTIVE_ENDPOINT, fetchOptions),
+            fetch(INACTIVE_ENDPOINT, fetchOptions)
+        ]);
+
+        // Processa os resultados de ambas as chamadas. Se uma falhar, retorna uma lista vazia para ela.
+        const activeData = activeResponse.ok ? await activeResponse.json() : { data: [] };
+        const inactiveData = inactiveResponse.ok ? await inactiveResponse.json() : { data: [] };
+
+        // Adiciona um campo 'status' para identificar a origem de cada produto.
+        // O seu index.html usará esse campo para exibir a tag correta.
+        const activeProducts = (activeData.data || []).map(p => ({ ...p, status: 'ativo' }));
+        const inactiveProducts = (inactiveData.data || []).map(p => ({ ...p, status: 'inativo' }));
+
+        // Combina as duas listas em uma só
+        const allProducts = [...activeProducts, ...inactiveProducts];
+
+        // Retorna a lista unificada com sucesso
         return {
             statusCode: 200,
             headers: responseHeaders,
-            body: responseBody 
+            body: JSON.stringify({ data: allProducts })
         };
 
     } catch (error) {
-        // 5. Captura erros de rede ou outros problemas na execução do fetch (ex: falha de conexão).
+        // Captura erros de rede ou outros problemas na execução
         console.error("Erro ao tentar conectar com a API FacilZap:", error);
         return {
             statusCode: 500,
