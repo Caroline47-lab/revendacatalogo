@@ -3,7 +3,7 @@ const fetch = require('node-fetch');
 exports.handler = async function(event, context) {
     // Pega o token da API que está guardado de forma segura na Netlify.
     const FACILZAP_TOKEN = process.env.FACILZAP_TOKEN;
-    // CORREÇÃO: Alterado o endpoint para buscar apenas produtos ativos.
+    // Endpoint correto para buscar apenas produtos ativos.
     const API_ENDPOINT = 'https://api.facilzap.app.br/listar-ativos';
 
     // Verifica se o token foi configurado na Netlify
