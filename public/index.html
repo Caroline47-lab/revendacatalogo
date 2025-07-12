@@ -69,6 +69,7 @@
         .panel-header { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; margin-bottom: 30px; gap: 20px; }
         .panel-header h1 { font-family: var(--font-titulo); color: var(--rosa-pink); }
         .product-grid { display: grid; gap: 20px; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); }
+        .pagination-controls { text-align: center; margin-top: 30px; }
         
         .product-card { transition: transform 0.3s ease, box-shadow 0.3s ease; }
         .product-card:hover { transform: translateY(-5px); box-shadow: 0 8px 25px rgba(0,0,0,0.1); }
@@ -161,6 +162,9 @@
             </div>
             <p style="text-align: center; margin-bottom: 30px;" id="last-sync-time">Última sincronização: Nunca</p>
             <div id="admin-product-grid" class="product-grid"></div>
+            <div id="pagination-controls" class="pagination-controls">
+                 <!-- O botão "Carregar Mais" será inserido aqui -->
+            </div>
         </div>
     </section>
 
@@ -216,6 +220,8 @@
     let allApiProducts = [];
     let publishedProductIds = [];
     let customPrices = {};
+    let displayedProductsCount = 0;
+    const PRODUCTS_PER_LOAD = 48; // Quantidade de produtos para exibir por vez
 
     // --- INICIALIZAÇÃO DA APLICAÇÃO ---
     document.addEventListener('DOMContentLoaded', () => {
@@ -228,7 +234,6 @@
         const savedProducts = localStorage.getItem('allApiProducts');
         if (savedProducts) {
             allApiProducts = JSON.parse(savedProducts);
-            // Renderiza os produtos salvos ao carregar a página
             renderAdminProducts(); 
         }
 
@@ -262,6 +267,8 @@
         localStorage.removeItem('isAdmin');
         allApiProducts = [];
         localStorage.removeItem('allApiProducts');
+        document.getElementById('admin-product-grid').innerHTML = '';
+        document.getElementById('pagination-controls').innerHTML = '';
         navigateTo('selection-view');
     }
 
@@ -281,15 +288,14 @@
         const syncButton = document.querySelector('button[onclick="syncFromFacilZap()"]');
         if (syncButton) syncButton.disabled = true;
 
-        allApiProducts = []; // Limpa a lista de produtos antes de começar
+        allApiProducts = []; 
         let currentPage = 1;
         let keepFetching = true;
         let totalFetched = 0;
-        const PRODUCTS_PER_PAGE_API = 100; // A API retorna 100 por página
+        const PRODUCTS_PER_PAGE_API = 100;
 
         while (keepFetching) {
             try {
-                // O proxy agora espera um parâmetro 'page' na URL
                 const response = await fetch(`/api/facilzap-proxy?page=${currentPage}`);
 
                 if (!response.ok) {
@@ -325,26 +331,22 @@
                     });
                     allApiProducts.push(...processedProducts);
                     
-                    // *** LÓGICA DE PARADA CORRIGIDA ***
-                    // Se a API retornou menos produtos do que o máximo por página,
-                    // significa que esta é a última página.
                     if (productsFromPage.length < PRODUCTS_PER_PAGE_API) {
                         keepFetching = false;
                     } else {
                         currentPage++;
                     }
                 } else {
-                    // Se a API retornar uma página vazia, paramos o loop.
                     keepFetching = false;
                 }
             } catch (error) {
                 showToast(`Erro: ${error.message}`, 'error');
-                keepFetching = false; // Para o loop em caso de erro
+                keepFetching = false;
             }
         }
 
         if (allApiProducts.length > 0) {
-            renderAdminProducts(); // Renderiza tudo de uma vez no final
+            renderAdminProducts(); 
             showToast(`Sincronização finalizada! ${allApiProducts.length} produtos carregados.`, 'success');
         } else {
             showToast('Sincronização concluída, mas nenhum produto foi encontrado.', 'info');
@@ -366,13 +368,14 @@
     function renderAdminProducts() {
         const grid = document.getElementById('admin-product-grid');
         grid.innerHTML = '';
+        displayedProductsCount = 0;
 
         if (!allApiProducts || allApiProducts.length === 0) {
             grid.innerHTML = `<p style="text-align:center; grid-column: 1 / -1;">Nenhum produto para exibir. Tente sincronizar.</p>`;
+            document.getElementById('pagination-controls').innerHTML = '';
             return;
         }
 
-        // Lógica de Ordenação
         const statusOrder = { 'ativo': 1, 'esgotado': 2, 'desativado': 3 };
         allApiProducts.sort((a, b) => {
             const statusA = a.status_api === 'inativo' ? 'desativado' : (a.estoque_total > 0 ? 'ativo' : 'esgotado');
@@ -380,7 +383,16 @@
             return statusOrder[statusA] - statusOrder[statusB];
         });
 
-        allApiProducts.forEach(p => {
+        loadMoreProducts();
+    }
+
+    function loadMoreProducts() {
+        const grid = document.getElementById('admin-product-grid');
+        const paginationControls = document.getElementById('pagination-controls');
+
+        const productsToRender = allApiProducts.slice(displayedProductsCount, displayedProductsCount + PRODUCTS_PER_LOAD);
+
+        productsToRender.forEach(p => {
             const card = document.createElement('div');
             const isPublished = publishedProductIds.includes(p.id);
             
@@ -420,6 +432,18 @@
             `;
             grid.appendChild(card);
         });
+
+        displayedProductsCount += productsToRender.length;
+        
+        paginationControls.innerHTML = '';
+        if (displayedProductsCount < allApiProducts.length) {
+            const loadMoreButton = document.createElement('button');
+            loadMoreButton.className = 'btn btn-primary';
+            loadMoreButton.innerHTML = `<i data-feather="plus"></i> Carregar Mais (${displayedProductsCount} de ${allApiProducts.length})`;
+            loadMoreButton.onclick = loadMoreProducts;
+            paginationControls.appendChild(loadMoreButton);
+        }
+
         feather.replace();
     }
 
