@@ -4,12 +4,12 @@ exports.handler = async function(event, context) {
     const FACILZAP_TOKEN = process.env.FACILZAP_TOKEN;
     const API_ENDPOINT = 'https://api.facilzap.app.br/listar-ativos';
 
-    // Cabeçalhos padrão para todas as respostas
+    // Cabeçalhos padrão para todas as respostas, garantindo que o front-end sempre receba JSON.
     const responseHeaders = {
         'Content-Type': 'application/json'
     };
 
-    // 1. Verifica se o token existe no ambiente da Netlify
+    // 1. Verifica se o token da API foi configurado no ambiente da Netlify.
     if (!FACILZAP_TOKEN) {
         console.error("Erro Crítico: A variável de ambiente FACILZAP_TOKEN não foi encontrada.");
         return {
@@ -20,17 +20,19 @@ exports.handler = async function(event, context) {
     }
 
     try {
-        // 2. Faz a chamada para a API real da FacilZap
+        // 2. Faz a chamada para a API real da FacilZap, usando o método POST.
         const apiResponse = await fetch(API_ENDPOINT, {
+            method: 'POST', // <-- CORREÇÃO: A API exige o método POST.
             headers: {
                 'Authorization': `Bearer ${FACILZAP_TOKEN}`,
                 'Accept': 'application/json'
             }
         });
 
-        const responseBody = await apiResponse.text(); // Pega o corpo como texto primeiro para depuração
+        // Pega o corpo da resposta como texto para poder incluí-lo nos logs de erro se necessário.
+        const responseBody = await apiResponse.text();
 
-        // 3. Verifica se a resposta da API FacilZap foi bem-sucedida
+        // 3. Verifica se a resposta da API FacilZap foi bem-sucedida (status 2xx).
         if (!apiResponse.ok) {
             console.error(`Erro da API FacilZap: Status ${apiResponse.status}. Corpo: ${responseBody}`);
             return {
@@ -43,7 +45,7 @@ exports.handler = async function(event, context) {
             };
         }
         
-        // 4. Sucesso! Retorna os dados com o status e cabeçalhos corretos.
+        // 4. Sucesso! Retorna os dados recebidos da API diretamente para o front-end.
         return {
             statusCode: 200,
             headers: responseHeaders,
@@ -51,7 +53,7 @@ exports.handler = async function(event, context) {
         };
 
     } catch (error) {
-        // 5. Captura erros de rede ou outros problemas na execução do fetch
+        // 5. Captura erros de rede ou outros problemas na execução do fetch (ex: falha de conexão).
         console.error("Erro ao tentar conectar com a API FacilZap:", error);
         return {
             statusCode: 500,
