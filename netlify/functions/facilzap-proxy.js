@@ -1,50 +1,62 @@
 const fetch = require('node-fetch');
 
 exports.handler = async function(event, context) {
-    // Pega o token da API que está guardado de forma segura na Netlify.
     const FACILZAP_TOKEN = process.env.FACILZAP_TOKEN;
-    // Endpoint correto para buscar apenas produtos ativos.
     const API_ENDPOINT = 'https://api.facilzap.app.br/listar-ativos';
 
-    // Verifica se o token foi configurado na Netlify
+    // Cabeçalhos padrão para todas as respostas
+    const responseHeaders = {
+        'Content-Type': 'application/json'
+    };
+
+    // 1. Verifica se o token existe no ambiente da Netlify
     if (!FACILZAP_TOKEN) {
+        console.error("Erro Crítico: A variável de ambiente FACILZAP_TOKEN não foi encontrada.");
         return {
             statusCode: 500,
-            body: JSON.stringify({ error: "Token da API não configurado no ambiente da Netlify." })
+            headers: responseHeaders,
+            body: JSON.stringify({ error: "Configuração do servidor incompleta. O token da API não foi definido no ambiente da Netlify." })
         };
     }
 
     try {
-        const response = await fetch(API_ENDPOINT, {
+        // 2. Faz a chamada para a API real da FacilZap
+        const apiResponse = await fetch(API_ENDPOINT, {
             headers: {
                 'Authorization': `Bearer ${FACILZAP_TOKEN}`,
                 'Accept': 'application/json'
             }
         });
 
-        const responseBody = await response.text();
+        const responseBody = await apiResponse.text(); // Pega o corpo como texto primeiro para depuração
 
-        if (!response.ok) {
+        // 3. Verifica se a resposta da API FacilZap foi bem-sucedida
+        if (!apiResponse.ok) {
+            console.error(`Erro da API FacilZap: Status ${apiResponse.status}. Corpo: ${responseBody}`);
             return {
-                statusCode: response.status,
-                body: JSON.stringify({ error: `Erro na API FacilZap: ${response.statusText}`, details: responseBody })
+                statusCode: apiResponse.status,
+                headers: responseHeaders,
+                body: JSON.stringify({ 
+                    error: `A API da FacilZap retornou um erro: ${apiResponse.statusText}`, 
+                    details: responseBody 
+                })
             };
         }
         
-        // Retorna os dados com sucesso.
+        // 4. Sucesso! Retorna os dados com o status e cabeçalhos corretos.
         return {
             statusCode: 200,
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: responseBody
+            headers: responseHeaders,
+            body: responseBody 
         };
 
     } catch (error) {
-        // Se houver um erro de rede, retorna um erro genérico.
+        // 5. Captura erros de rede ou outros problemas na execução do fetch
+        console.error("Erro ao tentar conectar com a API FacilZap:", error);
         return {
             statusCode: 500,
-            body: JSON.stringify({ error: `Erro ao conectar com a API: ${error.message}` })
+            headers: responseHeaders,
+            body: JSON.stringify({ error: `Erro interno no proxy: ${error.message}` })
         };
     }
 };
