@@ -99,9 +99,9 @@
         .modal-header .sku { font-size: 0.9rem; color: #888; margin-bottom: 20px; }
         .modal-body { display: grid; grid-template-columns: 1fr; gap: 30px; }
         @media(min-width: 768px) { .modal-body { grid-template-columns: 1fr 1fr; } }
-        .modal-gallery .main-image { width: 100%; aspect-ratio: 1/1; object-fit: cover; border-radius: var(--borda-suave); margin-bottom: 10px; }
+        .modal-gallery .main-image { width: 100%; aspect-ratio: 1 / 1; object-fit: cover; border-radius: var(--borda-suave); margin-bottom: 10px; }
         .modal-gallery .thumbnail-container { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; }
-        .modal-gallery .thumbnail { width: 100%; aspect-ratio: 1/1; object-fit: cover; border-radius: 8px; cursor: pointer; border: 2px solid transparent; transition: border-color 0.2s; }
+        .modal-gallery .thumbnail { width: 100%; aspect-ratio: 1 / 1; object-fit: cover; border-radius: 8px; cursor: pointer; border: 2px solid transparent; transition: border-color 0.2s; }
         .modal-gallery .thumbnail.active { border-color: var(--rosa-pink); }
         .modal-details .variations-table { width: 100%; border-collapse: collapse; }
         .modal-details .variations-table th, .modal-details .variations-table td { text-align: left; padding: 12px; border-bottom: 1px solid var(--cinza-fundo); }
@@ -285,6 +285,7 @@
         let currentPage = 1;
         let keepFetching = true;
         let totalFetched = 0;
+        const PRODUCTS_PER_PAGE_API = 100; // A API retorna 100 por página
 
         while (keepFetching) {
             try {
@@ -324,7 +325,14 @@
                     });
                     allApiProducts.push(...processedProducts);
                     
-                    currentPage++;
+                    // *** LÓGICA DE PARADA CORRIGIDA ***
+                    // Se a API retornou menos produtos do que o máximo por página,
+                    // significa que esta é a última página.
+                    if (productsFromPage.length < PRODUCTS_PER_PAGE_API) {
+                        keepFetching = false;
+                    } else {
+                        currentPage++;
+                    }
                 } else {
                     // Se a API retornar uma página vazia, paramos o loop.
                     keepFetching = false;
