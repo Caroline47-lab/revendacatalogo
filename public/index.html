@@ -282,17 +282,33 @@
             const data = await response.json();
             const productsFromApi = data.data || [];
 
-            allApiProducts = productsFromApi.map(p => ({
-                id: p.id,
-                nome: p.nome,
-                sku: p.sku || 'N/A',
-                preco_original: p.preco,
-                imagem: p.imagem, // Imagem principal
-                fotos: p.fotos || [p.imagem], // Lista de fotos
-                estoque_total: p.total_estoque || 0,
-                variacoes: p.estoque || [], // Lista de variações
-                status_api: p.status_ativo ? 'ativo' : 'inativo' // Adaptado para a estrutura da planilha
-            }));
+            // ***** CORREÇÃO APLICADA AQUI, BASEADA NA ESTRUTURA DA PLANILHA *****
+            allApiProducts = productsFromApi.map(p => {
+                // A API pode retornar as fotos como um array de objetos ou um array de strings.
+                // Esta função garante que sempre teremos um array de strings (URLs).
+                const getPhotoUrls = (photos) => {
+                    if (!photos || photos.length === 0) return [];
+                    if (typeof photos[0] === 'string') return photos; // Já é um array de URLs
+                    return photos.map(photoObj => photoObj.url); // Extrai a URL do objeto
+                };
+
+                const photoList = getPhotoUrls(p.fotos);
+
+                return {
+                    id: p.id,
+                    nome: p.nome,
+                    sku: p.sku || 'N/A',
+                    preco_original: p.preco,
+                    // A imagem principal é a primeira da lista de fotos.
+                    imagem: photoList.length > 0 ? photoList[0] : null,
+                    fotos: photoList,
+                    estoque_total: p.total_estoque || 0,
+                    // A API chama o campo de variações de 'estoque'.
+                    variacoes: p.estoque || [], 
+                    // A API usa 'status_ativo' (true/false) para o status.
+                    status_api: p.status_ativo ? 'ativo' : 'inativo' 
+                };
+            });
 
             localStorage.setItem('allApiProducts', JSON.stringify(allApiProducts));
             renderAdminProducts();
@@ -375,20 +391,23 @@
         // Galeria de Imagens
         const mainImage = document.getElementById('modal-main-image');
         const thumbnailContainer = document.getElementById('modal-thumbnail-container');
-        mainImage.src = product.fotos[0] || 'https://via.placeholder.com/400';
+        mainImage.src = product.imagem || 'https://via.placeholder.com/400';
         thumbnailContainer.innerHTML = '';
-        product.fotos.forEach((foto, index) => {
-            const thumb = document.createElement('img');
-            thumb.src = foto;
-            thumb.className = 'thumbnail';
-            if (index === 0) thumb.classList.add('active');
-            thumb.onclick = () => {
-                mainImage.src = foto;
-                document.querySelectorAll('.thumbnail').forEach(t => t.classList.remove('active'));
-                thumb.classList.add('active');
-            };
-            thumbnailContainer.appendChild(thumb);
-        });
+        
+        if (product.fotos && product.fotos.length > 0) {
+            product.fotos.forEach((foto, index) => {
+                const thumb = document.createElement('img');
+                thumb.src = foto;
+                thumb.className = 'thumbnail';
+                if (index === 0) thumb.classList.add('active');
+                thumb.onclick = () => {
+                    mainImage.src = foto;
+                    document.querySelectorAll('.thumbnail').forEach(t => t.classList.remove('active'));
+                    thumb.classList.add('active');
+                };
+                thumbnailContainer.appendChild(thumb);
+            });
+        }
 
         // Tabela de Variações
         const variationsTbody = document.getElementById('modal-variations-tbody');
