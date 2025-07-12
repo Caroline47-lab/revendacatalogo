@@ -14,7 +14,6 @@
     <script src="https://unpkg.com/feather-icons"></script>
 
     <style>
-        /* --- Variáveis de Estilo e Reset --- */
         :root {
             --rosa-pink: #DB1472;
             --amarelo-ouro: #F8B81F;
@@ -23,790 +22,75 @@
             --cinza-fundo: #f7f7f9;
             --verde-sucesso: #28a745;
             --vermelho-perigo: #dc3545;
+            --azul-info: #17a2b8;
             --branco: #FFFFFF;
             --sombra: 0 5px 20px rgba(0, 0, 0, 0.07);
             --borda-suave: 12px;
             --font-titulo: 'Poppins', sans-serif;
             --font-texto: 'Montserrat', sans-serif;
-
-            /* Variáveis da Loja da Revendedora (serão sobrescritas por JS) */
-            --store-primary-color: var(--rosa-pink);
-            --store-secondary-color: var(--amarelo-ouro);
         }
 
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
+        * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
             font-family: var(--font-texto);
             background-color: var(--cinza-fundo);
             color: var(--cinza-texto);
             line-height: 1.6;
         }
+        .view { display: none; min-height: 100vh; padding: 20px 15px; animation: fadeIn 0.4s ease-in-out; }
+        .view.active { display: flex; flex-direction: column; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(15px); } to { opacity: 1; transform: translateY(0); } }
+        .container { width: 100%; max-width: 1280px; margin: 0 auto; }
 
-        /* --- Estrutura da SPA (Single Page Application) --- */
-        .view {
-            display: none;
-            flex-direction: column;
-            min-height: 100vh;
-            padding: 20px 15px;
-            animation: fadeIn 0.4s ease-in-out;
-        }
+        /* --- Componentes --- */
+        .btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 12px 28px; border-radius: 50px; border: none; font-weight: 600; font-size: 1rem; cursor: pointer; transition: all 0.3s ease; text-decoration: none; }
+        .btn-primary { background-color: var(--rosa-pink); color: var(--branco); }
+        .btn-primary:hover { transform: translateY(-3px); box-shadow: 0 6px 20px rgba(219, 20, 114, 0.3); }
+        .btn-secondary { background-color: var(--amarelo-ouro); color: var(--branco); }
+        .btn-secondary:hover { transform: translateY(-3px); box-shadow: 0 6px 20px rgba(248, 184, 31, 0.3); }
+        .btn-outline { background-color: transparent; color: var(--rosa-pink); border: 2px solid var(--rosa-pink); }
+        .btn-outline:hover { background-color: var(--rosa-pink); color: var(--branco); }
+        .card { background: var(--branco); border-radius: var(--borda-suave); box-shadow: var(--sombra); overflow: hidden; display: flex; flex-direction: column; }
+        .form-control { width: 100%; padding: 12px 15px; border-radius: 8px; border: 1px solid var(--cinza-borda); font-size: 1rem; transition: border-color 0.2s, box-shadow 0.2s; }
+        .form-control:focus { outline: none; border-color: var(--rosa-pink); box-shadow: 0 0 0 3px rgba(219, 20, 114, 0.15); }
+        .form-group { margin-bottom: 15px; }
+        .form-group label { display: block; margin-bottom: 8px; font-weight: 600; }
+        
+        /* --- Telas Iniciais --- */
+        .center-box-container { display: flex; justify-content: center; align-items: center; text-align: center; flex-grow: 1; }
+        .center-box { width: 100%; max-width: 400px; padding: 30px; }
+        .center-box h1 { font-family: var(--font-titulo); font-size: 2.8rem; color: var(--rosa-pink); margin-bottom: 15px; }
+        .center-box p { margin-bottom: 30px; font-size: 1.1rem; }
+        .center-box .options { display: flex; flex-direction: column; gap: 15px; }
+        #login-form { background-color: var(--branco); padding: 40px; border-radius: var(--borda-suave); box-shadow: var(--sombra); }
 
-        .view.active {
-            display: flex;
-        }
-
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(15px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-
-        .container {
-            width: 100%;
-            max-width: 1280px;
-            margin: 0 auto;
-        }
-
-        /* --- Componentes Reutilizáveis --- */
-        .btn {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
-            padding: 12px 28px;
-            border-radius: 50px;
-            border: none;
-            font-weight: 600;
-            font-size: 1rem;
-            font-family: var(--font-texto);
-            cursor: pointer;
-            transition: all 0.3s ease;
-            text-decoration: none;
-        }
-
-        .btn-primary {
-            background-color: var(--rosa-pink);
-            color: var(--branco);
-        }
-        .btn-primary:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 6px 20px rgba(219, 20, 114, 0.3);
-        }
-
-        .btn-secondary {
-            background-color: var(--amarelo-ouro);
-            color: var(--branco);
-        }
-        .btn-secondary:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 6px 20px rgba(248, 184, 31, 0.3);
-        }
-
-        .btn-outline {
-            background-color: transparent;
-            color: var(--rosa-pink);
-            border: 2px solid var(--rosa-pink);
-        }
-        .btn-outline:hover {
-            background-color: var(--rosa-pink);
-            color: var(--branco);
-        }
-
-        .card {
-            background: var(--branco);
-            border-radius: var(--borda-suave);
-            box-shadow: var(--sombra);
-            overflow: hidden;
-            display: flex;
-            flex-direction: column;
-        }
-
-        .form-control {
-            width: 100%;
-            padding: 12px 15px;
-            border-radius: 8px;
-            border: 1px solid var(--cinza-borda);
-            font-family: var(--font-texto);
-            font-size: 1rem;
-            transition: border-color 0.2s, box-shadow 0.2s;
-        }
-        .form-control:focus {
-            outline: none;
-            border-color: var(--rosa-pink);
-            box-shadow: 0 0 0 3px rgba(219, 20, 114, 0.15);
-        }
-        .form-group {
-            margin-bottom: 15px;
-        }
-        .form-group label {
-            display: block;
-            margin-bottom: 8px;
-            font-weight: 600;
-        }
-        .form-group .field-suggestion {
-            font-size: 0.8rem;
-            color: #888;
-            margin-top: -5px;
-            margin-bottom: 10px;
-        }
-
-        /* --- Telas Iniciais (Seleção e Login) --- */
-        .center-box-container {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            text-align: center;
-            flex-grow: 1;
-        }
-        .center-box {
-            width: 100%;
-            max-width: 400px;
-            padding: 30px;
-        }
-        .center-box h1 {
-            font-family: var(--font-titulo);
-            font-size: 2.8rem;
-            color: var(--rosa-pink);
-            margin-bottom: 15px;
-        }
-        .center-box p {
-            margin-bottom: 30px;
-            font-size: 1.1rem;
-        }
-        .center-box .options {
-            display: flex;
-            flex-direction: column;
-            gap: 15px;
-        }
-        #login-form {
-            background-color: var(--branco);
-            padding: 40px;
-            border-radius: var(--borda-suave);
-            box-shadow: var(--sombra);
-        }
-
-        /* --- Painéis (Admin e Revendedora) --- */
-        .panel-header {
-            display: flex;
-            flex-wrap: wrap;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 30px;
-            gap: 20px;
-        }
-        .panel-header h1, .panel-header h2 {
-            font-family: var(--font-titulo);
-            color: var(--rosa-pink);
-        }
-
-        .filters {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 15px;
-            margin-bottom: 30px;
-        }
-
-        .product-grid {
-            display: grid;
-            gap: 20px;
-            grid-template-columns: repeat(2, 1fr);
-        }
-        @media (min-width: 768px) {
-            .product-grid {
-                grid-template-columns: repeat(3, 1fr);
-            }
-        }
-        @media (min-width: 1200px) {
-            .product-grid {
-                grid-template-columns: repeat(4, 1fr);
-            }
-        }
-
-        .product-card {
-            transition: transform 0.3s ease, box-shadow 0.3s ease;
-        }
-        .product-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 8px 25px rgba(0,0,0,0.1);
-        }
-        .product-card__image-container {
-            position: relative;
-        }
-        .product-card img {
-            width: 100%;
-            aspect-ratio: 1 / 1;
-            object-fit: cover;
-            display: block;
-        }
-        .product-card__status-badge {
-            position: absolute;
-            top: 10px;
-            right: 10px;
-            padding: 4px 12px;
-            border-radius: 50px;
-            font-size: 0.75rem;
-            font-weight: 600;
-            color: var(--branco);
-            text-transform: uppercase;
-        }
+        /* --- Painel --- */
+        .panel-header { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; margin-bottom: 30px; gap: 20px; }
+        .panel-header h1 { font-family: var(--font-titulo); color: var(--rosa-pink); }
+        .product-grid { display: grid; gap: 20px; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); }
+        
+        .product-card { transition: transform 0.3s ease, box-shadow 0.3s ease; }
+        .product-card:hover { transform: translateY(-5px); box-shadow: 0 8px 25px rgba(0,0,0,0.1); }
+        .product-card__image-container { position: relative; }
+        .product-card img { width: 100%; aspect-ratio: 1 / 1; object-fit: cover; display: block; }
+        .product-card__status-badge { position: absolute; top: 10px; right: 10px; padding: 4px 12px; border-radius: 50px; font-size: 0.75rem; font-weight: 600; color: var(--branco); text-transform: uppercase; }
         .product-card__status-badge.ativo { background-color: var(--verde-sucesso); }
         .product-card__status-badge.esgotado { background-color: var(--vermelho-perigo); }
-        .product-card__multi-photo-badge {
-            position: absolute;
-            bottom: 10px;
-            left: 10px;
-            background-color: rgba(0,0,0,0.5);
-            color: white;
-            padding: 4px 8px;
-            border-radius: 6px;
-            font-size: 0.8rem;
-            display: inline-flex;
-            align-items: center;
-            gap: 5px;
-        }
-        .product-card__promo-timer {
-            position: absolute;
-            bottom: 10px;
-            right: 10px;
-            background-color: var(--vermelho-perigo);
-            color: white;
-            padding: 4px 10px;
-            border-radius: 6px;
-            font-size: 0.8rem;
-            font-weight: 600;
-        }
-
-        .product-card__content {
-            padding: 15px;
-            flex-grow: 1;
-            display: flex;
-            flex-direction: column;
-        }
-        .product-card__collection {
-            font-size: 0.8rem;
-            font-weight: 600;
-            color: var(--rosa-pink);
-            margin-bottom: 5px;
-        }
-        .product-card__tags {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 5px;
-            margin-bottom: 8px;
-        }
-        .product-card__tag {
-            background-color: var(--cinza-fundo);
-            color: var(--cinza-texto);
-            padding: 2px 8px;
-            border-radius: 4px;
-            font-size: 0.75rem;
-            font-weight: 600;
-        }
-        .product-card__name {
-            font-size: 1.1rem;
-            font-weight: 600;
-            margin-bottom: 5px;
-        }
-        .product-card__price {
-            font-size: 1.2rem;
-            font-weight: 700;
-            color: var(--cinza-texto);
-            margin-bottom: 10px;
-        }
-        .product-card__price--original {
-            text-decoration: line-through;
-            color: #999;
-            font-size: 1rem;
-            margin-right: 10px;
-        }
-        .product-card__price--promo {
-            color: var(--vermelho-perigo);
-        }
-        .product-card__desc {
-            font-size: 0.9rem;
-            margin-bottom: 15px;
-            flex-grow: 1;
-        }
-        .product-card__actions {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 10px;
-            margin-top: auto;
-            border-top: 1px solid var(--cinza-fundo);
-            padding-top: 15px;
-        }
-        .product-card__actions .btn {
-            width: 100%;
-            padding: 8px 10px;
-            font-size: 0.85rem;
-        }
-
-        /* --- Admin: Cadastro em Massa --- */
-        #bulk-upload-card {
-            padding: 30px;
-            margin-bottom: 40px;
-        }
-        .bulk-upload-step {
-            display: none;
-        }
-        .bulk-upload-step.active {
-            display: block;
-        }
-        #drop-zone {
-            border: 3px dashed var(--cinza-borda);
-            border-radius: var(--borda-suave);
-            padding: 50px;
-            text-align: center;
-            cursor: pointer;
-            transition: background-color 0.3s, border-color 0.3s;
-        }
-        #drop-zone.dragover {
-            border-color: var(--rosa-pink);
-            background-color: #fdeaf4;
-        }
-        #drop-zone p {
-            font-size: 1.2rem;
-            font-weight: 600;
-            color: #888;
-        }
-        #staging-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
-            gap: 15px;
-            margin-bottom: 30px;
-        }
-        .staging-item {
-            position: relative;
-            cursor: pointer;
-        }
-        .staging-item img {
-            width: 100%;
-            aspect-ratio: 1/1;
-            object-fit: cover;
-            border-radius: var(--borda-suave);
-            border: 3px solid transparent;
-            transition: border-color 0.2s;
-        }
-        .staging-item input[type="checkbox"] {
-            position: absolute;
-            top: 10px;
-            left: 10px;
-            width: 24px;
-            height: 24px;
-            accent-color: var(--rosa-pink);
-        }
-        .staging-item.selected img {
-            border-color: var(--rosa-pink);
-        }
-        .staging-item .image-count {
-            position: absolute;
-            top: 10px;
-            right: 10px;
-            background-color: var(--rosa-pink);
-            color: white;
-            border-radius: 50%;
-            width: 28px;
-            height: 28px;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            font-weight: 700;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.3);
-        }
-        #bulk-fill-form {
-            background-color: var(--cinza-fundo);
-            padding: 20px;
-            border-radius: var(--borda-suave);
-            margin-bottom: 30px;
-        }
-        #details-list .detail-item {
-            display: flex;
-            flex-direction: column;
-            gap: 20px;
-            padding: 20px;
-            background-color: var(--branco);
-            border-radius: var(--borda-suave);
-            margin-bottom: 20px;
-            border: 1px solid var(--cinza-borda);
-        }
-        @media(min-width: 768px) {
-            #details-list .detail-item {
-                flex-direction: row;
-                align-items: flex-start;
-            }
-        }
-        .detail-item__selector {
-            flex-shrink: 0;
-            padding-top: 10px;
-        }
-        .detail-item__image {
-            flex-shrink: 0;
-            width: 120px;
-            height: 120px;
-            position: relative;
-        }
-        .detail-item__image img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-            border-radius: var(--borda-suave);
-        }
-        .detail-item__image .image-count {
-             position: absolute;
-            top: -10px;
-            right: -10px;
-        }
-        .detail-item__form {
-            flex-grow: 1;
-        }
-
-        /* --- Revendedora: Checkbox e Botões Flutuantes --- */
-        .selection-control {
-            background-color: var(--cinza-fundo);
-            padding: 12px 15px;
-        }
-        .selection-control label {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            cursor: pointer;
-            font-weight: 600;
-        }
-        .selection-control input[type="checkbox"] {
-            width: 20px;
-            height: 20px;
-            accent-color: var(--rosa-pink);
-        }
-
-        .floating-buttons {
-            position: fixed;
-            bottom: 20px;
-            right: 20px;
-            display: flex;
-            flex-direction: column;
-            gap: 15px;
-            z-index: 1000;
-        }
-        .floating-buttons .btn {
-            width: 60px;
-            height: 60px;
-            border-radius: 50%;
-            padding: 0;
-            font-size: 1.5rem;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
-        }
-        .floating-buttons .btn-badge {
-            position: absolute;
-            top: -5px;
-            right: -5px;
-            background-color: var(--rosa-pink);
-            color: var(--branco);
-            width: 24px;
-            height: 24px;
-            border-radius: 50%;
-            font-size: 0.8rem;
-            font-weight: 700;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-        }
+        .product-card__status-badge.desativado { background-color: var(--cinza-texto); }
+        .product-card__content { padding: 15px; flex-grow: 1; display: flex; flex-direction: column; }
+        .product-card__name { font-size: 1.1rem; font-weight: 600; margin-bottom: 5px; }
+        .product-card__price { font-size: 1.2rem; font-weight: 700; color: var(--cinza-texto); margin-bottom: 10px; }
+        .selection-control { background-color: var(--cinza-fundo); padding: 12px 15px; }
+        .selection-control label { display: flex; align-items: center; gap: 10px; cursor: pointer; font-weight: 600; }
+        .selection-control input[type="checkbox"] { width: 20px; height: 20px; accent-color: var(--rosa-pink); }
         
-        #shopping-cart-button {
-            display: none; /* Escondido por padrão, aparece na vitrine */
-            position: relative;
-        }
-        #shopping-cart-button.visible { display: flex; }
-
-
-        /* --- Revendedora: Configurações da Loja --- */
-        #reseller-settings-view .card {
-            max-width: 700px;
-            margin: 20px auto;
-            padding: 30px;
-        }
-        .preview-container {
-            width: 100%;
-            border: 2px dashed var(--cinza-borda);
-            border-radius: var(--borda-suave);
-            margin: 0 auto 5px;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            overflow: hidden;
-            background-size: cover;
-            background-position: center;
-            color: #aaa;
-            cursor: pointer;
-        }
-        #logo-preview-container {
-            height: 150px;
-            width: 150px;
-            border-radius: 50%;
-        }
-        #banner-mobile-preview-container {
-            aspect-ratio: 16 / 9;
-            height: auto;
-        }
-        #banner-desktop-preview-container {
-             aspect-ratio: 16 / 5;
-             height: auto;
-        }
-        .preview-container span {
-            font-size: 0.9rem;
-            text-align: center;
-            padding: 10px;
-        }
-        .color-picker-group {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-        .color-picker-group input[type="color"] {
-            width: 40px;
-            height: 40px;
-            border: none;
-            padding: 0;
-            border-radius: 50%;
-            cursor: pointer;
-        }
-        
-        /* --- Vitrine Externa da Revendedora --- */
-        #store-view .store-banner-container {
-            width: 100%;
-            margin-bottom: -60px; /* Puxa o header para cima do banner */
-        }
-        #store-view .store-banner {
-            width: 100%;
-            height: auto;
-            object-fit: cover;
-            border-radius: var(--borda-suave);
-        }
-        #store-banner-mobile-display { display: block; }
-        #store-banner-desktop-display { display: none; }
-        @media(min-width: 768px) {
-            #store-banner-mobile-display { display: none; }
-            #store-banner-desktop-display { display: block; }
-        }
-
-        #store-view .store-header {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            margin-bottom: 40px;
-            text-align: center;
-            position: relative; /* Para o z-index funcionar */
-        }
-        #store-view .store-logo {
-            width: 120px;
-            height: 120px;
-            border-radius: 50%;
-            object-fit: cover;
-            margin-bottom: 20px;
-            border: 4px solid var(--branco);
-            box-shadow: var(--sombra);
-            background-color: var(--branco);
-        }
-        #store-view .store-name {
-            font-family: var(--font-titulo);
-            font-size: 2.5rem;
-            color: var(--store-primary-color);
-        }
-        #store-view .store-bio {
-            font-size: 1rem;
-            max-width: 600px;
-            margin: 10px auto;
-        }
-        #store-view .store-socials {
-            display: flex;
-            gap: 15px;
-            margin-top: 15px;
-        }
-        #store-view .store-socials a {
-            color: var(--cinza-texto);
-            transition: color 0.2s;
-        }
-        #store-view .store-socials a:hover {
-            color: var(--store-primary-color);
-        }
-        #store-view .product-card__collection {
-            color: var(--store-primary-color);
-        }
-        #store-view .btn-store-primary {
-            background-color: var(--store-primary-color);
-            color: var(--branco);
-        }
-        #store-view .btn-store-secondary {
-            background-color: var(--store-secondary-color);
-            color: var(--branco);
-        }
-
-        /* --- Menu de Promoções --- */
-        .promo-menu-grid {
-            display: grid;
-            grid-template-columns: 1fr;
-            gap: 20px;
-        }
-        @media(min-width: 768px) {
-            .promo-menu-grid {
-                grid-template-columns: repeat(2, 1fr);
-            }
-        }
-        @media(min-width: 1024px) {
-            .promo-menu-grid {
-                grid-template-columns: repeat(3, 1fr);
-            }
-        }
-        .promo-menu-button {
-            background: var(--branco);
-            border: 1px solid var(--cinza-borda);
-            border-radius: var(--borda-suave);
-            padding: 25px;
-            text-align: center;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 10px;
-            color: var(--cinza-texto);
-        }
-        .promo-menu-button:hover {
-            transform: translateY(-5px);
-            box-shadow: var(--sombra);
-            border-color: var(--rosa-pink);
-        }
-        .promo-menu-button i {
-            width: 32px;
-            height: 32px;
-            color: var(--rosa-pink);
-        }
-        .promo-menu-button span {
-            font-size: 1.2rem;
-            font-weight: 600;
-        }
-        .promo-menu-button small {
-            font-size: 0.9rem;
-            color: #888;
-        }
-        .promo-config-section {
-            display: none;
-        }
-
-        /* --- Modal --- */
-        .modal-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0,0,0,0.6);
-            display: none;
-            justify-content: center;
-            align-items: center;
-            z-index: 2000;
-            padding: 15px;
-            overflow-y: auto;
-        }
+        /* --- Modal e Toast --- */
+        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); display: none; justify-content: center; align-items: center; z-index: 2000; padding: 15px; }
         .modal-overlay.active { display: flex; }
-        .modal-content {
-            background: var(--branco);
-            padding: 30px;
-            border-radius: var(--borda-suave);
-            width: 100%;
-            max-width: 600px;
-            animation: zoomIn 0.3s;
-            margin: auto;
-        }
-        @keyframes zoomIn {
-            from { transform: scale(0.8); opacity: 0; }
-            to { transform: scale(1); opacity: 1; }
-        }
-        .modal-content h3 {
-            font-family: var(--font-titulo);
-            color: var(--rosa-pink);
-            margin-bottom: 20px;
-            text-align: center;
-        }
-
-        /* --- Carrinho de Compras Modal --- */
-        #cart-items-list {
-            max-height: 300px;
-            overflow-y: auto;
-            margin-bottom: 20px;
-        }
-        .cart-item {
-            display: flex;
-            align-items: center;
-            gap: 15px;
-            padding: 10px 0;
-            border-bottom: 1px solid var(--cinza-fundo);
-        }
-        .cart-item img {
-            width: 60px;
-            height: 60px;
-            object-fit: cover;
-            border-radius: 8px;
-        }
-        .cart-item__info {
-            flex-grow: 1;
-        }
-        .cart-item__name {
-            font-weight: 600;
-        }
-        .cart-item__quantity {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-        .cart-item__quantity button {
-            background: var(--cinza-fundo);
-            border: none;
-            width: 28px;
-            height: 28px;
-            border-radius: 50%;
-            cursor: pointer;
-        }
-        .cart-summary {
-            text-align: right;
-            margin-top: 20px;
-        }
-        .cart-summary p {
-            font-size: 1.1rem;
-            margin-bottom: 5px;
-        }
-        .cart-summary .discount {
-            color: var(--verde-sucesso);
-        }
-        .cart-summary .total {
-            font-size: 1.3rem;
-            font-weight: 700;
-            color: var(--store-primary-color);
-        }
-
-        /* --- Popup de Cupom --- */
-        #coupon-popup .modal-content {
-            background: linear-gradient(135deg, var(--store-primary-color), var(--store-secondary-color));
-            color: white;
-            text-align: center;
-        }
-        #coupon-popup h3 {
-            color: white;
-            font-size: 2rem;
-        }
-        #coupon-popup .coupon-code {
-            display: inline-block;
-            background: rgba(255,255,255,0.2);
-            border: 2px dashed white;
-            padding: 10px 20px;
-            font-size: 1.5rem;
-            font-weight: 700;
-            border-radius: 8px;
-            margin: 15px 0;
-        }
+        .modal-content { background: var(--branco); padding: 30px; border-radius: var(--borda-suave); width: 100%; max-width: 600px; animation: zoomIn 0.3s; }
+        @keyframes zoomIn { from { transform: scale(0.8); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+        .modal-content h3 { font-family: var(--font-titulo); color: var(--rosa-pink); margin-bottom: 20px; text-align: center; }
+        #toast { position: fixed; bottom: -100px; left: 50%; transform: translateX(-50%); background-color: #333; color: white; padding: 15px 25px; border-radius: 50px; transition: bottom 0.5s ease; z-index: 3000; }
     </style>
 </head>
 <body>
@@ -835,7 +119,7 @@
             <div class="center-box">
                 <form id="login-form" onsubmit="event.preventDefault(); handleLogin();">
                     <h1>Acesso Admin</h1>
-                    <div style="margin-bottom: 20px;">
+                    <div class="form-group">
                         <input type="password" id="password" class="form-control" placeholder="Digite a senha" required>
                     </div>
                     <button type="submit" class="btn btn-primary" style="width: 100%;">Entrar</button>
@@ -850,8 +134,7 @@
         <div class="container">
             <div class="panel-header">
                 <h1>Painel da Empresa</h1>
-                <div style="display: flex; gap: 10px; flex-wrap: wrap;">
-                    <button class="btn btn-secondary" onclick="openFacilZapModal()"><i data-feather="zap"></i> Configurar FacilZap</button>
+                <div>
                     <button class="btn btn-primary" onclick="syncFromFacilZap()"><i data-feather="refresh-cw"></i> Sincronizar Produtos</button>
                     <button class="btn btn-outline" onclick="handleLogout()"><i data-feather="log-out"></i> Sair</button>
                 </div>
@@ -865,71 +148,64 @@
     <section id="reseller-panel-view" class="view">
         <div class="container">
             <div class="panel-header">
-                <h1>Painel da Revendedora</h1>
+                <h1>Vitrine da Revendedora</h1>
                  <button class="btn btn-outline" onclick="navigateTo('selection-view')">Voltar</button>
             </div>
             <div id="reseller-product-grid" class="product-grid"></div>
         </div>
     </section>
-
-    <!-- MODAL DE CONFIGURAÇÃO FACILZAP -->
-    <div id="facilzapModal" class="modal-overlay" onclick="closeModal('facilzapModal')">
-        <div class="modal-content" onclick="event.stopPropagation()">
-            <h3>Configurar Integração FacilZap</h3>
-            <p style="margin-bottom: 20px;">Cole seu token da API FacilZap abaixo para sincronizar seus produtos.</p>
-            <div class="form-group">
-                <input type="password" id="facilzapToken" class="form-control" placeholder="Cole seu token aqui">
-            </div>
-            <div style="display: flex; gap: 10px; justify-content: flex-end;">
-                <button class="btn btn-outline" onclick="closeModal('facilzapModal')">Cancelar</button>
-                <button class="btn btn-primary" onclick="saveFacilZapToken()">Salvar</button>
-            </div>
-        </div>
-    </div>
     
     <!-- TOAST NOTIFICATION -->
-    <div id="toast" style="position: fixed; bottom: -100px; left: 50%; transform: translateX(-50%); background-color: #333; color: white; padding: 15px 25px; border-radius: 50px; transition: bottom 0.5s ease; z-index: 3000;">
-        <span id="toast-message"></span>
-    </div>
+    <div id="toast"><span id="toast-message"></span></div>
 
     <script>
     // --- VARIÁVEIS GLOBAIS ---
-    let allApiProducts = []; // Armazena todos os produtos sincronizados da API
-    let publishedProductIds = []; // Armazena os IDs dos produtos que o admin liberou
-    let customPrices = {}; // Armazena os preços personalizados da revendedora
+    let allApiProducts = [];
+    let publishedProductIds = [];
+    let customPrices = {};
 
     // --- INICIALIZAÇÃO DA APLICAÇÃO ---
     document.addEventListener('DOMContentLoaded', () => {
         feather.replace();
+        loadLocalData();
         checkAuth();
-        loadCustomPrices();
-        loadPublishedProducts();
-        loadAllApiProducts();
     });
 
-    // --- LÓGICA DE AUTENTICAÇÃO E NAVEGAÇÃO ---
+    function loadLocalData() {
+        const savedProducts = localStorage.getItem('allApiProducts');
+        if (savedProducts) allApiProducts = JSON.parse(savedProducts);
+
+        const savedPublished = localStorage.getItem('publishedProductIds');
+        if (savedPublished) publishedProductIds = JSON.parse(savedPublished);
+        
+        const savedPrices = localStorage.getItem('customPrices');
+        if (savedPrices) customPrices = JSON.parse(savedPrices);
+
+        const savedTime = localStorage.getItem('lastSyncTime');
+        if (savedTime) document.getElementById('last-sync-time').textContent = `Última sincronização: ${savedTime}`;
+    }
+
+    // --- AUTENTICAÇÃO E NAVEGAÇÃO ---
     function checkAuth() {
         if (localStorage.getItem('isAdmin') === 'true') {
             navigateTo('admin-panel-view');
         } else {
-            navigateTo('selection-view');
+            // Por padrão, não vai para lugar nenhum se não for admin, fica na seleção.
         }
     }
 
     function handleLogin() {
-        const password = document.getElementById('password').value;
-        if (password === 'admin123') {
+        if (document.getElementById('password').value === 'admin123') {
             localStorage.setItem('isAdmin', 'true');
             navigateTo('admin-panel-view');
         } else {
             showToast('Senha incorreta!', 'error');
-            document.getElementById('password').value = '';
         }
     }
 
     function handleLogout() {
         localStorage.removeItem('isAdmin');
-        navigateTo('login-view');
+        navigateTo('selection-view');
     }
 
     function navigateTo(viewId) {
@@ -937,116 +213,86 @@
         const view = document.getElementById(viewId);
         if(view) {
             view.classList.add('active');
-            if (viewId === 'admin-panel-view') {
-                loadAdminData();
-            } else if (viewId === 'reseller-panel-view') {
-                renderResellerProducts();
-            }
+            if (viewId === 'admin-panel-view') renderAdminProducts();
+            if (viewId === 'reseller-panel-view') renderResellerProducts();
         }
     }
 
-    // --- LÓGICA DE INTEGRAÇÃO FACILZAP ---
-    function openFacilZapModal() {
-        const token = localStorage.getItem('facilzap_token');
-        document.getElementById('facilzapToken').value = token || '18984QJfUFFSglyjNBY9iciIZLRh1TPnoMJ2s92VLE3SxRQ1Hf3PHXeeD5hXPa5P1lTcCAy0IY5OXzcCzg5wT';
-        document.getElementById('facilzapModal').classList.add('active');
-    }
-
-    function saveFacilZapToken() {
-        const token = document.getElementById('facilzapToken').value.trim();
-        if (token) {
-            localStorage.setItem('facilzap_token', token);
-            showToast('Token salvo com sucesso!', 'success');
-            closeModal('facilzapModal');
-            syncFromFacilZap(); // Sincroniza imediatamente após salvar
-        } else {
-            showToast('Por favor, insira um token válido.', 'error');
-        }
-    }
-
+    // --- LÓGICA DA API E SINCRONIZAÇÃO ---
     async function syncFromFacilZap() {
         showToast('Sincronizando produtos...');
         try {
-            // Chamando nosso próprio proxy na Netlify.
+            // A chamada para o proxy que busca ativos e inativos
             const response = await fetch('/api/facilzap-proxy');
 
-            const contentType = response.headers.get("content-type");
-            if (!response.ok || !contentType || !contentType.includes("application/json")) {
-                const errorText = await response.text();
-                console.error("Resposta inesperada do servidor:", errorText);
-                throw new Error('A resposta do servidor não foi válida. Verifique a configuração da função na Netlify.');
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.error || 'Falha na comunicação com o proxy.');
             }
 
             const data = await response.json();
-            
             const productsFromApi = data.data || [];
 
-            // Mapeia os dados da API para a nossa estrutura de produto
+            // ***** LÓGICA ATUALIZADA PARA PROCESSAR OS DADOS DA API *****
             allApiProducts = productsFromApi.map(p => ({
                 id: p.id,
                 nome: p.nome,
                 preco_original: p.preco,
                 imagem: p.imagem,
-                variacoes: p.estoque,
-                disponivel: p.total_estoque > 0
+                estoque_total: p.total_estoque || 0,
+                // O status 'ativo' ou 'inativo' vem diretamente da API agora
+                status_api: p.status 
             }));
 
-            // Salva os produtos sincronizados no localStorage para persistência
             localStorage.setItem('allApiProducts', JSON.stringify(allApiProducts));
-
             renderAdminProducts();
             updateLastSyncTime();
-
-            if (allApiProducts.length > 0) {
-                showToast(`${allApiProducts.length} produtos sincronizados com sucesso!`, 'success');
-            } else {
-                showToast('Sincronização concluída. Nenhum produto foi encontrado na API.', 'info');
-            }
+            showToast(`${allApiProducts.length} produtos sincronizados!`, 'success');
 
         } catch (error) {
             console.error('Erro ao sincronizar com FacilZap:', error);
             showToast(`Falha ao sincronizar: ${error.message}`, 'error');
         }
     }
-    
-    function loadAdminData() {
-        const token = localStorage.getItem('facilzap_token');
-        if (token) {
-            renderAdminProducts();
-            syncFromFacilZap();
-        } else {
-            const grid = document.getElementById('admin-product-grid');
-            grid.innerHTML = `<p style="text-align:center; grid-column: 1 / -1;">Por favor, configure sua integração com a FacilZap para ver os produtos.</p>`;
-        }
-    }
 
     function updateLastSyncTime() {
-        const timeEl = document.getElementById('last-sync-time');
-        const now = new Date();
-        const formattedTime = now.toLocaleDateString() + ' ' + now.toLocaleTimeString();
-        timeEl.textContent = `Última sincronização: ${formattedTime}`;
-        localStorage.setItem('lastSyncTime', formattedTime);
+        const now = new Date().toLocaleString('pt-BR');
+        document.getElementById('last-sync-time').textContent = `Última sincronização: ${now}`;
+        localStorage.setItem('lastSyncTime', now);
     }
 
-    // --- RENDERIZAÇÃO E LÓGICA DE PREÇO ---
+    // --- RENDERIZAÇÃO DOS PRODUTOS ---
     function renderAdminProducts() {
         const grid = document.getElementById('admin-product-grid');
         grid.innerHTML = '';
 
         if(allApiProducts.length === 0) {
-             grid.innerHTML = `<p style="text-align:center; grid-column: 1 / -1;">Nenhum produto sincronizado. Clique em "Sincronizar Produtos".</p>`;
+             grid.innerHTML = `<p style="text-align:center; grid-column: 1 / -1;">Nenhum produto encontrado. Clique em "Sincronizar Produtos".</p>`;
              return;
         }
 
         allApiProducts.forEach(p => {
             const card = document.createElement('div');
             const isPublished = publishedProductIds.includes(p.id);
-            card.className = 'card product-card';
             
+            // ***** LÓGICA ATUALIZADA PARA DEFINIR O STATUS DE EXIBIÇÃO *****
+            let displayStatus, statusClass;
+            if (p.status_api === 'inativo') {
+                displayStatus = 'Desativado';
+                statusClass = 'desativado';
+            } else if (p.estoque_total > 0) {
+                displayStatus = 'Ativo';
+                statusClass = 'ativo';
+            } else {
+                displayStatus = 'Esgotado';
+                statusClass = 'esgotado';
+            }
+
+            card.className = 'card product-card';
             card.innerHTML = `
                 <div class="product-card__image-container">
                     <img src="${p.imagem}" alt="${p.nome}" onerror="this.src='https://via.placeholder.com/300'">
-                    <span class="product-card__status-badge ${p.disponivel ? 'disponivel' : 'indisponivel'}">${p.disponivel ? 'Disponível' : 'Esgotado'}</span>
+                    <span class="product-card__status-badge ${statusClass}">${displayStatus}</span>
                 </div>
                 <div class="product-card__content">
                     <h3 class="product-card__name">${p.nome}</h3>
@@ -1061,17 +307,18 @@
             `;
             grid.appendChild(card);
         });
-        feather.replace();
     }
 
     function renderResellerProducts() {
         const grid = document.getElementById('reseller-product-grid');
         grid.innerHTML = '';
         
-        const productsToShow = allApiProducts.filter(p => publishedProductIds.includes(p.id));
+        const productsToShow = allApiProducts.filter(p => 
+            publishedProductIds.includes(p.id) && p.status_api === 'ativo' && p.estoque_total > 0
+        );
 
         if(productsToShow.length === 0) {
-             grid.innerHTML = `<p style="text-align:center; grid-column: 1 / -1;">Nenhum produto liberado para revenda no momento. Fale com o administrador.</p>`;
+             grid.innerHTML = `<p style="text-align:center; grid-column: 1 / -1;">Nenhum produto disponível para revenda no momento.</p>`;
              return;
         }
 
@@ -1086,8 +333,6 @@
                 </div>
                 <div class="product-card__content">
                     <h3 class="product-card__name">${p.nome}</h3>
-                </div>
-                <div class="product-card__price-section">
                     <div class="form-group">
                         <label>Preço Original</label>
                         <input type="text" class="form-control" value="R$ ${parseFloat(p.preco_original).toFixed(2)}" readonly style="background-color: #f0f0f0;">
@@ -1101,26 +346,9 @@
             `;
             grid.appendChild(card);
         });
-        feather.replace();
     }
     
-    function saveCustomPrice(productId, newPrice) {
-        customPrices[productId] = newPrice;
-        saveCustomPricesToStorage();
-        showToast('Preço salvo!', 'success');
-    }
-
-    function saveCustomPricesToStorage() {
-        localStorage.setItem('customPrices', JSON.stringify(customPrices));
-    }
-
-    function loadCustomPrices() {
-        const savedPrices = localStorage.getItem('customPrices');
-        if (savedPrices) {
-            customPrices = JSON.parse(savedPrices);
-        }
-    }
-
+    // --- GERENCIAMENTO DE ESTADO LOCAL ---
     function togglePublishedProduct(productId) {
         const index = publishedProductIds.indexOf(productId);
         if (index > -1) {
@@ -1128,48 +356,23 @@
         } else {
             publishedProductIds.push(productId);
         }
-        savePublishedProducts();
+        localStorage.setItem('publishedProductIds', JSON.stringify(publishedProductIds));
         showToast('Lista para revendedoras atualizada!', 'success');
     }
 
-    function savePublishedProducts() {
-        localStorage.setItem('publishedProductIds', JSON.stringify(publishedProductIds));
+    function saveCustomPrice(productId, newPrice) {
+        customPrices[productId] = newPrice;
+        localStorage.setItem('customPrices', JSON.stringify(customPrices));
+        showToast('Preço salvo!', 'success');
     }
 
-    function loadPublishedProducts() {
-        const saved = localStorage.getItem('publishedProductIds');
-        if (saved) {
-            publishedProductIds = JSON.parse(saved);
-        }
-    }
-    
-    function loadAllApiProducts() {
-        const saved = localStorage.getItem('allApiProducts');
-        if (saved) {
-            allApiProducts = JSON.parse(saved);
-        }
-        const savedTime = localStorage.getItem('lastSyncTime');
-        if (savedTime) {
-            document.getElementById('last-sync-time').textContent = `Última sincronização: ${savedTime}`;
-        }
-    }
-
-    // --- FUNÇÕES UTILITÁRIAS ---
-    function closeModal(modalId) {
-        document.getElementById(modalId).classList.remove('active');
-    }
-
+    // --- UTILITÁRIOS ---
     function showToast(message, type = 'info') {
         const toast = document.getElementById('toast');
-        const toastMessage = document.getElementById('toast-message');
-        
-        toastMessage.textContent = message;
-        toast.style.backgroundColor = type === 'success' ? 'var(--verde-sucesso)' : 'var(--vermelho-perigo)';
-        
+        toast.style.backgroundColor = type === 'success' ? 'var(--verde-sucesso)' : (type === 'error' ? 'var(--vermelho-perigo)' : '#333');
+        document.getElementById('toast-message').textContent = message;
         toast.style.bottom = '20px';
-        setTimeout(() => {
-            toast.style.bottom = '-100px';
-        }, 3000);
+        setTimeout(() => { toast.style.bottom = '-100px'; }, 3000);
     }
     </script>
 </body>
