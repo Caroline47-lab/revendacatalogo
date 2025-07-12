@@ -43,7 +43,7 @@
         .container { width: 100%; max-width: 1280px; margin: 0 auto; }
 
         /* --- Componentes --- */
-        .btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 12px 28px; border-radius: 50px; border: none; font-weight: 600; font-size: 1rem; cursor: pointer; transition: all 0.3s ease; text-decoration: none; }
+        .btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 10px 24px; border-radius: 50px; border: none; font-weight: 600; font-size: 0.9rem; cursor: pointer; transition: all 0.3s ease; text-decoration: none; }
         .btn-primary { background-color: var(--rosa-pink); color: var(--branco); }
         .btn-primary:hover { transform: translateY(-3px); box-shadow: 0 6px 20px rgba(219, 20, 114, 0.3); }
         .btn-secondary { background-color: var(--amarelo-ouro); color: var(--branco); }
@@ -77,19 +77,38 @@
         .product-card__status-badge.ativo { background-color: var(--verde-sucesso); }
         .product-card__status-badge.esgotado { background-color: var(--vermelho-perigo); }
         .product-card__status-badge.desativado { background-color: var(--cinza-texto); }
+        .product-card__multi-photo-badge { position: absolute; bottom: 10px; left: 10px; background-color: rgba(0,0,0,0.6); color: white; padding: 4px 8px; border-radius: 6px; font-size: 0.8rem; display: inline-flex; align-items: center; gap: 5px; }
         .product-card__content { padding: 15px; flex-grow: 1; display: flex; flex-direction: column; }
         .product-card__name { font-size: 1.1rem; font-weight: 600; margin-bottom: 5px; }
-        .product-card__price { font-size: 1.2rem; font-weight: 700; color: var(--cinza-texto); margin-bottom: 10px; }
+        .product-card__sku { font-size: 0.8rem; color: #888; margin-bottom: 10px; }
+        .product-card__price { font-size: 1.2rem; font-weight: 700; color: var(--cinza-texto); margin-bottom: 15px; }
+        .product-card__actions { margin-top: auto; padding-top: 15px; border-top: 1px solid var(--cinza-fundo); display: flex; gap: 10px; }
         .selection-control { background-color: var(--cinza-fundo); padding: 12px 15px; }
         .selection-control label { display: flex; align-items: center; gap: 10px; cursor: pointer; font-weight: 600; }
         .selection-control input[type="checkbox"] { width: 20px; height: 20px; accent-color: var(--rosa-pink); }
         
         /* --- Modal e Toast --- */
-        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); display: none; justify-content: center; align-items: center; z-index: 2000; padding: 15px; }
+        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); display: none; justify-content: center; align-items: flex-start; z-index: 2000; padding: 40px 15px; overflow-y: auto; }
         .modal-overlay.active { display: flex; }
-        .modal-content { background: var(--branco); padding: 30px; border-radius: var(--borda-suave); width: 100%; max-width: 600px; animation: zoomIn 0.3s; }
+        .modal-content { background: var(--branco); padding: 30px; border-radius: var(--borda-suave); width: 100%; max-width: 800px; animation: zoomIn 0.3s; position: relative; }
         @keyframes zoomIn { from { transform: scale(0.8); opacity: 0; } to { transform: scale(1); opacity: 1; } }
-        .modal-content h3 { font-family: var(--font-titulo); color: var(--rosa-pink); margin-bottom: 20px; text-align: center; }
+        .modal-close-btn { position: absolute; top: 15px; right: 15px; background: none; border: none; cursor: pointer; color: #888; }
+        .modal-close-btn:hover { color: #000; }
+        .modal-header h3 { font-family: var(--font-titulo); color: var(--rosa-pink); margin-bottom: 5px; }
+        .modal-header .sku { font-size: 0.9rem; color: #888; margin-bottom: 20px; }
+        .modal-body { display: grid; grid-template-columns: 1fr; gap: 30px; }
+        @media(min-width: 768px) { .modal-body { grid-template-columns: 1fr 1fr; } }
+        .modal-gallery .main-image { width: 100%; aspect-ratio: 1/1; object-fit: cover; border-radius: var(--borda-suave); margin-bottom: 10px; }
+        .modal-gallery .thumbnail-container { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; }
+        .modal-gallery .thumbnail { width: 100%; aspect-ratio: 1/1; object-fit: cover; border-radius: 8px; cursor: pointer; border: 2px solid transparent; transition: border-color 0.2s; }
+        .modal-gallery .thumbnail.active { border-color: var(--rosa-pink); }
+        .modal-details .variations-table { width: 100%; border-collapse: collapse; }
+        .modal-details .variations-table th, .modal-details .variations-table td { text-align: left; padding: 12px; border-bottom: 1px solid var(--cinza-fundo); }
+        .modal-details .variations-table th { font-weight: 600; }
+        .stock-badge { padding: 3px 8px; border-radius: 50px; font-size: 0.8rem; font-weight: 600; color: var(--branco); }
+        .stock-badge.in-stock { background-color: var(--verde-sucesso); }
+        .stock-badge.out-of-stock { background-color: var(--vermelho-perigo); }
+
         #toast { position: fixed; bottom: -100px; left: 50%; transform: translateX(-50%); background-color: #333; color: white; padding: 15px 25px; border-radius: 50px; transition: bottom 0.5s ease; z-index: 3000; }
     </style>
 </head>
@@ -154,6 +173,39 @@
             <div id="reseller-product-grid" class="product-grid"></div>
         </div>
     </section>
+
+    <!-- MODAL DE DETALHES DO PRODUTO -->
+    <div id="product-details-modal" class="modal-overlay" onclick="closeModal('product-details-modal')">
+        <div class="modal-content" onclick="event.stopPropagation()">
+            <button class="modal-close-btn" onclick="closeModal('product-details-modal')"><i data-feather="x"></i></button>
+            <div class="modal-header">
+                <h3 id="modal-product-name">Nome do Produto</h3>
+                <p id="modal-product-sku" class="sku">SKU: Default</p>
+            </div>
+            <div class="modal-body">
+                <div class="modal-gallery">
+                    <img id="modal-main-image" src="https://via.placeholder.com/400" alt="Imagem principal do produto">
+                    <div id="modal-thumbnail-container" class="thumbnail-container">
+                        <!-- Thumbnails serão inseridas aqui via JS -->
+                    </div>
+                </div>
+                <div class="modal-details">
+                    <h4>Variações de Estoque</h4>
+                    <table class="variations-table">
+                        <thead>
+                            <tr>
+                                <th>Variação (Tamanho)</th>
+                                <th>Estoque</th>
+                            </tr>
+                        </thead>
+                        <tbody id="modal-variations-tbody">
+                            <!-- Linhas da tabela serão inseridas aqui via JS -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
     
     <!-- TOAST NOTIFICATION -->
     <div id="toast"><span id="toast-message"></span></div>
@@ -189,8 +241,6 @@
     function checkAuth() {
         if (localStorage.getItem('isAdmin') === 'true') {
             navigateTo('admin-panel-view');
-        } else {
-            // Por padrão, não vai para lugar nenhum se não for admin, fica na seleção.
         }
     }
 
@@ -222,26 +272,26 @@
     async function syncFromFacilZap() {
         showToast('Sincronizando produtos...');
         try {
-            // A chamada para o proxy que busca ativos e inativos
             const response = await fetch('/api/facilzap-proxy');
 
             if (!response.ok) {
-                const errorData = await response.json();
+                const errorData = await response.json().catch(() => ({ error: 'Resposta inválida do proxy.' }));
                 throw new Error(errorData.error || 'Falha na comunicação com o proxy.');
             }
 
             const data = await response.json();
             const productsFromApi = data.data || [];
 
-            // ***** LÓGICA ATUALIZADA PARA PROCESSAR OS DADOS DA API *****
             allApiProducts = productsFromApi.map(p => ({
                 id: p.id,
                 nome: p.nome,
+                sku: p.sku || 'N/A',
                 preco_original: p.preco,
-                imagem: p.imagem,
+                imagem: p.imagem, // Imagem principal
+                fotos: p.fotos || [p.imagem], // Lista de fotos
                 estoque_total: p.total_estoque || 0,
-                // O status 'ativo' ou 'inativo' vem diretamente da API agora
-                status_api: p.status 
+                variacoes: p.estoque || [], // Lista de variações
+                status_api: p.status_ativo ? 'ativo' : 'inativo' // Adaptado para a estrutura da planilha
             }));
 
             localStorage.setItem('allApiProducts', JSON.stringify(allApiProducts));
@@ -266,7 +316,7 @@
         const grid = document.getElementById('admin-product-grid');
         grid.innerHTML = '';
 
-        if(allApiProducts.length === 0) {
+        if(!allApiProducts || allApiProducts.length === 0) {
              grid.innerHTML = `<p style="text-align:center; grid-column: 1 / -1;">Nenhum produto encontrado. Clique em "Sincronizar Produtos".</p>`;
              return;
         }
@@ -275,7 +325,6 @@
             const card = document.createElement('div');
             const isPublished = publishedProductIds.includes(p.id);
             
-            // ***** LÓGICA ATUALIZADA PARA DEFINIR O STATUS DE EXIBIÇÃO *****
             let displayStatus, statusClass;
             if (p.status_api === 'inativo') {
                 displayStatus = 'Desativado';
@@ -291,12 +340,17 @@
             card.className = 'card product-card';
             card.innerHTML = `
                 <div class="product-card__image-container">
-                    <img src="${p.imagem}" alt="${p.nome}" onerror="this.src='https://via.placeholder.com/300'">
+                    <img src="${p.imagem || 'https://via.placeholder.com/300'}" alt="${p.nome}" onerror="this.src='https://via.placeholder.com/300'">
                     <span class="product-card__status-badge ${statusClass}">${displayStatus}</span>
+                    ${p.fotos && p.fotos.length > 1 ? `<span class="product-card__multi-photo-badge"><i data-feather="image"></i> ${p.fotos.length}</span>` : ''}
                 </div>
                 <div class="product-card__content">
                     <h3 class="product-card__name">${p.nome}</h3>
-                    <p class="product-card__price">Preço Original: R$ ${parseFloat(p.preco_original).toFixed(2)}</p>
+                    <p class="product-card__sku">SKU: ${p.sku}</p>
+                    <p class="product-card__price">R$ ${parseFloat(p.preco_original).toFixed(2)}</p>
+                    <div class="product-card__actions">
+                        <button class="btn btn-secondary" onclick="showProductDetails(${p.id})">Ver Detalhes</button>
+                    </div>
                 </div>
                 <div class="selection-control">
                     <label>
@@ -307,47 +361,63 @@
             `;
             grid.appendChild(card);
         });
+        feather.replace();
     }
 
-    function renderResellerProducts() {
-        const grid = document.getElementById('reseller-product-grid');
-        grid.innerHTML = '';
-        
-        const productsToShow = allApiProducts.filter(p => 
-            publishedProductIds.includes(p.id) && p.status_api === 'ativo' && p.estoque_total > 0
-        );
+    // --- LÓGICA DO MODAL ---
+    function showProductDetails(productId) {
+        const product = allApiProducts.find(p => p.id === productId);
+        if (!product) return;
 
-        if(productsToShow.length === 0) {
-             grid.innerHTML = `<p style="text-align:center; grid-column: 1 / -1;">Nenhum produto disponível para revenda no momento.</p>`;
-             return;
+        document.getElementById('modal-product-name').textContent = product.nome;
+        document.getElementById('modal-product-sku').textContent = `SKU: ${product.sku}`;
+        
+        // Galeria de Imagens
+        const mainImage = document.getElementById('modal-main-image');
+        const thumbnailContainer = document.getElementById('modal-thumbnail-container');
+        mainImage.src = product.fotos[0] || 'https://via.placeholder.com/400';
+        thumbnailContainer.innerHTML = '';
+        product.fotos.forEach((foto, index) => {
+            const thumb = document.createElement('img');
+            thumb.src = foto;
+            thumb.className = 'thumbnail';
+            if (index === 0) thumb.classList.add('active');
+            thumb.onclick = () => {
+                mainImage.src = foto;
+                document.querySelectorAll('.thumbnail').forEach(t => t.classList.remove('active'));
+                thumb.classList.add('active');
+            };
+            thumbnailContainer.appendChild(thumb);
+        });
+
+        // Tabela de Variações
+        const variationsTbody = document.getElementById('modal-variations-tbody');
+        variationsTbody.innerHTML = '';
+        if (product.variacoes && product.variacoes.length > 0) {
+            product.variacoes.forEach(v => {
+                const row = variationsTbody.insertRow();
+                row.innerHTML = `
+                    <td>${v.nome}</td>
+                    <td>
+                        <span class="stock-badge ${v.estoque > 0 ? 'in-stock' : 'out-of-stock'}">
+                            ${v.estoque}
+                        </span>
+                    </td>
+                `;
+            });
+        } else {
+            const row = variationsTbody.insertRow();
+            row.innerHTML = `<td colspan="2">Nenhuma variação de estoque encontrada.</td>`;
         }
 
-        productsToShow.forEach(p => {
-            const card = document.createElement('div');
-            card.className = 'card product-card';
-            const precoRevenda = customPrices[p.id] ? parseFloat(customPrices[p.id]).toFixed(2) : '';
-
-            card.innerHTML = `
-                <div class="product-card__image-container">
-                    <img src="${p.imagem}" alt="${p.nome}" onerror="this.src='https://via.placeholder.com/300'">
-                </div>
-                <div class="product-card__content">
-                    <h3 class="product-card__name">${p.nome}</h3>
-                    <div class="form-group">
-                        <label>Preço Original</label>
-                        <input type="text" class="form-control" value="R$ ${parseFloat(p.preco_original).toFixed(2)}" readonly style="background-color: #f0f0f0;">
-                    </div>
-                    <div class="form-group">
-                         <label for="price-${p.id}">Seu Preço de Venda (R$)</label>
-                         <input type="number" id="price-${p.id}" class="form-control" value="${precoRevenda}" 
-                                onchange="saveCustomPrice(${p.id}, this.value)" placeholder="Defina seu preço">
-                    </div>
-                </div>
-            `;
-            grid.appendChild(card);
-        });
+        document.getElementById('product-details-modal').classList.add('active');
+        feather.replace();
     }
-    
+
+    function closeModal(modalId) {
+        document.getElementById(modalId).classList.remove('active');
+    }
+
     // --- GERENCIAMENTO DE ESTADO LOCAL ---
     function togglePublishedProduct(productId) {
         const index = publishedProductIds.indexOf(productId);
@@ -358,12 +428,6 @@
         }
         localStorage.setItem('publishedProductIds', JSON.stringify(publishedProductIds));
         showToast('Lista para revendedoras atualizada!', 'success');
-    }
-
-    function saveCustomPrice(productId, newPrice) {
-        customPrices[productId] = newPrice;
-        localStorage.setItem('customPrices', JSON.stringify(customPrices));
-        showToast('Preço salvo!', 'success');
     }
 
     // --- UTILITÁRIOS ---
