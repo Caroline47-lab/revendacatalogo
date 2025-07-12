@@ -1,35 +1,15 @@
 const fetch = require('node-fetch');
 
-// Função para buscar uma única página de produtos
-async function fetchProductPage(page, token) {
-    // O parâmetro de página é adicionado à URL
-    const API_ENDPOINT = `https://api.facilzap.app.br/produtos?pagina=${page}`;
-    
-    const fetchOptions = {
-        method: 'GET',
-        headers: {
-            'Authorization': `Bearer ${token}`,
-            'Accept': 'application/json'
-        }
-    };
-
-    console.log(`Buscando página ${page}...`);
-    const response = await fetch(API_ENDPOINT, fetchOptions);
-
-    if (!response.ok) {
-        console.error(`Erro ao buscar página ${page}. Status: ${response.status}`);
-        // Se uma página falhar, retornamos uma lista vazia para não quebrar o processo.
-        return []; 
-    }
-
-    const data = await response.json();
-    // A API da FacilZap aninha os dados dentro de um objeto 'data'.
-    return data.data || [];
-}
-
-
+/**
+ * Esta função busca uma única página de produtos da API da FacilZap.
+ * Ela é chamada pelo front-end repetidamente, uma página de cada vez.
+ */
 exports.handler = async function(event, context) {
     const FACILZAP_TOKEN = process.env.FACILZAP_TOKEN;
+    // Pega o número da página dos parâmetros da URL. Se não for fornecido, assume a página 1.
+    const page = event.queryStringParameters.page || '1';
+    
+    const API_ENDPOINT = `https://api.facilzap.app.br/produtos?pagina=${page}`;
     
     const responseHeaders = {
         'Content-Type': 'application/json'
@@ -43,40 +23,37 @@ exports.handler = async function(event, context) {
         };
     }
 
+    const fetchOptions = {
+        method: 'GET',
+        headers: {
+            'Authorization': `Bearer ${FACILZAP_TOKEN}`,
+            'Accept': 'application/json'
+        }
+    };
+
     try {
-        let currentPage = 1;
-        let allProducts = [];
-        let keepFetching = true;
+        console.log(`Proxy buscando página: ${page}`);
+        const response = await fetch(API_ENDPOINT, fetchOptions);
+        const responseBody = await response.text();
 
-        console.log("--- INICIANDO SINCRONIZAÇÃO COMPLETA ---");
-
-        // O loop continua enquanto a API retornar produtos na página anterior.
-        while (keepFetching) {
-            const productsFromPage = await fetchProductPage(currentPage, FACILZAP_TOKEN);
-
-            if (productsFromPage.length > 0) {
-                allProducts = allProducts.concat(productsFromPage);
-                console.log(`Página ${currentPage} carregada com ${productsFromPage.length} produtos. Total acumulado: ${allProducts.length}`);
-                currentPage++;
-            } else {
-                // Se a API retorna uma página vazia, significa que chegamos ao fim.
-                console.log(`Página ${currentPage} vazia. Finalizando busca.`);
-                keepFetching = false;
-            }
+        if (!response.ok) {
+            console.error(`Proxy: Erro da API na página ${page}. Status: ${response.status}`);
+            return {
+                statusCode: response.status,
+                headers: responseHeaders,
+                body: responseBody
+            };
         }
 
-        console.log(`--- SINCRONIZAÇÃO FINALIZADA. TOTAL DE PRODUTOS: ${allProducts.length} ---`);
-
+        // Retorna os dados da página solicitada com sucesso.
         return {
             statusCode: 200,
             headers: responseHeaders,
-            // Retorna a lista completa de produtos dentro de um objeto 'data',
-            // mantendo a consistência com a resposta original da API.
-            body: JSON.stringify({ data: allProducts })
+            body: responseBody
         };
 
     } catch (error) {
-        console.error("Erro geral no proxy durante a paginação:", error);
+        console.error(`Proxy: Erro de rede ao buscar a página ${page}:`, error);
         return {
             statusCode: 500,
             headers: responseHeaders,
