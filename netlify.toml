@@ -1,24 +1,19 @@
-# Build settings: define publish directory and functions folder.
 [build]
   publish = "public"
   functions = "netlify/functions"
 
-# Redirect rule for the product API proxy.
 [[redirects]]
   from = "/api/*"
   to = "/.netlify/functions/:splat"
   status = 200
   force = true
 
-# Redirect rule for the image proxy.
 [[redirects]]
   from = "/facilzap-images/*"
   to = "/.netlify/functions/image-proxy?url=:splat"
   status = 200
   force = true
 
-# Netlify Functions settings.
 [functions]
   node_bundler = "esbuild"
-  # Increase the default timeout to 30s to prevent sync interruption.
   timeout = 30
