@@ -309,32 +309,14 @@
         setTimeout(() => { toast.style.bottom = '-100px'; }, 3000);
     }
 
-    // FUNÇÃO CORRIGIDA: proxyImageUrl
     function proxyImageUrl(url) {
-        // Retorna placeholder se URL é inválida
-        if (!url || typeof url !== 'string' || url.trim() === '') {
+        if (!url || typeof url !== 'string') {
             return 'https://placehold.co/300x300/DB1472/FFFFFF?text=Sem+Imagem';
         }
-        
-        // Limpa a URL removendo espaços
-        let cleanUrl = url.trim();
-        
-        // Verifica se a URL já tem protocolo
-        if (!cleanUrl.startsWith('http://') && !cleanUrl.startsWith('https://')) {
-            cleanUrl = 'https://' + cleanUrl;
+        if (url.startsWith('http')) {
+            return `/facilzap-images/${encodeURIComponent(url)}`;
         }
-        
-        // Valida se a URL tem formato válido
-        try {
-            new URL(cleanUrl);
-        } catch (e) {
-            console.error('URL inválida:', url);
-            return 'https://placehold.co/300x300/DB1472/FFFFFF?text=URL+Inválida';
-        }
-        
-        // Encode a URL completa para passar pelo proxy
-        const encodedUrl = encodeURIComponent(cleanUrl);
-        return `/facilzap-images/${encodedUrl}`;
+        return `/facilzap-images/${encodeURIComponent('https://' + url)}`;
     }
     
     // --- LÓGICA DE NEGÓCIO E PROCESSAMENTO DE DADOS ---
@@ -417,19 +399,7 @@
                 const processedProducts = productsFromPage.map(p => {
                     const variacoes = processVariations(p.estoque, p.id);
                     const estoqueTotal = variacoes.reduce((total, v) => total + v.quantidade, 0);
-                    
-                    // PROCESSAMENTO MELHORADO DAS IMAGENS
-                    let imagens = [];
-                    if (p.imagem) {
-                        if (typeof p.imagem === 'string') {
-                            // Separa por vírgulas e limpa cada URL
-                            imagens = p.imagem.split(',')
-                                .map(url => url.trim())
-                                .filter(url => url && url.length > 0);
-                        } else if (Array.isArray(p.imagem)) {
-                            imagens = p.imagem.filter(url => url && typeof url === 'string' && url.trim().length > 0);
-                        }
-                    }
+                    const imagens = typeof p.imagem === 'string' ? p.imagem.split(',').map(url => url.trim()) : [];
                     
                     return {
                         id: p.id,
@@ -445,6 +415,21 @@
                 });
                 
                 allApiProducts.push(...processedProducts);
+                
+                // Log de verificação crucial
+                if (processedProducts.length > 0) {
+                    console.log("Exemplo de produto processado:", {
+                        id: processedProducts[0]?.id,
+                        nome: processedProducts[0]?.nome,
+                        variacoes: processedProducts[0]?.variacoes,
+                        imagem: processedProducts[0]?.imagem,
+                        estoque_original: productsFromPage[0]?.estoque
+                    });
+                }
+
+                if (productsFromPage.length < 100) {
+                    break;
+                }
                 currentPage++;
             }
 
@@ -523,7 +508,7 @@
             const row = tbody.insertRow();
             const isPublished = publishedProductIds.includes(p.id);
             row.innerHTML = `
-                <td><img src="${proxyImageUrl(p.imagem)}" alt="${p.nome}" class="product-image" onerror="this.src='https://placehold.co/40x40/DB1472/FFFFFF?text=Erro'"></td>
+                <td><img src="${proxyImageUrl(p.imagem)}" alt="${p.nome}" class="product-image" onerror="this.onerror=null; this.src='https://placehold.co/40x40/DB1472/FFFFFF?text=X'; this.parentNode.nextSibling.nextSibling.nextSibling.nextSibling.querySelector('.status-badge').textContent='Img Falhou';"></td>
                 <td>${p.nome}</td>
                 <td>${p.sku}</td>
                 <td>R$ ${p.preco_original.toFixed(2)}</td>
@@ -554,7 +539,7 @@
             const row = tbody.insertRow();
             const variationsText = p.variacoes.filter(v => v.quantidade > 0).map(v => v.nome).join(', ');
             row.innerHTML = `
-                <td><img src="${proxyImageUrl(p.imagem)}" alt="${p.nome}" class="product-image" onerror="this.src='https://placehold.co/40x40/DB1472/FFFFFF?text=Erro'"></td>
+                <td><img src="${proxyImageUrl(p.imagem)}" alt="${p.nome}" class="product-image" onerror="this.src='https://placehold.co/40x40/DB1472/FFFFFF?text=X'"></td>
                 <td>${p.nome}</td>
                 <td>R$ ${p.preco_original.toFixed(2)}</td>
                 <td>${variationsText || 'Nenhuma'}</td>
@@ -570,6 +555,7 @@
         const tbody = document.getElementById('modal-variations-tbody');
         
         document.getElementById('modal-product-name').textContent = product.nome;
+        document.getElementById('modal-main-image').src = proxyImageUrl(product.imagem);
         
         tbody.innerHTML = ''; // Limpa antes de popular
 
@@ -620,3 +606,68 @@
     </script>
 </body>
 </html>
+```
+
+### 2. Proxy de Imagens (`image-proxy.js`) Simplificado
+
+Para garantir, aqui está a versão simplificada do proxy de imagens que você deve usar.
+
+
+```javascript
+// Usar 'node-fetch' pode ser necessário dependendo da versão do Node na Netlify.
+const fetch = require('node-fetch');
+
+exports.handler = async (event) => {
+    const url = event.queryStringParameters.url;
+    
+    if (!url) {
+        return { statusCode: 400, body: JSON.stringify({ error: "URL não fornecida" }) };
+    }
+
+    try {
+        // CORREÇÃO: Apenas decodifica a URL, sem outras manipulações.
+        const imageUrl = decodeURIComponent(url);
+        
+        console.log("Proxy de Imagem buscando a URL:", imageUrl);
+
+        const response = await fetch(imageUrl, {
+            headers: { 
+                'User-Agent': 'Mozilla/5.0',
+                'Referer': 'https://facilzap.app.br/'
+            }
+        });
+
+        if (!response.ok) {
+            console.error(`[ERROR] Falha ao buscar imagem no proxy:`, {
+                status: response.status,
+                url: imageUrl
+            });
+            return {
+                statusCode: response.status,
+                body: JSON.stringify({ error: `Erro ${response.status}` })
+            };
+        }
+
+        const imageBuffer = await response.arrayBuffer();
+        
+        return {
+            statusCode: 200,
+            headers: {
+                'Content-Type': response.headers.get('content-type'),
+                'Cache-Control': 'public, max-age=86400'
+            },
+            body: Buffer.from(imageBuffer).toString('base64'),
+            isBase64Encoded: true
+        };
+        
+    } catch (error) {
+        console.error("[ERROR] Erro fatal no proxy de imagem:", {
+            errorMessage: error.message,
+            requestedUrl: url
+        });
+        return {
+            statusCode: 500,
+            body: JSON.stringify({ error: error.message })
+        };
+    }
+};
