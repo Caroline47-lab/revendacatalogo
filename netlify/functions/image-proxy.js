@@ -1,7 +1,5 @@
-// Usar 'node-fetch' pode ser necessário dependendo da versão do Node na Netlify.
-const fetch = require('node-fetch');
-
-exports.handler = async (event) => {
+// Node.js 18+ já possui fetch nativo
+export const handler = async (event) => {
   const url = event.queryStringParameters.url;
   
   if (!url) {
@@ -22,39 +20,59 @@ exports.handler = async (event) => {
       imageUrl = 'https://' + imageUrl;
     }
 
-    // LOG DE DEPURAÇÃO: Mostra a URL exata que está sendo buscada nos logs da função.
-    console.log("URL Sendo Buscada:", imageUrl);
+    // LOG DE DEPURAÇÃO: Mostra a URL exata que está sendo buscada
+    console.log("URL Original:", url);
+    console.log("URL Processada:", imageUrl);
     
     const response = await fetch(imageUrl, {
       headers: { 
-        'User-Agent': 'Mozilla/5.0',
-        'Referer': 'https://facilzap.app.br/' 
-      }
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
+        'Referer': 'https://facilzap.app.br/',
+        'Accept': 'image/webp,image/apng,image/*,*/*;q=0.8'
+      },
+      timeout: 10000 // 10 segundos de timeout
     });
 
     if (!response.ok) {
-        // Log de erro mais detalhado
-        console.error(`Falha ao buscar imagem. Status: ${response.status}`, { url: imageUrl });
-        return {
-            statusCode: response.status,
-            body: JSON.stringify({ error: `Falha ao buscar imagem. Status: ${response.statusText}`, url: imageUrl })
-        };
+      console.error(`Falha ao buscar imagem. Status: ${response.status}`, { 
+        url: imageUrl,
+        statusText: response.statusText,
+        headers: Object.fromEntries(response.headers.entries())
+      });
+      
+      return {
+        statusCode: response.status,
+        body: JSON.stringify({ 
+          error: `Falha ao buscar imagem. Status: ${response.status} - ${response.statusText}`, 
+          url: imageUrl,
+          originalUrl: url
+        })
+      };
     }
 
-    const imageBuffer = await response.buffer();
+    const imageBuffer = await response.arrayBuffer();
+    const contentType = response.headers.get('content-type') || 'image/jpeg';
+    
+    console.log(`Imagem carregada com sucesso. Tamanho: ${imageBuffer.byteLength} bytes, Tipo: ${contentType}`);
     
     return {
       statusCode: 200,
       headers: {
-        'Content-Type': response.headers.get('content-type'),
-        'Cache-Control': 'public, max-age=86400'
+        'Content-Type': contentType,
+        'Cache-Control': 'public, max-age=86400',
+        'Access-Control-Allow-Origin': '*'
       },
-      body: imageBuffer.toString('base64'),
+      body: Buffer.from(imageBuffer).toString('base64'),
       isBase64Encoded: true
     };
     
   } catch (error) {
-    console.error("Erro no proxy de imagem:", { errorMessage: error.message, requestedUrl: url });
+    console.error("Erro no proxy de imagem:", { 
+      errorMessage: error.message, 
+      errorStack: error.stack,
+      requestedUrl: url 
+    });
+    
     return {
       statusCode: 500,
       body: JSON.stringify({ 
