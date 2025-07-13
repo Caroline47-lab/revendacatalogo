@@ -10,8 +10,16 @@
   status = 200
   force = true
 
-# Netlify Functions settings.
-[functions]
+# Redirect rule for the image proxy.
+[[redirects]]
+  from = "/facilzap-images/*"
+  to = "/.netlify/functions/image-proxy?url=:splat"
+  status = 200
+  force = true
+
+# Settings for all functions, applied using a wildcard.
+# This syntax is more robust and can prevent parsing errors.
+[functions."*"]
   node_bundler = "esbuild"
   # Increase the default timeout to 30s to prevent sync interruption.
   timeout = 30
