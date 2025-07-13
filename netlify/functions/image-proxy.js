@@ -1,54 +1,76 @@
 exports.handler = async (event) => {
-    // Validação robusta do parâmetro de URL
+    // 1. Validação de origem
+    const allowedOrigins = [
+        'https://revendacatalogo.netlify.app',
+        'https://cjotarasteirinhas.com.br'
+    ];
+    
+    const origin = event.headers.origin || event.headers.Origin;
+    if (!allowedOrigins.includes(origin)) {
+        return {
+            statusCode: 403,
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ error: "Acesso não autorizado para este domínio" })
+        };
+    }
+
+    // 2. Processamento da URL da imagem
     const encodedUrl = event.queryStringParameters.url;
     if (!encodedUrl) {
-        return {
-            statusCode: 400,
-            body: JSON.stringify({ error: "Parâmetro 'url' não fornecido" })
-        };
+        return { statusCode: 400, body: "URL não fornecida" };
     }
 
     let imageUrl;
     try {
-        // Decodificação segura + normalização de URL
         imageUrl = decodeURIComponent(encodedUrl)
             .replace(/\s/g, '')
             .replace(/^\/\//, 'https://')
             .trim();
-        
-        // Validação rigorosa da URL
-        const parsedUrl = new URL(imageUrl);
-        if (!['http:', 'https:'].includes(parsedUrl.protocol)) {
-            return {
-                statusCode: 400,
-                body: JSON.stringify({ error: "Protocolo não permitido" })
-            };
-        }
-        
-        // CORREÇÃO: DOMÍNIOS PERMITIDOS ATUALIZADOS
-        const allowedDomains = [
-            '.lexilzap.app.br',
-            '.facilzap.app.br' // DOMÍNIO ADICIONADO
-        ];
-        
-        if (!allowedDomains.some(domain => parsedUrl.hostname.endsWith(domain))) {
-            return {
-                statusCode: 403,
-                body: JSON.stringify({ error: "Domínio não autorizado" })
-            };
-        }
-    } catch (error) {
-        return {
-            statusCode: 400,
-            body: JSON.stringify({ 
-                error: "URL inválida",
-                details: error.message,
-                receivedUrl: encodedUrl,
-                processedUrl: imageUrl || 'não processada'
-            })
-        };
-    }
 
-    // ... (restante do código permanece igual) ...
-    // O fetch e processamento da imagem continuam idênticos
+        // Correção automática para URLs incompletas
+        if (!imageUrl.includes('://') || imageUrl.startsWith('https://produtos/')) {
+            imageUrl = imageUrl.replace('https://produtos/', 'https://arquivos.facilzap.app.br/produtos/');
+        }
+
+        const parsedUrl = new URL(imageUrl);
+        
+        // 3. Validação de segurança
+        if (!['http:', 'https:'].includes(parsedUrl.protocol)) {
+            return { statusCode: 400, body: "Protocolo inválido" };
+        }
+        
+        if (!parsedUrl.hostname.endsWith('.facilzap.app.br')) {
+            return { statusCode: 403, body: "Domínio não permitido" };
+        }
+
+        // 4. Fetch da imagem (código mantido igual)
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 8000);
+        
+        const response = await fetch(imageUrl, {
+            signal: controller.signal,
+            headers: {
+                'User-Agent': 'Mozilla/5.0',
+                'Referer': 'https://facilzap.app.br/'
+            }
+        });
+        
+        clearTimeout(timeoutId);
+
+        // ... (restante do processamento da imagem) ...
+
+        return {
+            statusCode: 200,
+            headers: {
+                'Content-Type': contentType,
+                'Cache-Control': 'public, max-age=31536000, immutable',
+                'Access-Control-Allow-Origin': origin // Permite o domínio solicitante
+            },
+            body: Buffer.from(buffer).toString('base64'),
+            isBase64Encoded: true
+        };
+
+    } catch (error) {
+        // ... (tratamento de erros) ...
+    }
 };
