@@ -3,371 +3,378 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Painel de Mídia da Revendedora</title>
+    <title>Painel de Gestão de Catálogo (ERP)</title>
     
-    <!-- Google Fonts: Poppins (Títulos) e Montserrat (Textos) -->
+    <!-- Google Fonts: Inter -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@700&family=Montserrat:wght@400;600&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     
-    <!-- Feather Icons para ícones leves -->
+    <!-- Feather Icons -->
     <script src="https://unpkg.com/feather-icons"></script>
 
     <style>
         :root {
-            --rosa-pink: #DB1472;
-            --amarelo-ouro: #F8B81F;
-            --cinza-texto: #4A4A4A;
-            --cinza-borda: #e0e0e0;
-            --cinza-fundo: #f7f7f9;
-            --cinza-desativado: #888;
-            --verde-sucesso: #28a745;
-            --vermelho-perigo: #dc3545;
-            --azul-info: #17a2b8;
-            --branco: #FFFFFF;
-            --sombra: 0 5px 20px rgba(0, 0, 0, 0.07);
-            --borda-suave: 12px;
-            --font-titulo: 'Poppins', sans-serif;
-            --font-texto: 'Montserrat', sans-serif;
+            --primary-color: #DB1472;
+            --secondary-color: #F8B81F;
+            --text-color: #334155;
+            --text-light: #64748b;
+            --bg-color: #f8fafc;
+            --card-bg: #ffffff;
+            --border-color: #e2e8f0;
+            --success-color: #10b981;
+            --danger-color: #ef4444;
+            --info-color: #3b82f6;
+            --font-sans: 'Inter', sans-serif;
+            --shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+            --border-radius: 0.75rem;
         }
 
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
-            font-family: var(--font-texto);
-            background-color: var(--cinza-fundo);
-            color: var(--cinza-texto);
-            line-height: 1.6;
+            font-family: var(--font-sans);
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            line-height: 1.5;
         }
-        .view { display: none; min-height: 100vh; padding: 20px 15px; animation: fadeIn 0.4s ease-in-out; }
-        .view.active { display: flex; flex-direction: column; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(15px); } to { opacity: 1; transform: translateY(0); } }
-        .container { width: 100%; max-width: 1280px; margin: 0 auto; }
-
-        /* --- Componentes --- */
-        .btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 10px 24px; border-radius: 50px; border: none; font-weight: 600; font-size: 0.9rem; cursor: pointer; transition: all 0.3s ease; text-decoration: none; }
-        .btn:disabled { background-color: #ccc; cursor: not-allowed; }
-        .btn-primary { background-color: var(--rosa-pink); color: var(--branco); }
-        .btn-primary:hover:not(:disabled) { transform: translateY(-3px); box-shadow: 0 6px 20px rgba(219, 20, 114, 0.3); }
-        .btn-secondary { background-color: var(--amarelo-ouro); color: var(--branco); }
-        .btn-secondary:hover:not(:disabled) { transform: translateY(-3px); box-shadow: 0 6px 20px rgba(248, 184, 31, 0.3); }
-        .btn-outline { background-color: transparent; color: var(--rosa-pink); border: 2px solid var(--rosa-pink); }
-        .btn-outline:hover:not(:disabled) { background-color: var(--rosa-pink); color: var(--branco); }
-        .card { background: var(--branco); border-radius: var(--borda-suave); box-shadow: var(--sombra); overflow: hidden; display: flex; flex-direction: column; }
-        .form-control { width: 100%; padding: 12px 15px; border-radius: 8px; border: 1px solid var(--cinza-borda); font-size: 1rem; transition: border-color 0.2s, box-shadow 0.2s; }
-        .form-control:focus { outline: none; border-color: var(--rosa-pink); box-shadow: 0 0 0 3px rgba(219, 20, 114, 0.15); }
-        .form-group { margin-bottom: 15px; }
-        .form-group label { display: block; margin-bottom: 8px; font-weight: 600; }
-        
-        /* --- Telas Iniciais --- */
-        .center-box-container { display: flex; justify-content: center; align-items: center; text-align: center; flex-grow: 1; }
-        .center-box { width: 100%; max-width: 400px; padding: 30px; }
-        .center-box h1 { font-family: var(--font-titulo); font-size: 2.8rem; color: var(--rosa-pink); margin-bottom: 15px; }
-        .center-box p { margin-bottom: 30px; font-size: 1.1rem; }
-        .center-box .options { display: flex; flex-direction: column; gap: 15px; }
-        #login-form { background-color: var(--branco); padding: 40px; border-radius: var(--borda-suave); box-shadow: var(--sombra); }
-
-        /* --- Painel --- */
-        .panel-header { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; margin-bottom: 30px; gap: 20px; }
-        .panel-header h1 { font-family: var(--font-titulo); color: var(--rosa-pink); }
-        .product-grid { display: grid; gap: 20px; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); }
-        .pagination-controls { text-align: center; margin-top: 30px; }
-        
-        .product-card { transition: transform 0.3s ease, box-shadow 0.3s ease; }
-        .product-card:hover { transform: translateY(-5px); box-shadow: 0 8px 25px rgba(0,0,0,0.1); }
-        .product-card__image-container { position: relative; }
-        .product-card img { width: 100%; aspect-ratio: 1 / 1; object-fit: cover; display: block; }
-        .product-card__status-badge { position: absolute; top: 10px; right: 10px; padding: 4px 12px; border-radius: 50px; font-size: 0.75rem; font-weight: 600; color: var(--branco); text-transform: uppercase; }
-        .product-card__status-badge.ativo { background-color: var(--verde-sucesso); }
-        .product-card__status-badge.sem_estoque { background-color: var(--vermelho-perigo); }
-        .product-card__content { padding: 15px; flex-grow: 1; display: flex; flex-direction: column; }
-        .product-card__name { font-size: 1.1rem; font-weight: 600; margin-bottom: 5px; min-height: 48px; }
-        .product-card__sku { font-size: 0.8rem; color: #888; margin-bottom: 10px; }
-        .product-card__price { font-size: 1.2rem; font-weight: 700; color: var(--cinza-texto); margin-bottom: 10px; }
-        .product-card__actions { margin-top: auto; padding-top: 15px; border-top: 1px solid var(--cinza-fundo); display: flex; gap: 10px; }
-        .selection-control { background-color: var(--cinza-fundo); padding: 12px 15px; }
-        .selection-control label { display: flex; align-items: center; gap: 10px; cursor: pointer; font-weight: 600; }
-        .selection-control input[type="checkbox"] { width: 20px; height: 20px; accent-color: var(--rosa-pink); }
-        
-        .product-card__variations {
-            margin-top: 5px;
-            margin-bottom: 15px;
+        .app-container {
             display: flex;
-            flex-wrap: wrap;
-            gap: 6px;
+            min-height: 100vh;
         }
-        .variation-tag {
-            background-color: var(--cinza-fundo);
-            color: var(--cinza-texto);
-            padding: 4px 10px;
-            border-radius: 50px;
+        .sidebar {
+            width: 250px;
+            background-color: var(--card-bg);
+            border-right: 1px solid var(--border-color);
+            padding: 2rem 1rem;
+            display: flex;
+            flex-direction: column;
+        }
+        .sidebar-header {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--primary-color);
+            margin-bottom: 2rem;
+            text-align: center;
+        }
+        .nav-menu {
+            list-style: none;
+            flex-grow: 1;
+        }
+        .nav-item a {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.75rem 1rem;
+            border-radius: 0.5rem;
+            text-decoration: none;
+            color: var(--text-light);
+            font-weight: 500;
+            transition: background-color 0.2s, color 0.2s;
+        }
+        .nav-item a:hover {
+            background-color: #f1f5f9;
+            color: var(--text-color);
+        }
+        .nav-item a.active {
+            background-color: var(--primary-color);
+            color: white;
+        }
+        .sidebar-footer {
             font-size: 0.8rem;
-            font-weight: 600;
-            border: 1px solid var(--cinza-borda);
+            color: #94a3b8;
+            text-align: center;
         }
-        .variations-title {
-            font-size: 0.8rem;
-            font-weight: 600;
-            color: #888;
-            margin-top: 10px;
-            margin-bottom: 5px;
+        .main-content {
+            flex-grow: 1;
+            padding: 2rem;
+            overflow-y: auto;
         }
+        .page {
+            display: none;
+        }
+        .page.active {
+            display: block;
+            animation: fadeIn 0.4s ease-in-out;
+        }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        
+        .page-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+        }
+        .page-header h1 {
+            font-size: 1.75rem;
+            font-weight: 700;
+        }
+        .btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 0.6rem 1.25rem; border-radius: 0.5rem; border: none; font-weight: 600; font-size: 0.9rem; cursor: pointer; transition: all 0.2s ease; }
+        .btn-primary { background-color: var(--primary-color); color: white; }
+        .btn-primary:hover { opacity: 0.9; }
+        .btn-secondary { background-color: var(--secondary-color); color: white; }
+        .btn-secondary:hover { opacity: 0.9; }
+        
+        .stats-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 1.5rem; margin-bottom: 2rem; }
+        .stat-card { background-color: var(--card-bg); padding: 1.5rem; border-radius: var(--border-radius); box-shadow: var(--shadow); }
+        .stat-card-title { font-size: 0.9rem; color: var(--text-light); margin-bottom: 0.5rem; }
+        .stat-card-value { font-size: 2rem; font-weight: 700; }
 
-        /* --- Modal e Toast --- */
-        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); display: none; justify-content: center; align-items: flex-start; z-index: 2000; padding: 40px 15px; overflow-y: auto; }
+        .table-container { background-color: var(--card-bg); border-radius: var(--border-radius); box-shadow: var(--shadow); overflow: hidden; }
+        .product-table { width: 100%; border-collapse: collapse; }
+        .product-table th, .product-table td { padding: 1rem; text-align: left; border-bottom: 1px solid var(--border-color); }
+        .product-table th { background-color: #f8fafc; font-size: 0.8rem; text-transform: uppercase; color: var(--text-light); }
+        .product-table td { font-size: 0.9rem; }
+        .product-image { width: 40px; height: 40px; object-fit: cover; border-radius: 0.25rem; }
+        
+        .status-badge { padding: 0.25rem 0.75rem; border-radius: 999px; font-size: 0.75rem; font-weight: 600; text-transform: capitalize; }
+        .status-badge.ativo { background-color: #dcfce7; color: #16a34a; }
+        .status-badge.sem_estoque { background-color: #fee2e2; color: #dc2626; }
+        
+        /* Switch Toggle para Publicar */
+        .toggle-switch { position: relative; display: inline-block; width: 44px; height: 24px; }
+        .toggle-switch input { opacity: 0; width: 0; height: 0; }
+        .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #ccc; transition: .4s; border-radius: 34px; }
+        .slider:before { position: absolute; content: ""; height: 16px; width: 16px; left: 4px; bottom: 4px; background-color: white; transition: .4s; border-radius: 50%; }
+        input:checked + .slider { background-color: var(--primary-color); }
+        input:checked + .slider:before { transform: translateX(20px); }
+
+        /* Modal */
+        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: none; justify-content: center; align-items: center; z-index: 1000; }
         .modal-overlay.active { display: flex; }
-        .modal-content { background: var(--branco); padding: 30px; border-radius: var(--borda-suave); width: 100%; max-width: 800px; animation: zoomIn 0.3s; position: relative; }
-        @keyframes zoomIn { from { transform: scale(0.8); opacity: 0; } to { transform: scale(1); opacity: 1; } }
-        .modal-close-btn { position: absolute; top: 15px; right: 15px; background: none; border: none; cursor: pointer; color: #888; }
-        .modal-close-btn:hover { color: #000; }
-        .modal-header h3 { font-family: var(--font-titulo); color: var(--rosa-pink); margin-bottom: 20px; }
-        .modal-body { display: grid; grid-template-columns: 1fr; gap: 30px; }
-        @media(min-width: 768px) { .modal-body { grid-template-columns: 1fr 1fr; } }
-        .modal-gallery .main-image { width: 100%; aspect-ratio: 1 / 1; object-fit: cover; border-radius: var(--borda-suave); margin-bottom: 10px; }
-        .modal-details .variations-table { width: 100%; border-collapse: collapse; margin-top: 15px; }
-        .modal-details .variations-table th, .modal-details .variations-table td { text-align: left; padding: 12px; border-bottom: 1px solid var(--cinza-fundo); }
-        .modal-details .variations-table th { font-weight: 600; }
-        .stock-badge { padding: 3px 8px; border-radius: 50px; font-size: 0.8rem; font-weight: 600; color: var(--branco); }
-        .stock-badge.in-stock { background-color: var(--verde-sucesso); }
-        .stock-badge.out-of-stock { background-color: var(--vermelho-perigo); }
+        .modal-content { background: var(--card-bg); padding: 2rem; border-radius: var(--border-radius); width: 90%; max-width: 600px; box-shadow: 0 25px 50px -12px rgb(0 0 0 / 0.25); }
+        .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; }
+        .modal-header h3 { font-size: 1.25rem; }
+        .modal-close-btn { background: none; border: none; cursor: pointer; color: var(--text-light); }
 
-        #toast { position: fixed; bottom: -100px; left: 50%; transform: translateX(-50%); background-color: #333; color: white; padding: 15px 25px; border-radius: 50px; transition: bottom 0.5s ease; z-index: 3000; }
+        #toast { position: fixed; bottom: -100px; left: 50%; transform: translateX(-50%); background-color: #333; color: white; padding: 1rem 1.5rem; border-radius: 0.5rem; transition: bottom 0.5s ease; z-index: 2000; box-shadow: var(--shadow); }
     </style>
 </head>
 <body>
 
-    <!-- TELA DE SELEÇÃO DE PERFIL -->
-    <section id="selection-view" class="view active">
-        <div class="center-box-container">
-            <div class="center-box">
-                <h1>Painel de Mídia</h1>
-                <p>Escolha seu perfil para começar.</p>
-                <div class="options">
-                    <button class="btn btn-primary" onclick="navigateTo('login-view')">
-                        <i data-feather="briefcase"></i> Sou da Empresa (Admin)
-                    </button>
-                    <button class="btn btn-secondary" onclick="navigateTo('reseller-panel-view')">
-                        <i data-feather="shopping-bag"></i> Sou Revendedora
-                    </button>
-                </div>
+    <div class="app-container">
+        <aside class="sidebar">
+            <div class="sidebar-header">Meu ERP</div>
+            <ul class="nav-menu">
+                <li class="nav-item">
+                    <a href="#" class="nav-link active" data-page="dashboard">
+                        <i data-feather="home"></i> Visão Geral
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="#" class="nav-link" data-page="products">
+                        <i data-feather="package"></i> Produtos
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="#" class="nav-link" data-page="catalog">
+                        <i data-feather="book-open"></i> Catálogo Revenda
+                    </a>
+                </li>
+                 <li class="nav-item">
+                    <a href="#" class="nav-link" data-page="sync">
+                        <i data-feather="refresh-cw"></i> Sincronização
+                    </a>
+                </li>
+            </ul>
+            <div class="sidebar-footer">
+                <p>&copy; 2025 - Painel de Gestão</p>
             </div>
-        </div>
-    </section>
+        </aside>
 
-    <!-- TELA DE LOGIN (ADMIN) -->
-    <section id="login-view" class="view">
-        <div class="center-box-container">
-            <div class="center-box">
-                <form id="login-form" onsubmit="event.preventDefault(); handleLogin();">
-                    <h1>Acesso Admin</h1>
-                    <div class="form-group">
-                        <input type="password" id="password" class="form-control" placeholder="Digite a senha" required>
+        <main class="main-content">
+            <!-- PÁGINA: VISÃO GERAL -->
+            <section id="dashboard" class="page active">
+                <div class="page-header">
+                    <h1>Visão Geral</h1>
+                </div>
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <p class="stat-card-title">Total de Produtos</p>
+                        <p class="stat-card-value" id="stat-total-products">0</p>
                     </div>
-                    <button type="submit" class="btn btn-primary" style="width: 100%;">Entrar</button>
-                    <p style="margin-top: 20px; font-size: 0.9rem;"><a href="#" onclick="navigateTo('selection-view')">Voltar</a></p>
-                </form>
-            </div>
-        </div>
-    </section>
-
-    <!-- PAINEL DA EMPRESA (ADMIN) -->
-    <section id="admin-panel-view" class="view">
-        <div class="container">
-            <div class="panel-header">
-                <h1>Painel da Empresa</h1>
-                <div>
-                    <button class="btn btn-primary" onclick="syncFromFacilZap()"><i data-feather="refresh-cw"></i> Sincronizar Produtos</button>
-                    <button class="btn btn-secondary" onclick="testApiConnection()">Testar API</button>
-                    <button class="btn btn-outline" onclick="handleLogout()"><i data-feather="log-out"></i> Sair</button>
+                    <div class="stat-card">
+                        <p class="stat-card-title">Produtos Ativos (com estoque)</p>
+                        <p class="stat-card-value" id="stat-active-products">0</p>
+                    </div>
+                    <div class="stat-card">
+                        <p class="stat-card-title">Publicados para Revenda</p>
+                        <p class="stat-card-value" id="stat-published-products">0</p>
+                    </div>
                 </div>
-            </div>
-            <p style="text-align: center; margin-bottom: 30px;" id="last-sync-time">Última sincronização: Nunca</p>
-            <div id="admin-product-grid" class="product-grid"></div>
-            <div id="pagination-controls" class="pagination-controls">
-                 <!-- O botão "Carregar Mais" será inserido aqui -->
-            </div>
-        </div>
-    </section>
+            </section>
 
-    <!-- PAINEL DA REVENDEDORA -->
-    <section id="reseller-panel-view" class="view">
-        <div class="container">
-            <div class="panel-header">
-                <h1>Vitrine da Revendedora</h1>
-                 <button class="btn btn-outline" onclick="navigateTo('selection-view')">Voltar</button>
-            </div>
-            <div id="reseller-product-grid" class="product-grid"></div>
-        </div>
-    </section>
-
-    <!-- MODAL DE DETALHES DO PRODUTO (REVERTIDO PARA TABELA) -->
-    <div id="product-details-modal" class="modal-overlay" onclick="closeModal('product-details-modal')">
-        <div class="modal-content" onclick="event.stopPropagation()">
-            <button class="modal-close-btn" onclick="closeModal('product-details-modal')"><i data-feather="x"></i></button>
-            <div class="modal-header">
-                <h3 id="modal-product-name">Nome do Produto</h3>
-            </div>
-            <div class="modal-body">
-                <div class="modal-gallery">
-                    <img id="modal-main-image" src="https://via.placeholder.com/400" alt="Imagem principal do produto">
+            <!-- PÁGINA: PRODUTOS -->
+            <section id="products" class="page">
+                <div class="page-header">
+                    <h1>Todos os Produtos</h1>
                 </div>
-                <div class="modal-details">
-                    <h4>Variações de Estoque</h4>
-                    <table class="variations-table">
+                <div class="table-container">
+                    <table class="product-table">
                         <thead>
                             <tr>
-                                <th>Numeração</th>
-                                <th>Disponibilidade</th>
+                                <th>Imagem</th>
+                                <th>Nome</th>
+                                <th>SKU</th>
+                                <th>Preço</th>
+                                <th>Status</th>
+                                <th>Publicar</th>
+                                <th>Ações</th>
                             </tr>
                         </thead>
-                        <tbody id="modal-variations-tbody">
-                            <!-- As linhas da tabela serão injetadas aqui -->
+                        <tbody id="products-table-body">
+                            <!-- Linhas da tabela serão inseridas aqui -->
                         </tbody>
                     </table>
                 </div>
+            </section>
+            
+            <!-- PÁGINA: CATÁLOGO REVENDA -->
+            <section id="catalog" class="page">
+                 <div class="page-header">
+                    <h1>Catálogo para Revendedoras</h1>
+                </div>
+                <div class="table-container">
+                    <table class="product-table">
+                        <thead>
+                            <tr>
+                                <th>Imagem</th>
+                                <th>Nome</th>
+                                <th>Preço</th>
+                                <th>Variações Disponíveis</th>
+                            </tr>
+                        </thead>
+                        <tbody id="catalog-table-body">
+                            <!-- Linhas da tabela serão inseridas aqui -->
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+            
+            <!-- PÁGINA: SINCRONIZAÇÃO -->
+            <section id="sync" class="page">
+                <div class="page-header">
+                    <h1>Sincronização com FacilZap</h1>
+                </div>
+                <div class="stat-card">
+                    <p>Clique nos botões abaixo para gerenciar a integração com a API.</p>
+                    <div style="margin-top: 1.5rem; display: flex; gap: 1rem;">
+                        <button class="btn btn-primary" onclick="syncFromFacilZap()"><i data-feather="refresh-cw"></i> Sincronizar Produtos</button>
+                        <button class="btn btn-secondary" onclick="testApiConnection()">Testar Conexão</button>
+                    </div>
+                    <p id="last-sync-time" style="margin-top: 1rem; color: var(--text-light); font-size: 0.9rem;">Última sincronização: Nunca</p>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- MODAL DE DETALHES -->
+    <div id="product-details-modal" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="modal-product-name"></h3>
+                <button class="modal-close-btn" onclick="closeModal('product-details-modal')"><i data-feather="x"></i></button>
+            </div>
+            <div class="modal-body">
+                <table class="product-table">
+                    <thead>
+                        <tr><th>Variação</th><th>Estoque</th></tr>
+                    </thead>
+                    <tbody id="modal-variations-tbody"></tbody>
+                </table>
             </div>
         </div>
     </div>
-    
-    <!-- TOAST NOTIFICATION -->
-    <div id="toast"><span id="toast-message"></span></div>
+
+    <div id="toast"></div>
 
     <script>
     // --- VARIÁVEIS GLOBAIS ---
     let allApiProducts = [];
     let publishedProductIds = [];
-    let customPrices = {};
-    let displayedProductsCount = 0;
-    const PRODUCTS_PER_LOAD = 48;
 
     // --- INICIALIZAÇÃO DA APLICAÇÃO ---
     document.addEventListener('DOMContentLoaded', () => {
         feather.replace();
         loadLocalData();
-        checkAuth();
+        setupNavigation();
+        updateDashboard();
     });
 
     function loadLocalData() {
-        const savedProducts = localStorage.getItem('allApiProducts');
+        const savedProducts = localStorage.getItem('erpProducts');
         if (savedProducts) {
             allApiProducts = JSON.parse(savedProducts);
-            renderAdminProducts(); 
         }
-        const savedPublished = localStorage.getItem('publishedProductIds');
-        if (savedPublished) publishedProductIds = JSON.parse(savedPublished);
-        const savedPrices = localStorage.getItem('customPrices');
-        if (savedPrices) customPrices = JSON.parse(savedPrices);
-        const savedTime = localStorage.getItem('lastSyncTime');
-        if (savedTime) document.getElementById('last-sync-time').textContent = `Última sincronização: ${savedTime}`;
-    }
-
-    // --- AUTENTICAÇÃO E NAVEGAÇÃO ---
-    function checkAuth() {
-        if (localStorage.getItem('isAdmin') === 'true') {
-            navigateTo('admin-panel-view');
+        const savedPublished = localStorage.getItem('erpPublished');
+        if (savedPublished) {
+            publishedProductIds = JSON.parse(savedPublished);
+        }
+        const savedTime = localStorage.getItem('erpLastSync');
+        if (savedTime) {
+            document.getElementById('last-sync-time').textContent = `Última sincronização: ${savedTime}`;
         }
     }
 
-    function handleLogin() {
-        if (document.getElementById('password').value === 'admin123') {
-            localStorage.setItem('isAdmin', 'true');
-            navigateTo('admin-panel-view');
-        } else {
-            showToast('Senha incorreta!', 'error');
-        }
+    function setupNavigation() {
+        document.querySelectorAll('.nav-link').forEach(link => {
+            link.addEventListener('click', (e) => {
+                e.preventDefault();
+                const pageId = e.currentTarget.dataset.page;
+                
+                document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
+                e.currentTarget.classList.add('active');
+
+                document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+                document.getElementById(pageId).classList.add('active');
+
+                // Renderiza a tabela/conteúdo da página ao navegar
+                if (pageId === 'products') renderProductsTable();
+                if (pageId === 'catalog') renderCatalogTable();
+                if (pageId === 'dashboard') updateDashboard();
+            });
+        });
     }
 
-    function handleLogout() {
-        localStorage.removeItem('isAdmin');
-        allApiProducts = [];
-        localStorage.removeItem('allApiProducts');
-        document.getElementById('admin-product-grid').innerHTML = '';
-        document.getElementById('pagination-controls').innerHTML = '';
-        navigateTo('selection-view');
-    }
+    // --- LÓGICA DE NEGÓCIO E PROCESSAMENTO DE DADOS ---
 
-    function navigateTo(viewId) {
-        document.querySelectorAll('.view').forEach(view => view.classList.remove('active'));
-        const view = document.getElementById(viewId);
-        if(view) {
-            view.classList.add('active');
-            if (viewId === 'admin-panel-view') renderAdminProducts();
-            if (viewId === 'reseller-panel-view') renderResellerProducts();
-        }
-    }
-    
-    // ========== CORREÇÃO 1: FUNÇÃO PARA PROCESSAR IMAGENS ==========
-    function proxyImageUrl(url) {
-        if (!url || typeof url !== 'string') {
-            return 'https://placehold.co/300x300/DB1472/FFFFFF?text=Sem+Imagem';
-        }
-        
-        // URL absoluta - não modificar
-        if (url.startsWith('http')) {
-            return `/facilzap-images/${encodeURIComponent(url)}`;
-        }
-        
-        // URL relativa - converter para absoluta
-        return `/facilzap-images/${encodeURIComponent('https://' + url)}`;
-    }
-
-    // ========== CORREÇÃO 2: FUNÇÃO MELHORADA PARA PROCESSAR VARIAÇÕES ==========
     function parseVariationsFromObject(data) {
-        // Se é um array, processa cada item
         if (Array.isArray(data)) {
             return data.map(item => ({
                 nome: item.tamanho || item.variacao || item.nome || 'N/A',
                 quantidade: parseInt(item.estoque || item.quantidade || 0)
             }));
         }
-        
-        // Se é um único objeto
-        return [{
-            nome: data.tamanho || data.variacao || data.nome || 'Único',
-            quantidade: parseInt(data.estoque || data.quantidade || 0)
-        }];
-    }
-
-    function processVariations(estoqueData, produtoId) {
-        console.log(`Processando estoque para produto ${produtoId}:`, estoqueData);
-        
-        // Caso 1: Estoque é um número (sem variações)
-        if (typeof estoqueData === 'number') {
+        if (typeof data === 'object' && data !== null) {
             return [{
-                nome: 'Único',
-                quantidade: estoqueData
+                nome: data.tamanho || data.variacao || data.nome || 'Único',
+                quantidade: parseInt(data.estoque || data.quantidade || 0)
             }];
         }
-        
-        // Caso 2: Estoque é uma string (pode ser JSON ou número)
+        return [];
+    }
+    
+    function processVariations(estoqueData, produtoId) {
+        if (!estoqueData) return [];
+        if (typeof estoqueData === 'number') {
+            return [{ nome: 'Único', quantidade: estoqueData }];
+        }
         if (typeof estoqueData === 'string') {
-            // Tenta converter para número
             const asNumber = parseInt(estoqueData);
             if (!isNaN(asNumber)) {
-                return [{
-                    nome: 'Único',
-                    quantidade: asNumber
-                }];
+                return [{ nome: 'Único', quantidade: asNumber }];
             }
-            
-            // Tenta converter para JSON
             try {
                 const parsed = JSON.parse(estoqueData);
                 return parseVariationsFromObject(parsed);
-            } catch {
-                return [];
-            }
+            } catch { return []; }
         }
-        
-        // Caso 3: Estoque é um objeto/array
-        if (typeof estoqueData === 'object' && estoqueData !== null) {
+        if (typeof estoqueData === 'object') {
             return parseVariationsFromObject(estoqueData);
         }
-        
         return [];
     }
 
-
-    // ========== CORREÇÃO 3: FUNÇÃO SYNCFROMFACILZAP ATUALIZADA ==========
+    // --- LÓGICA DA API E SINCRONIZAÇÃO ---
     async function syncFromFacilZap() {
         showToast('Iniciando sincronização...', 'info');
         const syncButton = document.querySelector('button[onclick="syncFromFacilZap()"]');
@@ -380,316 +387,178 @@
         try {
             while (currentPage <= MAX_PAGES) {
                 showToast(`Buscando página ${currentPage}...`, 'info');
-                
                 const proxyUrl = `/api/facilzap-proxy?page=${currentPage}&length=100`;
                 const response = await fetch(proxyUrl);
                 
-                if (response.status === 401) {
-                    throw new Error("Token de autenticação inválido. Verifique a configuração na Netlify.");
-                }
-                if (!response.ok) {
-                    const errorData = await response.json().catch(() => ({}));
-                    throw new Error(errorData.error || `Erro na API: ${response.statusText}`);
-                }
+                if (response.status === 401) throw new Error("Token de autenticação inválido.");
+                if (!response.ok) throw new Error(`Erro na API: ${response.statusText}`);
 
                 const data = await response.json();
                 const productsFromPage = data.data || [];
                 
-                if (productsFromPage.length === 0) {
-                    console.log(`[DEBUG] Página ${currentPage} vazia. Fim da sincronização.`);
-                    break;
-                }
+                if (productsFromPage.length === 0) break;
 
-                // Processa os produtos desta página
                 const processedProducts = productsFromPage.map(p => {
-                    // Processa as variações usando a função corrigida
                     const variacoes = processVariations(p.estoque, p.id);
                     const estoqueTotal = variacoes.reduce((total, v) => total + v.quantidade, 0);
-
-                    // Processa as imagens (pegando a primeira da lista, se houver)
-                    const imagens = typeof p.imagem === 'string' ? 
-                        p.imagem.split(',').map(url => url.trim()) : 
-                        [];
-
-                    const produto = {
+                    const imagens = typeof p.imagem === 'string' ? p.imagem.split(',').map(url => url.trim()) : [];
+                    
+                    return {
                         id: p.id,
                         nome: p.nome || 'Nome não informado',
-                        sku: p.sku || p.codigo || 'N/A',
-                        preco_original: parseFloat(p.preco || p.valor || 0),
+                        sku: p.sku || 'N/A',
+                        preco_original: parseFloat(p.preco || 0),
                         imagem: imagens.length > 0 ? imagens[0] : null,
-                        imagens_adicionais: imagens.slice(1), // Para uso futuro
                         estoque_total: estoqueTotal,
                         variacoes: variacoes,
                         status: estoqueTotal > 0 ? 'ativo' : 'sem_estoque'
                     };
-
-                    return produto;
                 });
                 
                 allApiProducts.push(...processedProducts);
-                
-                // Log de verificação crucial
-                console.log("Exemplo de produto processado:", {
-                    id: processedProducts[0]?.id,
-                    nome: processedProducts[0]?.nome,
-                    variacoes: processedProducts[0]?.variacoes,
-                    imagem: processedProducts[0]?.imagem,
-                    estoque_original: productsFromPage[0]?.estoque
-                });
-
-                if (productsFromPage.length < 100) {
-                    console.log('[DEBUG] Última página encontrada.');
-                    break;
-                }
                 currentPage++;
             }
 
             const statusOrder = { 'ativo': 1, 'sem_estoque': 2 };
             allApiProducts.sort((a, b) => (statusOrder[a.status] || 99) - (statusOrder[b.status] || 99));
 
+            localStorage.setItem('erpProducts', JSON.stringify(allApiProducts));
+            updateLastSyncTime();
             showToast(`Sincronização completa! ${allApiProducts.length} produtos carregados.`, 'success');
-            localStorage.setItem('allApiProducts', JSON.stringify(allApiProducts));
             
-            renderAdminProducts();
+            // Atualiza as visualizações
+            updateDashboard();
+            renderProductsTable();
+            renderCatalogTable();
 
         } catch (error) {
-            console.error("[ERROR] Erro na sincronização:", error);
-            showToast(`Falha na sincronização: ${error.message}`, 'error');
+            console.error("Erro na sincronização:", error);
+            showToast(`Falha: ${error.message}`, 'error');
         } finally {
             if (syncButton) syncButton.disabled = false;
-            updateLastSyncTime();
         }
     }
-    
-    // ========== CORREÇÃO 5: FUNÇÃO PARA TESTAR A API ==========
+
     async function testApiConnection() {
+        showToast('Testando conexão...', 'info');
         try {
-            showToast('Testando conexão com a API...', 'info');
-            
             const response = await fetch('/api/facilzap-proxy?page=1&length=5');
             const data = await response.json();
-            
-            console.log('[DEBUG] Teste da API:', {
-                status: response.status,
-                data: data,
-                products: data.data ? data.data.length : 0
-            });
-            
-            if (response.ok && data.data && data.data.length > 0) {
-                const firstProduct = data.data[0];
-                console.log('[DEBUG] Estrutura do primeiro produto:', firstProduct);
-                console.log('[DEBUG] Estoque do primeiro produto:', firstProduct.estoque);
-                console.log('[DEBUG] Tipo do estoque:', typeof firstProduct.estoque);
-                
-                showToast('Conexão com API OK! Verifique o console para detalhes.', 'success');
+            console.log('[DEBUG] Teste da API:', { status: response.status, data });
+            if (response.ok && data.data) {
+                showToast('Conexão com API OK!', 'success');
             } else {
-                showToast('API conectada mas sem produtos.', 'info');
+                throw new Error(data.error || 'Resposta inválida da API.');
             }
-            
         } catch (error) {
-            console.error('[ERROR] Erro no teste da API:', error);
+            console.error('[ERROR] Teste da API falhou:', error);
             showToast(`Erro na conexão: ${error.message}`, 'error');
         }
     }
 
-
     function updateLastSyncTime() {
         const now = new Date().toLocaleString('pt-BR');
         document.getElementById('last-sync-time').textContent = `Última sincronização: ${now}`;
-        localStorage.setItem('lastSyncTime', now);
-    }
-
-    // --- RENDERIZAÇÃO DOS PRODUTOS ---
-    function renderAdminProducts() {
-        const grid = document.getElementById('admin-product-grid');
-        grid.innerHTML = '';
-        displayedProductsCount = 0;
-
-        if (!allApiProducts || allApiProducts.length === 0) {
-            grid.innerHTML = `<p style="text-align:center; grid-column: 1 / -1;">Nenhum produto para exibir. Tente sincronizar.</p>`;
-            document.getElementById('pagination-controls').innerHTML = '';
-            return;
-        }
-        loadMoreProducts();
-    }
-
-    function loadMoreProducts() {
-        const grid = document.getElementById('admin-product-grid');
-        const paginationControls = document.getElementById('pagination-controls');
-        const productsToRender = allApiProducts.slice(displayedProductsCount, displayedProductsCount + PRODUCTS_PER_LOAD);
-
-        const statusMap = {
-            'ativo': { text: 'Ativo', class: 'ativo' },
-            'sem_estoque': { text: 'Sem Estoque', class: 'sem_estoque' }
-        };
-
-        productsToRender.forEach(p => {
-            const card = document.createElement('div');
-            const isPublished = publishedProductIds.includes(p.id);
-            const productStatus = statusMap[p.status] || { text: 'Sem Estoque', class: 'sem_estoque' };
-
-            card.className = 'card product-card';
-            card.innerHTML = `
-                <div class="product-card__image-container">
-                    <img 
-                        src="${proxyImageUrl(p.imagem)}" 
-                        alt="${p.nome}" 
-                        loading="lazy"
-                        onerror="
-                            this.onerror=null;
-                            this.src='https://placehold.co/300x300/DB1472/FFFFFF?text=Erro+na+Imagem';
-                            this.parentNode.querySelector('.product-card__status-badge').textContent='Imagem não carregada';
-                        ">
-                    <span class="product-card__status-badge ${productStatus.class}">${productStatus.text}</span>
-                </div>
-                <div class="product-card__content">
-                    <h3 class="product-card__name">${p.nome}</h3>
-                    <p class="product-card__sku">SKU Pai: ${p.sku}</p>
-                    <p class="product-card__price">R$ ${parseFloat(p.preco_original).toFixed(2)}</p>
-                    <div class="product-card__actions">
-                        <button class="btn btn-secondary" onclick="showProductDetails(${p.id})">Ver Estoque</button>
-                    </div>
-                </div>
-                <div class="selection-control">
-                    <label>
-                        <input type="checkbox" onchange="togglePublishedProduct(${p.id})" ${isPublished ? 'checked' : ''}>
-                        Divulgar para Revendedoras
-                    </label>
-                </div>
-            `;
-            grid.appendChild(card);
-        });
-
-        displayedProductsCount += productsToRender.length;
-        paginationControls.innerHTML = '';
-        if (displayedProductsCount < allApiProducts.length) {
-            const loadMoreButton = document.createElement('button');
-            loadMoreButton.className = 'btn btn-primary';
-            loadMoreButton.innerHTML = `<i data-feather="plus"></i> Carregar Mais (${displayedProductsCount} de ${allApiProducts.length})`;
-            loadMoreButton.onclick = loadMoreProducts;
-            paginationControls.appendChild(loadMoreButton);
-        }
-        feather.replace();
+        localStorage.setItem('erpLastSync', now);
     }
     
-    async function renderResellerProducts() {
-        const grid = document.getElementById('reseller-product-grid');
-        grid.innerHTML = '<p style="text-align:center; grid-column: 1 / -1;">Carregando produtos da vitrine...</p>';
+    // --- RENDERIZAÇÃO ---
+    function updateDashboard() {
+        document.getElementById('stat-total-products').textContent = allApiProducts.length;
+        document.getElementById('stat-active-products').textContent = allApiProducts.filter(p => p.status === 'ativo').length;
+        document.getElementById('stat-published-products').textContent = publishedProductIds.length;
+    }
 
-        const productsToDisplay = allApiProducts.filter(p => publishedProductIds.includes(p.id) && p.status === 'ativo');
-
-        if (productsToDisplay.length === 0) {
-            grid.innerHTML = `<p style="text-align:center; grid-column: 1 / -1;">Nenhum produto ativo foi liberado para divulgação no momento.</p>`;
-            return;
-        }
-        
-        grid.innerHTML = ''; // Limpa antes de popular
-        productsToDisplay.forEach(p => {
-            const availableVariations = p.variacoes.filter(v => v.quantidade > 0);
-
-            if (availableVariations.length > 0) {
-                const variationsHtml = availableVariations
-                    .map(v => `<span class="variation-tag">${v.nome}</span>`)
-                    .join('');
-                
-                const card = document.createElement('div');
-                card.className = 'card product-card';
-                card.innerHTML = `
-                    <div class="product-card__image-container">
-                        <img src="${proxyImageUrl(p.imagem)}" alt="${p.nome}" loading="lazy" decoding="async" onerror="this.onerror=null;this.src='https://placehold.co/300x300/DB1472/FFFFFF?text=Erro+na+Imagem';">
-                    </div>
-                    <div class="product-card__content">
-                        <h3 class="product-card__name">${p.nome}</h3>
-                        <p class="product-card__price">R$ ${parseFloat(p.preco_original).toFixed(2)}</p>
-                        <h4 class="variations-title">Numerações disponíveis:</h4>
-                        <div class="product-card__variations">
-                            ${variationsHtml}
-                        </div>
-                        <div class="product-card__actions">
-                            <button class="btn btn-primary" onclick="alert('Funcionalidade futura: Compartilhar produto.')"><i data-feather="share-2"></i> Compartilhar</button>
-                        </div>
-                    </div>
-                `;
-                grid.appendChild(card);
-            }
+    function renderProductsTable() {
+        const tbody = document.getElementById('products-table-body');
+        tbody.innerHTML = '';
+        allApiProducts.forEach(p => {
+            const row = tbody.insertRow();
+            row.innerHTML = `
+                <td><img src="${proxyImageUrl(p.imagem)}" alt="${p.nome}" class="product-image" onerror="this.src='https://placehold.co/40x40/DB1472/FFFFFF?text=X'"></td>
+                <td>${p.nome}</td>
+                <td>${p.sku}</td>
+                <td>R$ ${p.preco_original.toFixed(2)}</td>
+                <td><span class="status-badge ${p.status}">${p.status.replace('_', ' ')}</span></td>
+                <td>
+                    <label class="toggle-switch">
+                        <input type="checkbox" onchange="togglePublished(${p.id})" ${publishedProductIds.includes(p.id) ? 'checked' : ''}>
+                        <span class="slider"></span>
+                    </label>
+                </td>
+                <td><button class="btn" style="padding: 0.25rem 0.5rem;" onclick="showProductDetails(${p.id})"><i data-feather="eye"></i></button></td>
+            `;
         });
-
-        if (grid.innerHTML === '') {
-             grid.innerHTML = `<p style="text-align:center; grid-column: 1 / -1;">Todos os produtos liberados estão sem variações em estoque no momento.</p>`;
-        }
         feather.replace();
     }
 
-    // --- FUNÇÃO MELHORADA PARA EXIBIR DETALHES DO PRODUTO ---
-    function showProductDetails(productId) {
-        const modal = document.getElementById('product-details-modal');
-        const variationsTbody = document.getElementById('modal-variations-tbody');
-        
-        const product = allApiProducts.find(p => p.id === productId);
-        if (!product) {
-            console.error("Produto não encontrado na lista local:", productId);
-            showToast("Erro: Produto não encontrado.", "error");
+    function renderCatalogTable() {
+        const tbody = document.getElementById('catalog-table-body');
+        tbody.innerHTML = '';
+        const publishedProducts = allApiProducts.filter(p => publishedProductIds.includes(p.id) && p.status === 'ativo');
+
+        if (publishedProducts.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;">Nenhum produto publicado para revenda.</td></tr>';
             return;
         }
+
+        publishedProducts.forEach(p => {
+            const row = tbody.insertRow();
+            const variationsText = p.variacoes.filter(v => v.quantidade > 0).map(v => v.nome).join(', ');
+            row.innerHTML = `
+                <td><img src="${proxyImageUrl(p.imagem)}" alt="${p.nome}" class="product-image" onerror="this.src='https://placehold.co/40x40/DB1472/FFFFFF?text=X'"></td>
+                <td>${p.nome}</td>
+                <td>R$ ${p.preco_original.toFixed(2)}</td>
+                <td>${variationsText || 'Nenhuma'}</td>
+            `;
+        });
+    }
+
+    function showProductDetails(productId) {
+        const product = allApiProducts.find(p => p.id === productId);
+        if (!product) return;
+
+        const modal = document.getElementById('product-details-modal');
+        const tbody = document.getElementById('modal-variations-tbody');
+        tbody.innerHTML = '';
 
         document.getElementById('modal-product-name').textContent = product.nome;
-        document.getElementById('modal-main-image').src = proxyImageUrl(product.imagem);
-        
+
         if (product.variacoes && product.variacoes.length > 0) {
-            variationsTbody.innerHTML = '';
-            
             product.variacoes.forEach(v => {
-                const row = document.createElement('tr');
-                
-                // CÉLULA DA NUMERAÇÃO
-                const sizeCell = document.createElement('td');
-                sizeCell.textContent = v.nome;
-                row.appendChild(sizeCell);
-                
-                // CÉLULA DA DISPONIBILIDADE
-                const stockCell = document.createElement('td');
-                const badge = document.createElement('span');
-                badge.className = v.quantidade > 0 ? 'stock-badge in-stock' : 'stock-badge out-of-stock';
-                badge.textContent = v.quantidade > 0 ? `Disponível (${v.quantidade})` : 'Esgotado';
-                stockCell.appendChild(badge);
-                row.appendChild(stockCell);
-                
-                variationsTbody.appendChild(row);
+                const row = tbody.insertRow();
+                row.innerHTML = `
+                    <td>${v.nome}</td>
+                    <td><span class="status-badge ${v.quantidade > 0 ? 'ativo' : 'sem_estoque'}">${v.quantidade > 0 ? `Disponível (${v.quantidade})` : 'Esgotado'}</span></td>
+                `;
             });
         } else {
-            variationsTbody.innerHTML = `<tr><td colspan="2">Nenhuma variação encontrada para este produto.</td></tr>`;
+            tbody.innerHTML = '<tr><td colspan="2">Nenhuma variação encontrada.</td></tr>';
         }
-        
-        modal.classList.add('active');
-        feather.replace();
-    }
 
+        modal.classList.add('active');
+    }
 
     function closeModal(modalId) {
         document.getElementById(modalId).classList.remove('active');
     }
-
-    // --- GERENCIAMENTO DE ESTADO LOCAL ---
-    function togglePublishedProduct(productId) {
+    
+    function togglePublished(productId) {
         const index = publishedProductIds.indexOf(productId);
         if (index > -1) {
             publishedProductIds.splice(index, 1);
         } else {
             publishedProductIds.push(productId);
         }
-        localStorage.setItem('publishedProductIds', JSON.stringify(publishedProductIds));
-        showToast('Lista para revendedoras atualizada!', 'success');
-        
-        if (document.getElementById('reseller-panel-view').classList.contains('active')) {
-            renderResellerProducts();
-        }
+        localStorage.setItem('erpPublished', JSON.stringify(publishedProductIds));
+        updateDashboard();
+        showToast('Catálogo de revenda atualizado!', 'success');
     }
 
-    // --- UTILITÁRIOS ---
     function showToast(message, type = 'info') {
         const toast = document.getElementById('toast');
-        toast.style.backgroundColor = type === 'success' ? 'var(--verde-sucesso)' : (type === 'error' ? 'var(--vermelho-perigo)' : '#333');
-        document.getElementById('toast-message').textContent = message;
+        toast.textContent = message;
+        toast.style.backgroundColor = type === 'success' ? 'var(--success-color)' : (type === 'error' ? 'var(--danger-color)' : '#333');
         toast.style.bottom = '20px';
         setTimeout(() => { toast.style.bottom = '-100px'; }, 3000);
     }
