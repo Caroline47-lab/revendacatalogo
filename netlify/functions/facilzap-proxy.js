@@ -2,45 +2,51 @@
 // O Node.js 18+ (definido no package.json) já possui 'fetch' de forma nativa.
 
 /**
- * Esta função atua como um proxy para as imagens da FacilZap.
- * Ela recebe o caminho da imagem, busca no servidor da FacilZap usando o token
- * e a retorna para o navegador.
+ * Handler da função Netlify para atuar como proxy para a API FacilZap.
+ * Busca uma página de produtos da API.
  */
 export const handler = async (event) => {
-    const imagePath = event.queryStringParameters.url;
-    const token = process.env.FACILZAP_TOKEN;
+  const FACILZAP_TOKEN = process.env.FACILZAP_TOKEN;
+  const page = event.queryStringParameters.page || '1';
+  const length = event.queryStringParameters.length || '100';
+  
+  const API_ENDPOINT = `https://api.facilzap.app.br/produtos?page=${page}&length=${length}`;
 
-    if (!imagePath) {
-        return { statusCode: 400, body: 'Caminho da imagem não fornecido.' };
-    }
+  try {
+    console.log(`Proxy de Produtos buscando: ${API_ENDPOINT}`);
+    const response = await fetch(API_ENDPOINT, {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${FACILZAP_TOKEN}`,
+        'Accept': 'application/json'
+      }
+    });
 
-    const imageUrl = `https://api.facilzap.app.br/${imagePath}`;
+    const responseBody = await response.text();
 
-    try {
-        const response = await fetch(imageUrl, {
-            headers: { 'Authorization': `Bearer ${token}` }
-        });
-
-        if (!response.ok) {
-            return { statusCode: response.status, body: response.statusText };
-        }
-
-        const imageBuffer = await response.arrayBuffer();
-        
+    if (!response.ok) {
+        console.error(`Erro da API para ${API_ENDPOINT}. Status: ${response.status}, Corpo: ${responseBody}`);
         return {
-            statusCode: 200,
-            headers: {
-                'Content-Type': response.headers.get('content-type'),
-                'Cache-Control': 'public, max-age=86400'
-            },
-            body: Buffer.from(imageBuffer).toString('base64'),
-            isBase64Encoded: true
-        };
-    } catch (error) {
-        console.error("Erro no proxy de imagem:", error);
-        return {
-            statusCode: 500,
-            body: JSON.stringify({ error: error.message })
+            statusCode: response.status,
+            headers: { 'Content-Type': 'application/json' },
+            body: responseBody
         };
     }
+    
+    return {
+      statusCode: 200,
+      headers: {
+        'Content-Type': 'application/json',
+        'Access-Control-Allow-Origin': '*'
+      },
+      body: responseBody
+    };
+
+  } catch (error) {
+    console.error("Erro no Proxy de Produtos:", error);
+    return {
+      statusCode: 500,
+      body: JSON.stringify({ error: error.message })
+    };
+  }
 };
