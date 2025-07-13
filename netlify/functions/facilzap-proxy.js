@@ -1,46 +1,50 @@
-// O Node.js 18+ já possui 'fetch' de forma nativa.
+// Node.js 18+ já possui 'fetch' de forma nativa.
 
 /**
  * Handler da função Netlify para atuar como proxy para a API FacilZap.
- * Versão corrigida com base na análise do usuário.
- * - Usa os parâmetros de URL corretos ('page', 'length').
- * - Adiciona tratamento para erro de autenticação (401).
+ * Versão melhorada com logs detalhados e tratamento robusto de dados.
  */
 export const handler = async (event) => {
-  // Use o token real, configurado nas variáveis de ambiente da Netlify.
   const FACILZAP_TOKEN = process.env.FACILZAP_TOKEN;
   
-  // Lê os parâmetros da URL da requisição do front-end.
-  const { page, length, id } = event.queryStringParameters;
+  if (!FACILZAP_TOKEN) {
+    console.error("FACILZAP_TOKEN não está configurado nas variáveis de ambiente");
+    return {
+      statusCode: 500,
+      body: JSON.stringify({ error: "Token de configuração não encontrado" })
+    };
+  }
+  
+  const { page, length, id } = event.queryStringParameters || {};
 
   const fetchOptions = {
     method: 'GET',
     headers: {
       'Authorization': `Bearer ${FACILZAP_TOKEN}`,
-      'Accept': 'application/json'
+      'Accept': 'application/json',
+      'Content-Type': 'application/json'
     }
   };
 
   let API_ENDPOINT;
 
   if (id) {
-    // Busca detalhes de um produto específico.
     API_ENDPOINT = `https://api.facilzap.app.br/produtos/${id}`;
-    console.log(`Proxy (Detalhe) buscando: ${API_ENDPOINT}`);
+    console.log(`Proxy (Detalhe) buscando produto ID: ${id}`);
   } else {
-    // CORREÇÃO: Usa 'page' e 'length' como a API espera.
     const pageNum = page || '1';
     const pageLength = length || '100';
     API_ENDPOINT = `https://api.facilzap.app.br/produtos?page=${pageNum}&length=${pageLength}`;
-    console.log(`Proxy (Lista) buscando: ${API_ENDPOINT}`);
+    console.log(`Proxy (Lista) buscando página: ${pageNum}, tamanho: ${pageLength}`);
   }
 
   try {
     const response = await fetch(API_ENDPOINT, fetchOptions);
+    
+    console.log(`Resposta da API FacilZap - Status: ${response.status}`);
 
-    // CORREÇÃO: Tratamento específico para erro de autenticação (token inválido).
     if (response.status === 401) {
-      console.error("Erro de autenticação (401). Verifique o FACILZAP_TOKEN.");
+      console.error("Erro de autenticação (401). Token inválido ou expirado.");
       return {
         statusCode: 401,
         body: JSON.stringify({ error: "Token de autenticação inválido ou expirado." })
@@ -48,17 +52,39 @@ export const handler = async (event) => {
     }
 
     const responseBody = await response.text();
-
+    
     if (!response.ok) {
-      console.error(`Erro da API para ${API_ENDPOINT}. Status: ${response.status}`);
+      console.error(`Erro da API FacilZap:`, {
+        endpoint: API_ENDPOINT,
+        status: response.status,
+        statusText: response.statusText,
+        body: responseBody.substring(0, 500) // Primeiros 500 caracteres para debug
+      });
+      
       return {
         statusCode: response.status,
         headers: { 'Content-Type': 'application/json' },
         body: responseBody
       };
     }
+
+    // Log detalhado do que estamos recebendo
+    try {
+      const jsonData = JSON.parse(responseBody);
+      console.log(`Dados recebidos da API:`, {
+        totalItems: jsonData.data ? jsonData.data.length : 'N/A',
+        firstItem: jsonData.data && jsonData.data[0] ? {
+          id: jsonData.data[0].id,
+          nome: jsonData.data[0].nome,
+          imagem: jsonData.data[0].imagem,
+          estoque: typeof jsonData.data[0].estoque,
+          estoqueLength: Array.isArray(jsonData.data[0].estoque) ? jsonData.data[0].estoque.length : 'N/A'
+        } : 'Sem dados'
+      });
+    } catch (parseError) {
+      console.log("Resposta não é JSON válido ou estrutura diferente");
+    }
     
-    // Se tudo deu certo, apenas repassa a resposta da FacilZap para o front-end.
     return {
       statusCode: 200,
       headers: {
@@ -69,10 +95,18 @@ export const handler = async (event) => {
     };
 
   } catch (error) {
-    console.error("Erro fatal no Proxy:", error);
+    console.error("Erro fatal no Proxy:", {
+      message: error.message,
+      stack: error.stack,
+      endpoint: API_ENDPOINT
+    });
+    
     return {
       statusCode: 500,
-      body: JSON.stringify({ error: error.message })
+      body: JSON.stringify({ 
+        error: `Erro no proxy: ${error.message}`,
+        endpoint: API_ENDPOINT
+      })
     };
   }
 };
