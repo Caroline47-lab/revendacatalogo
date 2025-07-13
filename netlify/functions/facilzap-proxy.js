@@ -5,6 +5,7 @@
  * Esta versão é inteligente:
  * - Se buscar a lista, enriquece cada produto com um campo 'status'.
  * - Se buscar detalhes de um 'id', processa o estoque das variações.
+ * - USA PARSEFLOAT ROBUSTO para garantir a conversão de estoque.
  */
 export const handler = async (event) => {
   const FACILZAP_TOKEN = process.env.FACILZAP_TOKEN;
@@ -46,20 +47,22 @@ export const handler = async (event) => {
     let finalBody = responseBody;
 
     if (id) {
-      // **NOVA LÓGICA PARA DETALHES DO PRODUTO**
-      // Garante que o estoque de cada variação seja numérico.
+      // LÓGICA PARA DETALHES DO PRODUTO (MODAL)
       const data = JSON.parse(responseBody);
       const productDetails = data.data || data;
 
       if (productDetails && Array.isArray(productDetails.estoque)) {
         productDetails.estoque = productDetails.estoque.map(variacao => {
+          // Converte o estoque da variação para número de forma robusta
+          const estoqueNumerico = parseFloat(String(variacao.estoque || '0')) || 0;
           return {
             ...variacao,
-            estoque: parseFloat(variacao.estoque) || 0
+            estoque: estoqueNumerico
           };
         });
       }
       
+      // Remonta o corpo da resposta
       if (data.data) {
         data.data = productDetails;
         finalBody = JSON.stringify(data);
@@ -68,11 +71,12 @@ export const handler = async (event) => {
       }
 
     } else {
-      // **LÓGICA PARA A LISTA DE PRODUTOS**
+      // LÓGICA PARA A LISTA GERAL DE PRODUTOS
       const data = JSON.parse(responseBody);
       if (data && Array.isArray(data.data)) {
         const produtosEnriquecidos = data.data.map(produto => {
-          const estoqueNumerico = parseFloat(produto.total_estoque) || 0;
+          // Converte o estoque total para número de forma robusta
+          const estoqueNumerico = parseFloat(String(produto.total_estoque || '0')) || 0;
           const status = estoqueNumerico > 0 ? 'ativo' : 'sem_estoque';
           return { ...produto, status: status };
         });
