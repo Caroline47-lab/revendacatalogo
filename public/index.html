@@ -362,8 +362,7 @@
                     imagem: mainImageUrl,
                     fotos: photoList,
                     estoque_total: p.total_estoque || 0,
-                    variacoes: p.estoque || [],
-                    status_api: 'ativo'
+                    // Deixamos as variações para serem buscadas sob demanda
                 };
             });
             
@@ -462,54 +461,88 @@
     }
 
     // --- LÓGICA DO MODAL ---
-    function showProductDetails(productId) {
+    async function showProductDetails(productId) {
         const product = allApiProducts.find(p => p.id === productId);
         if (!product) return;
 
+        const modal = document.getElementById('product-details-modal');
+        const variationsTbody = document.getElementById('modal-variations-tbody');
+        const thumbnailContainer = document.getElementById('modal-thumbnail-container');
+        
         document.getElementById('modal-product-name').textContent = product.nome;
         document.getElementById('modal-product-sku').textContent = `SKU: ${product.sku}`;
-        
-        const mainImage = document.getElementById('modal-main-image');
-        const thumbnailContainer = document.getElementById('modal-thumbnail-container');
-        mainImage.src = proxyImageUrl(product.imagem);
+        document.getElementById('modal-main-image').src = proxyImageUrl(product.imagem);
+        variationsTbody.innerHTML = '<tr><td colspan="2">Carregando detalhes...</td></tr>';
         thumbnailContainer.innerHTML = '';
         
-        if (product.fotos && product.fotos.length > 0) {
-            product.fotos.forEach((foto, index) => {
+        modal.classList.add('active');
+        feather.replace();
+
+        try {
+            const response = await fetch(`/api/facilzap-proxy?id=${productId}`);
+            if (!response.ok) throw new Error('Falha ao carregar detalhes do produto.');
+
+            const detailedData = await response.json();
+            const details = detailedData.data || detailedData;
+
+            // Atualiza a galeria com as fotos detalhadas
+            const fixUrl = (url) => {
+                if (!url || typeof url !== 'string') return null;
+                if (url.startsWith('http')) return url;
+                const cleanPath = url.startsWith('/') ? url.substring(1) : url;
+                return `https://api.facilzap.app.br/${cleanPath}`;
+            };
+
+            let photoList = [];
+            if (details.imagens && typeof details.imagens === 'string') {
+                try {
+                    photoList = JSON.parse(details.imagens).map(fixUrl).filter(Boolean);
+                } catch(e) { console.warn("JSON de imagens inválido"); }
+            }
+            const mainImageUrl = fixUrl(details.imagem);
+            if (mainImageUrl && !photoList.includes(mainImageUrl)) {
+                photoList.unshift(mainImageUrl);
+            }
+
+            thumbnailContainer.innerHTML = '';
+            photoList.forEach((foto, index) => {
                 const thumb = document.createElement('img');
                 thumb.src = proxyImageUrl(foto);
                 thumb.className = 'thumbnail';
                 if (index === 0) thumb.classList.add('active');
                 thumb.onclick = () => {
-                    mainImage.src = proxyImageUrl(foto);
+                    document.getElementById('modal-main-image').src = proxyImageUrl(foto);
                     document.querySelectorAll('.thumbnail').forEach(t => t.classList.remove('active'));
                     thumb.classList.add('active');
                 };
                 thumbnailContainer.appendChild(thumb);
             });
-        }
 
-        const variationsTbody = document.getElementById('modal-variations-tbody');
-        variationsTbody.innerHTML = '';
-        if (product.variacoes && product.variacoes.length > 0) {
-            product.variacoes.forEach(v => {
+
+            // Atualiza a tabela de variações
+            variationsTbody.innerHTML = '';
+            const variations = details.estoque || [];
+            if (variations.length > 0) {
+                variations.forEach(v => {
+                    const row = variationsTbody.insertRow();
+                    row.innerHTML = `
+                        <td>${v.nome}</td>
+                        <td>
+                            <span class="stock-badge ${v.estoque > 0 ? 'in-stock' : 'out-of-stock'}">
+                                ${v.estoque}
+                            </span>
+                        </td>
+                    `;
+                });
+            } else {
                 const row = variationsTbody.insertRow();
-                row.innerHTML = `
-                    <td>${v.nome}</td>
-                    <td>
-                        <span class="stock-badge ${v.estoque > 0 ? 'in-stock' : 'out-of-stock'}">
-                            ${v.estoque}
-                        </span>
-                    </td>
-                `;
-            });
-        } else {
-            const row = variationsTbody.insertRow();
-            row.innerHTML = `<td colspan="2">Nenhuma variação de estoque encontrada.</td>`;
-        }
+                row.innerHTML = `<td colspan="2">Nenhuma variação de estoque encontrada.</td>`;
+            }
 
-        document.getElementById('product-details-modal').classList.add('active');
-        feather.replace();
+        } catch (error) {
+            console.error("Erro ao buscar detalhes do produto:", error);
+            variationsTbody.innerHTML = `<tr><td colspan="2" style="color: red;">${error.message}</td></tr>`;
+        }
     }
 
     function closeModal(modalId) {
