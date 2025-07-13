@@ -294,16 +294,26 @@
         }
     }
     
-    // --- FUNÇÃO AUXILIAR PARA O PROXY DE IMAGENS (CORRIGIDA) ---
+    // --- FUNÇÃO AUXILIAR PARA O PROXY DE IMAGENS (MELHORADA) ---
     function proxyImageUrl(url) {
         if (!url || typeof url !== 'string') {
+            console.log('URL de imagem inválida:', url);
             return 'https://placehold.co/300x300/DB1472/FFFFFF?text=Sem+Imagem';
         }
-        // CORREÇÃO: Usa o endpoint correto do proxy de imagens
-        return `/facilzap-images/${encodeURIComponent(url)}`;
+        
+        // Remove espaços e caracteres problemáticos
+        const cleanUrl = url.trim();
+        console.log('Proxy de imagem - URL limpa:', cleanUrl);
+        
+        // Usa o endpoint correto do proxy de imagens
+        const proxyUrl = `/facilzap-images/${encodeURIComponent(cleanUrl)}`;
+        console.log('Proxy de imagem - URL final:', proxyUrl);
+        
+        return proxyUrl;
     }
 
-    // --- LÓGICA DA API E SINCRONIZAÇÃO (CORRIGIDA) ---
+
+    // --- LÓGICA DA API E SINCRONIZAÇÃO (VERSÃO MELHORADA) ---
     async function syncFromFacilZap() {
         showToast('Iniciando sincronização...', 'info');
         const syncButton = document.querySelector('button[onclick="syncFromFacilZap()"]');
@@ -331,54 +341,104 @@
                 const data = await response.json();
                 const productsFromPage = data.data || [];
                 
+                // LOG DETALHADO para debug
+                console.log(`Página ${currentPage} - Produtos recebidos:`, productsFromPage.length);
+                if (productsFromPage.length > 0) {
+                    console.log('Estrutura do primeiro produto:', productsFromPage[0]);
+                }
+                
                 if (productsFromPage.length === 0) {
                     console.log(`Página ${currentPage} vazia. Fim da sincronização.`);
                     break;
                 }
 
-                // CORREÇÃO: Processa os dados recebidos para o formato que o app precisa
+                // PROCESSAMENTO MELHORADO dos produtos
                 const processedProducts = productsFromPage.map(p => {
-                    // Função robusta para tratar o campo de estoque
-                    const parseEstoque = (estoqueData) => {
-                        if (!estoqueData) return [];
+                    console.log(`Processando produto ${p.id}:`, {
+                        nome: p.nome,
+                        imagem: p.imagem,
+                        estoque: p.estoque,
+                        estoqueType: typeof p.estoque
+                    });
+
+                    // Função mais robusta para tratar variações
+                    const processVariations = (estoqueData) => {
+                        console.log(`Processando estoque para produto ${p.id}:`, estoqueData);
+                        
+                        if (!estoqueData) {
+                            console.log(`Produto ${p.id}: Sem dados de estoque`);
+                            return [];
+                        }
+
+                        let variations = [];
+
+                        // Se já é array
                         if (Array.isArray(estoqueData)) {
-                            return estoqueData.map(v => {
-                                // Pega o valor da variação
-                                const valorVariacao = v.nome || v.tamanho || v.variacao || 'N/A';
-                                return {
-                                    // CORREÇÃO: Formata o nome para "Tamanho: XX"
-                                    nome: `Tamanho: ${valorVariacao}`,
-                                    quantidade: parseInt(v.estoque || v.quantidade || 0)
-                                };
-                            });
+                            variations = estoqueData;
                         }
-                        if (typeof estoqueData === 'string') {
+                        // Se é string JSON
+                        else if (typeof estoqueData === 'string') {
                             try {
-                                return JSON.parse(estoqueData).map(v => {
-                                    const valorVariacao = v.nome || v.tamanho || v.variacao || 'N/A';
-                                    return {
-                                        nome: `Tamanho: ${valorVariacao}`,
-                                        quantidade: parseInt(v.estoque || v.quantidade || 0)
-                                    };
-                                });
-                            } catch { return []; }
+                                variations = JSON.parse(estoqueData);
+                            } catch (error) {
+                                console.error(`Erro ao parsear JSON do estoque do produto ${p.id}:`, error);
+                                return [];
+                            }
                         }
-                        return [];
+                        // Se é objeto
+                        else if (typeof estoqueData === 'object') {
+                            // Tenta diferentes estruturas possíveis
+                            variations = estoqueData.variations || estoqueData.variacoes || [estoqueData];
+                        }
+
+                        // Processa as variações
+                        const processedVariations = variations.map(v => {
+                            // Tenta diferentes campos para o nome da variação
+                            const nomeVariacao = v.nome || v.tamanho || v.variacao || v.size || v.name || v.variation || 'Tamanho não especificado';
+                            
+                            // Tenta diferentes campos para a quantidade
+                            const quantidade = parseInt(v.estoque || v.quantidade || v.qty || v.stock || v.amount || 0);
+                            
+                            console.log(`Variação processada:`, { nomeVariacao, quantidade });
+                            
+                            return {
+                                nome: nomeVariacao.toString().includes('Tamanho:') ? nomeVariacao : `Tamanho: ${nomeVariacao}`,
+                                quantidade: quantidade
+                            };
+                        });
+
+                        return processedVariations;
                     };
 
-                    const variacoes = parseEstoque(p.estoque);
+                    const variacoes = processVariations(p.estoque);
                     const estoqueTotal = variacoes.reduce((total, v) => total + v.quantidade, 0);
 
-                    return {
+                    // Processamento da imagem
+                    let imagemUrl = null;
+                    if (p.imagem) {
+                        // Remove possíveis caracteres problemáticos
+                        imagemUrl = p.imagem.trim();
+                        console.log(`Produto ${p.id} - Imagem original:`, imagemUrl);
+                    }
+
+                    const produto = {
                         id: p.id,
-                        nome: p.nome,
-                        sku: p.sku || 'N/A',
-                        preco_original: p.preco,
-                        imagem: p.imagem || null,
+                        nome: p.nome || 'Nome não informado',
+                        sku: p.sku || p.codigo || 'N/A',
+                        preco_original: p.preco || p.valor || 0,
+                        imagem: imagemUrl,
                         estoque_total: estoqueTotal,
-                        variacoes: variacoes, // Armazena as variações para uso posterior
-                        status: estoqueTotal > 0 ? 'ativo' : 'sem_estoque'
+                        variacoes: variacoes,
+                        status: estoqueTotal > 0 ? 'ativo' : 'sem_estoque',
+                        // Dados brutos para debugging
+                        _raw: {
+                            estoque_original: p.estoque,
+                            imagem_original: p.imagem
+                        }
                     };
+
+                    console.log(`Produto ${p.id} processado:`, produto);
+                    return produto;
                 });
                 
                 allApiProducts.push(...processedProducts);
@@ -396,6 +456,12 @@
 
             showToast(`Sincronização completa! ${allApiProducts.length} produtos carregados.`, 'success');
             localStorage.setItem('allApiProducts', JSON.stringify(allApiProducts));
+            
+            // Log final para análise
+            console.log('Sincronização finalizada. Produtos carregados:', allApiProducts.length);
+            console.log('Produtos com imagem:', allApiProducts.filter(p => p.imagem).length);
+            console.log('Produtos com variações:', allApiProducts.filter(p => p.variacoes.length > 0).length);
+            
             renderAdminProducts();
 
         } catch (error) {
@@ -406,6 +472,7 @@
             updateLastSyncTime();
         }
     }
+
 
     function updateLastSyncTime() {
         const now = new Date().toLocaleString('pt-BR');
@@ -526,7 +593,7 @@
         feather.replace();
     }
 
-    // --- LÓGICA DO MODAL (CORRIGIDA) ---
+    // --- FUNÇÃO MELHORADA PARA EXIBIR DETALHES DO PRODUTO ---
     function showProductDetails(productId) {
         const modal = document.getElementById('product-details-modal');
         const variationsTbody = document.getElementById('modal-variations-tbody');
@@ -539,6 +606,8 @@
                 return;
             }
 
+            console.log('Exibindo detalhes do produto:', product);
+
             document.getElementById('modal-product-name').textContent = product.nome;
             document.getElementById('modal-main-image').src = proxyImageUrl(product.imagem);
             variationsTbody.innerHTML = ''; // Limpa a tabela
@@ -546,7 +615,9 @@
             modal.classList.add('active');
             
             if (product.variacoes && product.variacoes.length > 0) {
-                // CORREÇÃO: Ordena as variações numericamente
+                console.log('Variações do produto:', product.variacoes);
+                
+                // Ordena as variações numericamente
                 const sortedVariations = [...product.variacoes].sort((a, b) => {
                     const numA = parseInt(String(a.nome).replace(/\D/g, ''));
                     const numB = parseInt(String(b.nome).replace(/\D/g, ''));
@@ -557,7 +628,6 @@
 
                 sortedVariations.forEach(v => {
                     const row = variationsTbody.insertRow();
-                    // CORREÇÃO: Mostra a quantidade no texto
                     const availabilityText = v.quantidade > 0 
                         ? `Disponível (${v.quantidade})` 
                         : 'Esgotado';
@@ -576,6 +646,7 @@
                     `;
                 });
             } else {
+                console.log('Produto sem variações:', product);
                 variationsTbody.innerHTML = `<tr><td colspan="2">Nenhuma variação encontrada para este produto.</td></tr>`;
             }
         } catch (error) {
@@ -586,6 +657,7 @@
             feather.replace();
         }
     }
+
 
     function closeModal(modalId) {
         document.getElementById(modalId).classList.remove('active');
