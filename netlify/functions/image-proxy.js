@@ -2,20 +2,19 @@
 
 /**
  * Esta função atua como um proxy para as imagens da FacilZap.
- * Ela recebe o caminho da imagem, busca no servidor da FacilZap usando o token
- * e a retorna para o navegador.
+ * Ela recebe a URL COMPLETA da imagem, busca no servidor da FacilZap
+ * usando o token de autenticação e a retorna para o navegador.
  */
 export const handler = async (event) => {
-    // Extrai o caminho da imagem do parâmetro 'url'
-    const imagePath = event.queryStringParameters.url;
+    // A URL completa da imagem é passada como um parâmetro 'url'
+    const imageUrl = event.queryStringParameters.url;
     const token = process.env.FACILZAP_TOKEN;
 
-    if (!imagePath) {
-        return { statusCode: 400, body: 'Caminho da imagem não fornecido.' };
+    if (!imageUrl) {
+        return { statusCode: 400, body: 'URL da imagem não fornecida.' };
     }
 
-    // Monta a URL completa para buscar a imagem no servidor de origem
-    const imageUrl = `https://api.facilzap.app.br/${decodeURIComponent(imagePath)}`;
+    console.log(`Proxy de Imagem buscando: ${imageUrl}`);
 
     try {
         const response = await fetch(imageUrl, {
