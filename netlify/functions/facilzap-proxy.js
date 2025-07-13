@@ -1,59 +1,46 @@
-import fetch from 'node-fetch';
+// A linha 'import fetch from 'node-fetch';' foi removida.
+// O Node.js 18+ (definido no package.json) já possui 'fetch' de forma nativa.
 
 /**
- * Handler da função Netlify para atuar como proxy para a API FacilZap.
- * Utiliza ESM (import/export) e os parâmetros de paginação corretos.
+ * Esta função atua como um proxy para as imagens da FacilZap.
+ * Ela recebe o caminho da imagem, busca no servidor da FacilZap usando o token
+ * e a retorna para o navegador.
  */
 export const handler = async (event) => {
-  // Token da API obtido das variáveis de ambiente da Netlify
-  const FACILZAP_TOKEN = process.env.FACILZAP_TOKEN;
+    const imagePath = event.queryStringParameters.url;
+    const token = process.env.FACILZAP_TOKEN;
 
-  // Parâmetros de paginação extraídos da requisição do front-end
-  const page = event.queryStringParameters.page || '1';
-  // O parâmetro correto para itens por página, conforme a documentação, é 'length'
-  const length = event.queryStringParameters.length || '100';
-  
-  // Endpoint da API construído com os parâmetros corretos
-  const API_ENDPOINT = `https://api.facilzap.app.br/produtos?page=${page}&length=${length}`;
+    if (!imagePath) {
+        return { statusCode: 400, body: 'Caminho da imagem não fornecido.' };
+    }
 
-  try {
-    console.log(`Proxy buscando: ${API_ENDPOINT}`);
-    const response = await fetch(API_ENDPOINT, {
-      method: 'GET', // O método correto é GET
-      headers: {
-        'Authorization': `Bearer ${FACILZAP_TOKEN}`,
-        'Accept': 'application/json'
-      }
-    });
+    const imageUrl = `https://api.facilzap.app.br/${imagePath}`;
 
-    const responseBody = await response.text();
+    try {
+        const response = await fetch(imageUrl, {
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
 
-    // Se a resposta da API não for bem-sucedida, retorna o erro
-    if (!response.ok) {
-        console.error(`Erro da API para ${API_ENDPOINT}. Status: ${response.status}, Corpo: ${responseBody}`);
+        if (!response.ok) {
+            return { statusCode: response.status, body: response.statusText };
+        }
+
+        const imageBuffer = await response.arrayBuffer();
+        
         return {
-            statusCode: response.status,
-            headers: { 'Content-Type': 'application/json' },
-            body: responseBody
+            statusCode: 200,
+            headers: {
+                'Content-Type': response.headers.get('content-type'),
+                'Cache-Control': 'public, max-age=86400'
+            },
+            body: Buffer.from(imageBuffer).toString('base64'),
+            isBase64Encoded: true
+        };
+    } catch (error) {
+        console.error("Erro no proxy de imagem:", error);
+        return {
+            statusCode: 500,
+            body: JSON.stringify({ error: error.message })
         };
     }
-    
-    // Retorna os dados com sucesso, incluindo cabeçalhos para CORS
-    return {
-      statusCode: 200,
-      headers: {
-        'Content-Type': 'application/json',
-        'Access-Control-Allow-Origin': '*'
-      },
-      body: responseBody
-    };
-
-  } catch (error) {
-    // Retorna um erro genérico caso a função falhe
-    console.error("Erro no Proxy:", error);
-    return {
-      statusCode: 500,
-      body: JSON.stringify({ error: error.message })
-    };
-  }
 };
