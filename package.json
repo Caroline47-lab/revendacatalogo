@@ -2,11 +2,10 @@
   "name": "painel-midia-facilzap",
   "version": "1.0.0",
   "description": "Proxy para a API FacilZap",
-  "main": "index.js",
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+  "engines": {
+    "node": "18.x"
   },
   "dependencies": {
-    "node-fetch": "^2.6.1"
+    "node-fetch": "^3.3.0"
   }
 }
