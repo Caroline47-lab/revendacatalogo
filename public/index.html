@@ -309,14 +309,20 @@
         setTimeout(() => { toast.style.bottom = '-100px'; }, 3000);
     }
 
+    // FUNÇÃO proxyImageUrl CORRIGIDA
     function proxyImageUrl(url) {
-        if (!url || typeof url !== 'string') {
+        if (!url || typeof url !== 'string' || url.trim() === '') {
             return 'https://placehold.co/300x300/DB1472/FFFFFF?text=Sem+Imagem';
         }
-        if (url.startsWith('http')) {
-            return `/facilzap-images/${encodeURIComponent(url)}`;
+        
+        let cleanUrl = url.trim();
+        
+        if (!cleanUrl.startsWith('http')) {
+            cleanUrl = 'https://' + cleanUrl;
         }
-        return `/facilzap-images/${encodeURIComponent('https://' + url)}`;
+        
+        // CORREÇÃO: Constrói a URL do proxy com o parâmetro 'url'
+        return `/facilzap-images?url=${encodeURIComponent(cleanUrl)}`;
     }
     
     // --- LÓGICA DE NEGÓCIO E PROCESSAMENTO DE DADOS ---
@@ -415,21 +421,6 @@
                 });
                 
                 allApiProducts.push(...processedProducts);
-                
-                // Log de verificação crucial
-                if (processedProducts.length > 0) {
-                    console.log("Exemplo de produto processado:", {
-                        id: processedProducts[0]?.id,
-                        nome: processedProducts[0]?.nome,
-                        variacoes: processedProducts[0]?.variacoes,
-                        imagem: processedProducts[0]?.imagem,
-                        estoque_original: productsFromPage[0]?.estoque
-                    });
-                }
-
-                if (productsFromPage.length < 100) {
-                    break;
-                }
                 currentPage++;
             }
 
@@ -508,7 +499,7 @@
             const row = tbody.insertRow();
             const isPublished = publishedProductIds.includes(p.id);
             row.innerHTML = `
-                <td><img src="${proxyImageUrl(p.imagem)}" alt="${p.nome}" class="product-image" onerror="this.onerror=null; this.src='https://placehold.co/40x40/DB1472/FFFFFF?text=X'; this.parentNode.nextSibling.nextSibling.nextSibling.nextSibling.querySelector('.status-badge').textContent='Img Falhou';"></td>
+                <td><img src="${proxyImageUrl(p.imagem)}" alt="${p.nome}" class="product-image" onerror="this.onerror=null; this.src='https://placehold.co/40x40/DB1472/FFFFFF?text=X';"></td>
                 <td>${p.nome}</td>
                 <td>${p.sku}</td>
                 <td>R$ ${p.preco_original.toFixed(2)}</td>
@@ -547,7 +538,6 @@
         });
     }
 
-    // FUNÇÃO showProductDetails CORRIGIDA
     function showProductDetails(productId) {
         const product = allApiProducts.find(p => p.id === productId);
         if (!product) return;
@@ -609,66 +599,37 @@
 </html>
 ```
 
-### 2. Proxy de Imagens (`image-proxy.js`) Simplificado
+### 2. O Ficheiro de Configuração (`netlify.toml`) Corrigido
 
-Para garantir, aqui está a versão simplificada do proxy de imagens que você deve usar.
+Este é o segundo ficheiro crucial. A regra de redirecionamento para as imagens foi simplificada para evitar erros.
 
 
-```javascript
-// Usar 'node-fetch' pode ser necessário dependendo da versão do Node na Netlify.
-const fetch = require('node-fetch');
+```toml
+# Configuração de build
+[build]
+  # Pasta onde o seu site (index.html, etc.) está localizado
+  publish = "public" 
+  # Pasta onde as suas funções de proxy estão localizadas
+  functions = "netlify/functions"
 
-exports.handler = async (event) => {
-    const url = event.queryStringParameters.url;
-    
-    if (!url) {
-        return { statusCode: 400, body: JSON.stringify({ error: "URL não fornecida" }) };
-    }
+# Redirecionamento para o proxy de DADOS da API
+[[redirects]]
+  from = "/api/*"
+  to = "/.netlify/functions/facilzap-proxy/:splat"
+  status = 200
+  force = true
 
-    try {
-        // CORREÇÃO: Apenas decodifica a URL, sem outras manipulações.
-        const imageUrl = decodeURIComponent(url);
-        
-        console.log("Proxy de Imagem buscando a URL:", imageUrl);
+# Redirecionamento para o proxy de IMAGENS (VERSÃO SIMPLIFICADA)
+# Esta regra agora aponta diretamente para a função, passando os parâmetros.
+[[redirects]]
+  from = "/facilzap-images"
+  to = "/.netlify/functions/image-proxy"
+  status = 200
 
-        const response = await fetch(imageUrl, {
-            headers: { 
-                'User-Agent': 'Mozilla/5.0',
-                'Referer': 'https://facilzap.app.br/'
-            }
-        });
+# Configurações das funções
+[functions]
+  node_bundler = "esbuild"
 
-        if (!response.ok) {
-            console.error(`[ERROR] Falha ao buscar imagem no proxy:`, {
-                status: response.status,
-                url: imageUrl
-            });
-            return {
-                statusCode: response.status,
-                body: JSON.stringify({ error: `Erro ${response.status}` })
-            };
-        }
-
-        const imageBuffer = await response.arrayBuffer();
-        
-        return {
-            statusCode: 200,
-            headers: {
-                'Content-Type': response.headers.get('content-type'),
-                'Cache-Control': 'public, max-age=86400'
-            },
-            body: Buffer.from(imageBuffer).toString('base64'),
-            isBase64Encoded: true
-        };
-        
-    } catch (error) {
-        console.error("[ERROR] Erro fatal no proxy de imagem:", {
-            errorMessage: error.message,
-            requestedUrl: url
-        });
-        return {
-            statusCode: 500,
-            body: JSON.stringify({ error: error.message })
-        };
-    }
-};
+[functions."*"]
+  # Aumenta o tempo máximo de execução para 30 segundos
+  timeout = 30
