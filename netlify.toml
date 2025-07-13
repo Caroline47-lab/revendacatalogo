@@ -1,11 +1,12 @@
-# Este comando diz à Netlify onde está o seu site principal 
-# e onde encontrar as funções especiais.
 [build]
   publish = "public"
   functions = "netlify/functions"
 
-# Esta regra redireciona as chamadas da API para a nossa função.
 [[redirects]]
   from = "/api/*"
   to = "/.netlify/functions/:splat"
   status = 200
+  force = true
+
+[functions]
+  node_bundler = "esbuild"
