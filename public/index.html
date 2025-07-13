@@ -284,86 +284,94 @@
 
     // --- LÓGICA DA API E SINCRONIZAÇÃO ---
     async function syncFromFacilZap() {
-        showToast('Iniciando sincronização completa...');
+        showToast('Iniciando sincronização...', 'info');
         const syncButton = document.querySelector('button[onclick="syncFromFacilZap()"]');
         if (syncButton) syncButton.disabled = true;
 
-        allApiProducts = []; 
+        allApiProducts = [];
         let currentPage = 1;
-        let keepFetching = true;
+        const MAX_PAGES = 200; // Limite de segurança para evitar loops infinitos
         let totalFetched = 0;
-        const PRODUCTS_PER_PAGE_API = 100;
 
-        // *** LÓGICA DE LOOP CORRIGIDA E MAIS ROBUSTA ***
-        while (keepFetching) {
-            try {
-                showToast(`Buscando página ${currentPage}... (${totalFetched} produtos carregados)`, 'info');
+        try {
+            while (currentPage <= MAX_PAGES) {
+                showToast(`Buscando página ${currentPage}... (${totalFetched} produtos)`, 'info');
+                
                 const response = await fetch(`/api/facilzap-proxy?page=${currentPage}`);
-
+                
                 if (!response.ok) {
-                    // Se a API retornar um erro (ex: página não encontrada), paramos o loop.
-                    console.error(`Falha ao buscar página ${currentPage}. Status: ${response.status}`);
-                    showToast(`Erro ao buscar página ${currentPage}. Finalizando.`, 'error');
-                    keepFetching = false;
-                    continue; // Pula para a próxima iteração do loop (que será a última)
+                    const errorText = await response.text();
+                    // Se o erro for 404 (Not Found), é um sinal normal de que as páginas acabaram.
+                    if (response.status === 404) {
+                        console.log(`Página ${currentPage} não encontrada, finalizando a busca.`);
+                        break;
+                    }
+                    throw new Error(`Erro ${response.status}: ${errorText}`);
                 }
 
                 const data = await response.json();
                 const productsFromPage = data.data || [];
-
-                if (productsFromPage.length > 0) {
-                    const processedProducts = productsFromPage.map(p => {
-                        const getPhotoUrls = (photos) => {
-                            if (!photos || photos.length === 0) return [];
-                            if (typeof photos[0] === 'string') return photos;
-                            return photos.map(photoObj => photoObj.url);
-                        };
-                        const photoList = getPhotoUrls(p.fotos);
-                        return {
-                            id: p.id,
-                            nome: p.nome,
-                            sku: p.sku || 'N/A',
-                            preco_original: p.preco,
-                            imagem: photoList.length > 0 ? photoList[0] : null,
-                            fotos: photoList,
-                            estoque_total: p.total_estoque || 0,
-                            variacoes: p.estoque || [],
-                            status_api: p.status_ativo ? 'ativo' : 'inativo'
-                        };
-                    });
-                    allApiProducts.push(...processedProducts);
-                    totalFetched = allApiProducts.length;
-                    
-                    // Condição de parada: se a página retornou menos que o máximo, é a última.
-                    if (productsFromPage.length < PRODUCTS_PER_PAGE_API) {
-                        keepFetching = false;
-                    } else {
-                        currentPage++;
-                    }
-                } else {
-                    // Condição de parada: se a página veio vazia, terminamos.
-                    keepFetching = false;
+                
+                if (productsFromPage.length === 0) {
+                    // Condição de saída principal: a página veio vazia.
+                    console.log(`Página ${currentPage} vazia. Fim da sincronização.`);
+                    break; 
                 }
-            } catch (error) {
-                showToast(`Erro durante a sincronização: ${error.message}`, 'error');
-                console.error("Erro no loop de sincronização:", error);
-                keepFetching = false;
+                
+                const getStatus = (status) => {
+                    if (typeof status === 'boolean') return status ? 'ativo' : 'inativo';
+                    if (typeof status !== 'string') return 'desativado';
+                    return status.toLowerCase().includes('ativ') ? 'ativo' : 'inativo';
+                };
+
+                const processedProducts = productsFromPage.map(p => {
+                    const getPhotoUrls = (photos) => {
+                        if (!photos || photos.length === 0) return [];
+                        if (typeof photos[0] === 'string') return photos;
+                        return photos.map(photoObj => photoObj.url);
+                    };
+                    const photoList = getPhotoUrls(p.fotos);
+                    return {
+                        id: p.id,
+                        nome: p.nome,
+                        sku: p.sku || 'N/A',
+                        preco_original: p.preco,
+                        imagem: photoList.length > 0 ? photoList[0] : null,
+                        fotos: photoList,
+                        estoque_total: p.total_estoque || 0,
+                        variacoes: p.estoque || [],
+                        status_api: getStatus(p.status_ativo)
+                    };
+                });
+                
+                allApiProducts.push(...processedProducts);
+                totalFetched = allApiProducts.length;
+                
+                currentPage++;
+                
+                // Pequeno delay para não sobrecarregar a UI e a API
+                await new Promise(resolve => setTimeout(resolve, 250));
             }
-        }
 
-        // --- FIM DO LOOP ---
-        // Agora, com todos os produtos carregados, renderizamos o resultado.
-        if (allApiProducts.length > 0) {
-            renderAdminProducts(); 
-            showToast(`Sincronização finalizada! ${allApiProducts.length} produtos carregados.`, 'success');
-        } else {
-            showToast('Sincronização concluída, mas nenhum produto foi encontrado.', 'info');
-            document.getElementById('admin-product-grid').innerHTML = `<p style="text-align:center; grid-column: 1 / -1;">Nenhum produto encontrado na API.</p>`;
-        }
+            // Ordena a lista completa apenas uma vez
+            const statusOrder = { 'ativo': 1, 'esgotado': 2, 'desativado': 3 };
+            allApiProducts.sort((a, b) => {
+                const statusA = a.status_api === 'inativo' ? 'desativado' : (a.estoque_total > 0 ? 'ativo' : 'esgotado');
+                const statusB = b.status_api === 'inativo' ? 'desativado' : (b.estoque_total > 0 ? 'ativo' : 'esgotado');
+                return statusOrder[statusA] - statusOrder[statusB];
+            });
 
-        localStorage.setItem('allApiProducts', JSON.stringify(allApiProducts));
-        updateLastSyncTime();
-        if (syncButton) syncButton.disabled = false;
+            showToast(`Sincronização completa! ${totalFetched} produtos carregados.`, 'success');
+            localStorage.setItem('allApiProducts', JSON.stringify(allApiProducts));
+            renderAdminProducts();
+
+        } catch (error) {
+            console.error("Erro na sincronização:", error);
+            showToast(`Falha: ${error.message}`, 'error');
+        } finally {
+            if (syncButton) syncButton.disabled = false;
+            updateLastSyncTime();
+        }
     }
 
 
@@ -385,13 +393,7 @@
             return;
         }
 
-        const statusOrder = { 'ativo': 1, 'esgotado': 2, 'desativado': 3 };
-        allApiProducts.sort((a, b) => {
-            const statusA = a.status_api === 'inativo' ? 'desativado' : (a.estoque_total > 0 ? 'ativo' : 'esgotado');
-            const statusB = b.status_api === 'inativo' ? 'desativado' : (b.estoque_total > 0 ? 'ativo' : 'esgotado');
-            return statusOrder[statusA] - statusOrder[statusB];
-        });
-
+        // A lista já está ordenada, apenas chamamos para carregar o primeiro lote
         loadMoreProducts();
     }
 
