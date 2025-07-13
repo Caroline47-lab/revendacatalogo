@@ -9,7 +9,7 @@ exports.handler = async (event) => {
     }
 
     try {
-        // SIMPLIFICAÇÃO RADICAL: apenas decodifica a URL
+        // CORREÇÃO: Remover todas as manipulações - usar URL decodificada diretamente
         const imageUrl = decodeURIComponent(url);
         
         console.log("URL Original:", url);
