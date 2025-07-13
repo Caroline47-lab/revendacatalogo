@@ -486,26 +486,35 @@
         document.getElementById('stat-published-products').textContent = publishedProductIds.length;
     }
 
+    // FUNÇÃO renderProductsTable CORRIGIDA
     function renderProductsTable() {
         const tbody = document.getElementById('products-table-body');
         tbody.innerHTML = '';
         allApiProducts.forEach(p => {
             const row = tbody.insertRow();
             const isPublished = publishedProductIds.includes(p.id);
-            row.innerHTML = `
-                <td><img src="${proxyImageUrl(p.imagem)}" alt="${p.nome}" class="product-image" onerror="this.src='https://placehold.co/40x40/DB1472/FFFFFF?text=X'"></td>
-                <td>${p.nome}</td>
-                <td>${p.sku}</td>
-                <td>R$ ${p.preco_original.toFixed(2)}</td>
-                <td><span class="status-badge ${p.status}">${p.status.replace('_', ' ')}</span></td>
-                <td>
-                    <label class="toggle-switch">
-                        <input type="checkbox" onchange="togglePublished(${p.id})" ${isPublished ? 'checked' : ''}>
-                        <span class="slider"></span>
-                    </label>
-                </td>
-                <td><button class="btn" style="padding: 0.25rem 0.5rem;" onclick="showProductDetails(${p.id})"><i data-feather="eye"></i></button></td>
-            `;
+
+            // Criação programática das células para robustez
+            row.insertCell().innerHTML = `<img src="${proxyImageUrl(p.imagem)}" alt="${p.nome}" class="product-image" onerror="this.src='https://placehold.co/40x40/DB1472/FFFFFF?text=X'">`;
+            row.insertCell().textContent = p.nome;
+            row.insertCell().textContent = p.sku;
+            row.insertCell().textContent = `R$ ${p.preco_original.toFixed(2)}`;
+            row.insertCell().innerHTML = `<span class="status-badge ${p.status}">${p.status.replace('_', ' ')}</span>`;
+            
+            const publishCell = row.insertCell();
+            const toggleLabel = document.createElement('label');
+            toggleLabel.className = 'toggle-switch';
+            toggleLabel.innerHTML = `<input type="checkbox" onchange="togglePublished(${p.id})" ${isPublished ? 'checked' : ''}><span class="slider"></span>`;
+            publishCell.appendChild(toggleLabel);
+
+            const actionsCell = row.insertCell();
+            const viewButton = document.createElement('button');
+            viewButton.className = 'btn';
+            viewButton.style.padding = '0.25rem 0.5rem';
+            viewButton.innerHTML = '<i data-feather="eye"></i>';
+            // CORREÇÃO: Adiciona o event listener programaticamente
+            viewButton.addEventListener('click', () => showProductDetails(p.id));
+            actionsCell.appendChild(viewButton);
         });
         feather.replace();
     }
