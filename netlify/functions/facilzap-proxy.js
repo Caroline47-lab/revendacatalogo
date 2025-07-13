@@ -8,9 +8,13 @@ exports.handler = async function(event, context) {
     const FACILZAP_TOKEN = process.env.FACILZAP_TOKEN;
     // Pega o número da página dos parâmetros da URL. Se não for fornecido, assume a página 1.
     const page = event.queryStringParameters.page || '1';
+    const perPage = 100; // Define o máximo de itens por página que a API permite.
+
+    // URL corrigida com os parâmetros de paginação padronizados
+    const API_ENDPOINT = `https://api.facilzap.app.br/produtos?page=${page}&per_page=${perPage}`;
     
-    const API_ENDPOINT = `https://api.facilzap.app.br/produtos?pagina=${page}`;
-    
+    console.log(`Proxy buscando: ${API_ENDPOINT}`);
+
     const responseHeaders = {
         'Content-Type': 'application/json'
     };
@@ -32,12 +36,12 @@ exports.handler = async function(event, context) {
     };
 
     try {
-        console.log(`Proxy buscando página: ${page}`);
         const response = await fetch(API_ENDPOINT, fetchOptions);
         const responseBody = await response.text();
 
+        console.log(`Resposta da API para página ${page}: Status ${response.status}`);
+
         if (!response.ok) {
-            console.error(`Proxy: Erro da API na página ${page}. Status: ${response.status}`);
             return {
                 statusCode: response.status,
                 headers: responseHeaders,
