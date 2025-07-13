@@ -4,8 +4,8 @@
  * Handler da função Netlify para atuar como proxy para a API FacilZap.
  * Esta versão é inteligente:
  * - Se receber um 'id', busca os detalhes de um único produto.
- * - Se buscar a lista, enriquece cada produto com um campo 'status'
- * baseado estritamente na contagem de estoque.
+ * - Se buscar a lista, enriquece cada produto com um campo 'status'.
+ * - **NOVO: Adiciona um log para depurar a estrutura do produto recebido da API.**
  */
 export const handler = async (event) => {
   const FACILZAP_TOKEN = process.env.FACILZAP_TOKEN;
@@ -53,18 +53,26 @@ export const handler = async (event) => {
       
       if (data && Array.isArray(data.data)) {
         
+        // --- INÍCIO DA FERRAMENTA DE DEPURAÇÃO ---
+        // O log abaixo irá mostrar a estrutura completa do primeiro produto no log da sua função Netlify.
+        // Isso nos ajudará a identificar o nome correto do campo de estoque.
+        if (data.data.length > 0) {
+          console.log("ESTRUTURA DO PRODUTO RECEBIDO DA API:", JSON.stringify(data.data[0], null, 2));
+        }
+        // --- FIM DA FERRAMENTA DE DEPURAÇÃO ---
+
         const produtosEnriquecidos = data.data.map(produto => {
           let status;
 
-          // **LÓGICA CORRIGIDA E SIMPLIFICADA BASEADA APENAS NO ESTOQUE**
-          // Conforme solicitado: > 0 é 'ativo', <= 0 é 'sem_estoque'.
+          // **AJUSTE A LINHA ABAIXO COM O NOME CORRETO DO CAMPO DE ESTOQUE**
+          // Procure no log por um campo como "total_estoque", "estoque", "quantidade", "stock", etc.
+          // E substitua 'produto.total_estoque' pelo nome correto.
           if ((produto.total_estoque || 0) > 0) {
-            status = 'ativo'; // Produto disponível para venda.
+            status = 'ativo';
           } else {
-            status = 'sem_estoque'; // Produto sem estoque no momento.
+            status = 'sem_estoque';
           }
 
-          // Retorna o produto original com o novo campo 'status'
           return { ...produto, status: status };
         });
 
