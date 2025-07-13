@@ -79,7 +79,7 @@
         .product-card__status-badge.ativo { background-color: var(--verde-sucesso); }
         .product-card__status-badge.esgotado { background-color: var(--vermelho-perigo); }
         .product-card__content { padding: 15px; flex-grow: 1; display: flex; flex-direction: column; }
-        .product-card__name { font-size: 1.1rem; font-weight: 600; margin-bottom: 5px; }
+        .product-card__name { font-size: 1.1rem; font-weight: 600; margin-bottom: 5px; min-height: 48px; }
         .product-card__sku { font-size: 0.8rem; color: #888; margin-bottom: 10px; }
         .product-card__price { font-size: 1.2rem; font-weight: 700; color: var(--cinza-texto); margin-bottom: 15px; }
         .product-card__actions { margin-top: auto; padding-top: 15px; border-top: 1px solid var(--cinza-fundo); display: flex; gap: 10px; }
@@ -280,7 +280,6 @@
         if (!url || typeof url !== 'string') {
             return 'https://placehold.co/300x300/DB1472/FFFFFF?text=Sem+Imagem';
         }
-        // Chama a função do proxy de imagem diretamente, passando a URL completa e codificada
         return `/.netlify/functions/image-proxy?url=${encodeURIComponent(url)}`;
     }
 
@@ -298,29 +297,22 @@
         try {
             while (currentPage <= MAX_PAGES) {
                 showToast(`Buscando página ${currentPage}... (${allProducts.length} produtos)`, 'info');
-                
                 const response = await fetch(`/api/facilzap-proxy?page=${currentPage}&length=${PER_PAGE}`);
-                
                 if (!response.ok) {
                     console.log(`Parando na página ${currentPage}, status: ${response.status}.`);
                     break;
                 }
-
                 const data = await response.json();
                 const productsFromPage = data.data || [];
-                
                 if (productsFromPage.length === 0) {
                     console.log(`Página ${currentPage} vazia. Fim da sincronização.`);
                     break; 
                 }
-                
                 allProducts.push(...productsFromPage);
-                
                 if (productsFromPage.length < PER_PAGE) {
                     console.log('Última página encontrada.');
                     break;
                 }
-                
                 currentPage++;
                 await new Promise(resolve => setTimeout(resolve, 200));
             }
@@ -332,15 +324,12 @@
                     const cleanPath = url.startsWith('/') ? url.substring(1) : url;
                     return `https://api.facilzap.app.br/${cleanPath}`;
                 };
-                
-                const mainImageUrl = fixUrl(p.imagem);
-
                 return {
                     id: p.id,
                     nome: p.nome,
                     sku: p.sku || 'N/A',
                     preco_original: p.preco,
-                    imagem: mainImageUrl,
+                    imagem: fixUrl(p.imagem),
                     estoque_total: p.total_estoque || 0,
                 };
             });
@@ -365,7 +354,6 @@
         }
     }
 
-
     function updateLastSyncTime() {
         const now = new Date().toLocaleString('pt-BR');
         document.getElementById('last-sync-time').textContent = `Última sincronização: ${now}`;
@@ -383,20 +371,17 @@
             document.getElementById('pagination-controls').innerHTML = '';
             return;
         }
-
         loadMoreProducts();
     }
 
     function loadMoreProducts() {
         const grid = document.getElementById('admin-product-grid');
         const paginationControls = document.getElementById('pagination-controls');
-
         const productsToRender = allApiProducts.slice(displayedProductsCount, displayedProductsCount + PRODUCTS_PER_LOAD);
 
         productsToRender.forEach(p => {
             const card = document.createElement('div');
             const isPublished = publishedProductIds.includes(p.id);
-            
             const displayStatus = p.estoque_total > 0 ? 'Ativo' : 'Esgotado';
             const statusClass = p.estoque_total > 0 ? 'ativo' : 'esgotado';
 
@@ -425,7 +410,6 @@
         });
 
         displayedProductsCount += productsToRender.length;
-        
         paginationControls.innerHTML = '';
         if (displayedProductsCount < allApiProducts.length) {
             const loadMoreButton = document.createElement('button');
@@ -434,9 +418,45 @@
             loadMoreButton.onclick = loadMoreProducts;
             paginationControls.appendChild(loadMoreButton);
         }
+        feather.replace();
+    }
+    
+    function renderResellerProducts() {
+        const grid = document.getElementById('reseller-product-grid');
+        grid.innerHTML = ''; // Limpa o grid para renderização
+
+        // Filtra os produtos que foram marcados como "publicados" pelo admin
+        const productsToDisplay = allApiProducts.filter(p => publishedProductIds.includes(p.id) && p.estoque_total > 0);
+
+        if (productsToDisplay.length === 0) {
+            grid.innerHTML = `<p style="text-align:center; grid-column: 1 / -1;">Nenhum produto foi liberado para divulgação no momento. Fale com a empresa.</p>`;
+            return;
+        }
+
+        productsToDisplay.forEach(p => {
+            // Futuramente, aqui entrará a lógica para preços customizados.
+            const price = customPrices[p.id] || p.preco_original;
+
+            const card = document.createElement('div');
+            card.className = 'card product-card';
+            card.innerHTML = `
+                <div class="product-card__image-container">
+                    <img src="${proxyImageUrl(p.imagem)}" alt="${p.nome}" loading="lazy" decoding="async" onerror="this.onerror=null;this.src='https://placehold.co/300x300/DB1472/FFFFFF?text=Erro+na+Imagem';">
+                </div>
+                <div class="product-card__content">
+                    <h3 class="product-card__name">${p.nome}</h3>
+                    <p class="product-card__price">R$ ${parseFloat(price).toFixed(2)}</p>
+                    <div class="product-card__actions">
+                        <button class="btn btn-primary" onclick="alert('Funcionalidade futura: Compartilhar produto.')"><i data-feather="share-2"></i> Compartilhar</button>
+                    </div>
+                </div>
+            `;
+            grid.appendChild(card);
+        });
 
         feather.replace();
     }
+
 
     // --- LÓGICA DO MODAL ---
     async function showProductDetails(productId) {
@@ -462,7 +482,9 @@
 
             const detailedData = await response.json();
             const details = detailedData.data || detailedData;
-            console.log("Detalhes do produto recebidos:", details);
+            
+            // Log para depuração no console do navegador
+            console.log("Detalhes do produto recebidos:", JSON.stringify(details, null, 2));
 
             variationsTbody.innerHTML = '';
             const variations = details.estoque || [];
@@ -471,11 +493,16 @@
                 variationHeader.textContent = `Variação (${variationTypeName})`;
 
                 variations.forEach(v => {
-                    const variationName = v.grade_item_nome || v.nome || 'N/A';
+                    // Acesso mais robusto às propriedades da variação
+                    const variationName = v.grade_item_nome || v.nome || v.name || 'N/A';
                     const variationSku = v.sku || 'N/A';
-                    const stockAmount = v.estoque !== undefined ? v.estoque : 0;
-                    const availabilityText = parseInt(stockAmount) > 0 ? 'Disponível' : 'Indisponível';
-                    const availabilityClass = parseInt(stockAmount) > 0 ? 'in-stock' : 'out-of-stock';
+                    
+                    // Lógica de estoque mais robusta
+                    const stockValue = v.estoque !== undefined ? v.estoque : (v.stock !== undefined ? v.stock : 0);
+                    const stockAmount = parseInt(stockValue, 10) || 0; // Garante que é um número
+                    
+                    const availabilityText = stockAmount > 0 ? 'Disponível' : 'Indisponível';
+                    const availabilityClass = stockAmount > 0 ? 'in-stock' : 'out-of-stock';
                     
                     const row = variationsTbody.insertRow();
                     row.innerHTML = `
@@ -483,14 +510,14 @@
                         <td>${variationSku}</td>
                         <td>
                             <span class="stock-badge ${availabilityClass}">
-                                ${availabilityText}
+                                ${availabilityText} (${stockAmount})
                             </span>
                         </td>
                     `;
                 });
             } else {
                 const row = variationsTbody.insertRow();
-                row.innerHTML = `<td colspan="3">Nenhuma variação de estoque encontrada.</td>`;
+                row.innerHTML = `<td colspan="3">Nenhuma variação de estoque encontrada para este produto.</td>`;
             }
 
         } catch (error) {
@@ -513,6 +540,11 @@
         }
         localStorage.setItem('publishedProductIds', JSON.stringify(publishedProductIds));
         showToast('Lista para revendedoras atualizada!', 'success');
+        
+        // Atualiza a visualização da revendedora caso esteja visível
+        if (document.getElementById('reseller-panel-view').classList.contains('active')) {
+            renderResellerProducts();
+        }
     }
 
     // --- UTILITÁRIOS ---
