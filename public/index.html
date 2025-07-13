@@ -298,7 +298,7 @@
         loadLocalData();
         setupNavigation();
         updateDashboard();
-        renderProductsTable(); // Renderiza a tabela com dados locais ao carregar
+        renderProductsTable();
     });
 
     function showToast(message, type = 'info') {
@@ -407,6 +407,7 @@
                         sku: p.sku || 'N/A',
                         preco_original: parseFloat(p.preco || 0),
                         imagem: imagens.length > 0 ? imagens[0] : null,
+                        imagens_adicionais: imagens.slice(1),
                         estoque_total: estoqueTotal,
                         variacoes: variacoes,
                         status: estoqueTotal > 0 ? 'ativo' : 'sem_estoque'
@@ -492,7 +493,7 @@
             const row = tbody.insertRow();
             const isPublished = publishedProductIds.includes(p.id);
             row.innerHTML = `
-                <td><img src="${proxyImageUrl(p.imagem)}" alt="${p.nome}" class="product-image" onerror="this.src='https://placehold.co/40x40/DB1472/FFFFFF?text=X'"></td>
+                <td><img src="${proxyImageUrl(p.imagem)}" alt="${p.nome}" class="product-image" onerror="this.onerror=null; this.src='https://placehold.co/40x40/DB1472/FFFFFF?text=X'; this.parentNode.nextSibling.nextSibling.nextSibling.nextSibling.querySelector('.status-badge').textContent='Img Falhou';"></td>
                 <td>${p.nome}</td>
                 <td>${p.sku}</td>
                 <td>R$ ${p.preco_original.toFixed(2)}</td>
@@ -537,22 +538,37 @@
 
         const modal = document.getElementById('product-details-modal');
         const tbody = document.getElementById('modal-variations-tbody');
-        tbody.innerHTML = '';
-
+        
         document.getElementById('modal-product-name').textContent = product.nome;
+        document.getElementById('modal-main-image').src = proxyImageUrl(product.imagem);
+        
+        tbody.innerHTML = ''; // Limpa antes de popular
 
         if (product.variacoes && product.variacoes.length > 0) {
             product.variacoes.forEach(v => {
-                const row = tbody.insertRow();
-                row.innerHTML = `
-                    <td>${v.nome}</td>
-                    <td><span class="status-badge ${v.quantidade > 0 ? 'ativo' : 'sem_estoque'}">${v.quantidade > 0 ? `Disponível (${v.quantidade})` : 'Esgotado'}</span></td>
-                `;
+                const row = document.createElement('tr');
+                
+                const nameCell = document.createElement('td');
+                nameCell.textContent = v.nome;
+                row.appendChild(nameCell);
+                
+                const stockCell = document.createElement('td');
+                const badge = document.createElement('span');
+                badge.className = v.quantidade > 0 ? 'stock-badge in-stock' : 'stock-badge out-of-stock';
+                badge.textContent = v.quantidade > 0 ? `Disponível (${v.quantidade})` : 'Esgotado';
+                stockCell.appendChild(badge);
+                row.appendChild(stockCell);
+                
+                tbody.appendChild(row);
             });
         } else {
-            tbody.innerHTML = '<tr><td colspan="2">Nenhuma variação encontrada.</td></tr>';
+            const row = tbody.insertRow();
+            const cell = row.insertCell();
+            cell.colSpan = 2;
+            cell.textContent = 'Nenhuma variação encontrada para este produto.';
+            cell.style.textAlign = 'center';
         }
-
+        
         modal.classList.add('active');
         feather.replace();
     }
