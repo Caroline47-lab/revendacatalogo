@@ -186,6 +186,7 @@
                 <h1>Painel da Empresa</h1>
                 <div>
                     <button class="btn btn-primary" onclick="syncFromFacilZap()"><i data-feather="refresh-cw"></i> Sincronizar Produtos</button>
+                    <button class="btn btn-secondary" onclick="testApiConnection()">Testar API</button>
                     <button class="btn btn-outline" onclick="handleLogout()"><i data-feather="log-out"></i> Sair</button>
                 </div>
             </div>
@@ -208,7 +209,7 @@
         </div>
     </section>
 
-    <!-- MODAL DE DETALHES DO PRODUTO (SIMPLIFICADO) -->
+    <!-- MODAL DE DETALHES DO PRODUTO (REVERTIDO PARA TABELA) -->
     <div id="product-details-modal" class="modal-overlay" onclick="closeModal('product-details-modal')">
         <div class="modal-content" onclick="event.stopPropagation()">
             <button class="modal-close-btn" onclick="closeModal('product-details-modal')"><i data-feather="x"></i></button>
@@ -220,10 +221,18 @@
                     <img id="modal-main-image" src="https://via.placeholder.com/400" alt="Imagem principal do produto">
                 </div>
                 <div class="modal-details">
-                    <h4>Numerações Disponíveis</h4>
-                    <div id="modal-variations-container">
-                        <!-- As tags das variações disponíveis serão injetadas aqui -->
-                    </div>
+                    <h4>Variações de Estoque</h4>
+                    <table class="variations-table">
+                        <thead>
+                            <tr>
+                                <th>Numeração</th>
+                                <th>Disponibilidade</th>
+                            </tr>
+                        </thead>
+                        <tbody id="modal-variations-tbody">
+                            <!-- As linhas da tabela serão injetadas aqui -->
+                        </tbody>
+                    </table>
                 </div>
             </div>
         </div>
@@ -296,85 +305,212 @@
         }
     }
     
-    // --- FUNÇÃO AUXILIAR PARA O PROXY DE IMAGENS ---
+    // ========== CORREÇÃO 1: FUNÇÃO PARA PROCESSAR IMAGENS ==========
     function proxyImageUrl(url) {
         if (!url || typeof url !== 'string') {
+            console.log('URL de imagem inválida:', url);
             return 'https://placehold.co/300x300/DB1472/FFFFFF?text=Sem+Imagem';
         }
-        return `/.netlify/functions/image-proxy?url=${encodeURIComponent(url)}`;
+        
+        // Remove espaços, quebras de linha e caracteres especiais
+        let cleanUrl = url.trim()
+            .replace(/\s+/g, '')
+            .replace(/\n/g, '')
+            .replace(/\r/g, '');
+        
+        // Corrige URLs malformadas
+        if (!cleanUrl.startsWith('http://') && !cleanUrl.startsWith('https://')) {
+            cleanUrl = 'https://' + cleanUrl;
+        }
+        
+        console.log('Processando imagem:', {
+            original: url,
+            cleaned: cleanUrl
+        });
+        
+        // Usa o proxy interno
+        return `/.netlify/functions/image-proxy?url=${encodeURIComponent(cleanUrl)}`;
     }
 
-    // --- LÓGICA DA API E SINCRONIZAÇÃO ---
+    // ========== CORREÇÃO 2: FUNÇÃO MELHORADA PARA PROCESSAR VARIAÇÕES ==========
+    function parseVariationsFromObject(data) {
+        // Se é um array, processa cada item
+        if (Array.isArray(data)) {
+            return data.map(item => ({
+                nome: item.tamanho || item.variacao || item.nome || 'N/A',
+                quantidade: parseInt(item.estoque || item.quantidade || 0)
+            }));
+        }
+        
+        // Se é um único objeto
+        return [{
+            nome: data.tamanho || data.variacao || data.nome || 'Único',
+            quantidade: parseInt(data.estoque || data.quantidade || 0)
+        }];
+    }
+
+    function processVariations(estoqueData, produtoId) {
+        console.log(`Processando estoque para produto ${produtoId}:`, estoqueData);
+        
+        // Caso 1: Estoque é um número (sem variações)
+        if (typeof estoqueData === 'number') {
+            return [{
+                nome: 'Único',
+                quantidade: estoqueData
+            }];
+        }
+        
+        // Caso 2: Estoque é uma string (pode ser JSON ou número)
+        if (typeof estoqueData === 'string') {
+            // Tenta converter para número
+            const asNumber = parseInt(estoqueData);
+            if (!isNaN(asNumber)) {
+                return [{
+                    nome: 'Único',
+                    quantidade: asNumber
+                }];
+            }
+            
+            // Tenta converter para JSON
+            try {
+                const parsed = JSON.parse(estoqueData);
+                return parseVariationsFromObject(parsed);
+            } catch {
+                return [];
+            }
+        }
+        
+        // Caso 3: Estoque é um objeto/array
+        if (typeof estoqueData === 'object' && estoqueData !== null) {
+            return parseVariationsFromObject(estoqueData);
+        }
+        
+        return [];
+    }
+
+
+    // ========== CORREÇÃO 3: FUNÇÃO SYNCFROMFACILZAP ATUALIZADA ==========
     async function syncFromFacilZap() {
         showToast('Iniciando sincronização...', 'info');
         const syncButton = document.querySelector('button[onclick="syncFromFacilZap()"]');
         if (syncButton) syncButton.disabled = true;
 
-        const allProducts = [];
+        allApiProducts = [];
         let currentPage = 1;
-        const PER_PAGE = 100;
         const MAX_PAGES = 200;
 
         try {
             while (currentPage <= MAX_PAGES) {
-                showToast(`Buscando página ${currentPage}... (${allProducts.length} produtos)`, 'info');
-                const response = await fetch(`/api/facilzap-proxy?page=${currentPage}&length=${PER_PAGE}`);
-                if (!response.ok) {
-                    console.log(`Parando na página ${currentPage}, status: ${response.status}.`);
-                    break;
+                showToast(`Buscando página ${currentPage}...`, 'info');
+                
+                const proxyUrl = `/api/facilzap-proxy?page=${currentPage}&length=100`;
+                const response = await fetch(proxyUrl);
+                
+                if (response.status === 401) {
+                    throw new Error("Token de autenticação inválido. Verifique a configuração na Netlify.");
                 }
+                if (!response.ok) {
+                    const errorData = await response.json().catch(() => ({}));
+                    throw new Error(errorData.error || `Erro na API: ${response.statusText}`);
+                }
+
                 const data = await response.json();
                 const productsFromPage = data.data || [];
+                
                 if (productsFromPage.length === 0) {
-                    console.log(`Página ${currentPage} vazia. Fim da sincronização.`);
-                    break; 
+                    console.log(`[DEBUG] Página ${currentPage} vazia. Fim da sincronização.`);
+                    break;
                 }
-                allProducts.push(...productsFromPage);
-                if (productsFromPage.length < PER_PAGE) {
-                    console.log('Última página encontrada.');
+
+                // Processa os produtos desta página
+                const processedProducts = productsFromPage.map(p => {
+                    // Processa as variações usando a função corrigida
+                    const variacoes = processVariations(p.estoque, p.id);
+                    const estoqueTotal = variacoes.reduce((total, v) => total + v.quantidade, 0);
+
+                    // Processa as imagens (pegando a primeira da lista, se houver)
+                    const imagens = typeof p.imagem === 'string' ? 
+                        p.imagem.split(',').map(url => url.trim()) : 
+                        [];
+
+                    const produto = {
+                        id: p.id,
+                        nome: p.nome || 'Nome não informado',
+                        sku: p.sku || p.codigo || 'N/A',
+                        preco_original: parseFloat(p.preco || p.valor || 0),
+                        imagem: imagens.length > 0 ? imagens[0] : null,
+                        estoque_total: estoqueTotal,
+                        variacoes: variacoes,
+                        status: estoqueTotal > 0 ? 'ativo' : 'sem_estoque'
+                    };
+
+                    return produto;
+                });
+                
+                allApiProducts.push(...processedProducts);
+                
+                console.log("Exemplo de produto processado:", {
+                    id: allApiProducts[0]?.id,
+                    nome: allApiProducts[0]?.nome,
+                    variacoes: allApiProducts[0]?.variacoes,
+                    imagem: allApiProducts[0]?.imagem
+                });
+
+                if (productsFromPage.length < 100) {
+                    console.log('[DEBUG] Última página encontrada.');
                     break;
                 }
                 currentPage++;
-                await new Promise(resolve => setTimeout(resolve, 200));
             }
 
-            allApiProducts = allProducts.map(p => {
-                const fixUrl = (url) => {
-                    if (!url || typeof url !== 'string') return null;
-                    if (url.startsWith('http')) return url;
-                    const cleanPath = url.startsWith('/') ? url.substring(1) : url;
-                    return `https://api.facilzap.app.br/${cleanPath}`;
-                };
-
-                return {
-                    id: p.id,
-                    nome: p.nome,
-                    sku: p.sku || 'N/A',
-                    preco_original: p.preco,
-                    imagem: fixUrl(p.imagem),
-                    status: p.status // Usa o status já tratado pelo proxy.js
-                };
-            });
-            
-            const statusOrder = { 'ativo': 1, 'sem_estoque': 2, 'desativado': 3 };
-            allApiProducts.sort((a, b) => {
-                const orderA = statusOrder[a.status] || 99;
-                const orderB = statusOrder[b.status] || 99;
-                return orderA - orderB;
-            });
+            const statusOrder = { 'ativo': 1, 'sem_estoque': 2 };
+            allApiProducts.sort((a, b) => (statusOrder[a.status] || 99) - (statusOrder[b.status] || 99));
 
             showToast(`Sincronização completa! ${allApiProducts.length} produtos carregados.`, 'success');
             localStorage.setItem('allApiProducts', JSON.stringify(allApiProducts));
+            
             renderAdminProducts();
 
         } catch (error) {
-            console.error("Erro na sincronização:", error);
-            showToast(`Falha: ${error.message}`, 'error');
+            console.error("[ERROR] Erro na sincronização:", error);
+            showToast(`Falha na sincronização: ${error.message}`, 'error');
         } finally {
             if (syncButton) syncButton.disabled = false;
             updateLastSyncTime();
         }
     }
+    
+    // ========== CORREÇÃO 5: FUNÇÃO PARA TESTAR A API ==========
+    async function testApiConnection() {
+        try {
+            showToast('Testando conexão com a API...', 'info');
+            
+            const response = await fetch('/api/facilzap-proxy?page=1&length=5');
+            const data = await response.json();
+            
+            console.log('[DEBUG] Teste da API:', {
+                status: response.status,
+                data: data,
+                products: data.data ? data.data.length : 0
+            });
+            
+            if (response.ok && data.data && data.data.length > 0) {
+                const firstProduct = data.data[0];
+                console.log('[DEBUG] Estrutura do primeiro produto:', firstProduct);
+                console.log('[DEBUG] Estoque do primeiro produto:', firstProduct.estoque);
+                console.log('[DEBUG] Tipo do estoque:', typeof firstProduct.estoque);
+                
+                showToast('Conexão com API OK! Verifique o console para detalhes.', 'success');
+            } else {
+                showToast('API conectada mas sem produtos.', 'info');
+            }
+            
+        } catch (error) {
+            console.error('[ERROR] Erro no teste da API:', error);
+            showToast(`Erro na conexão: ${error.message}`, 'error');
+        }
+    }
+
 
     function updateLastSyncTime() {
         const now = new Date().toLocaleString('pt-BR');
@@ -403,22 +539,27 @@
 
         const statusMap = {
             'ativo': { text: 'Ativo', class: 'ativo' },
-            'sem_estoque': { text: 'Sem Estoque', class: 'sem_estoque' },
-            'desativado': { text: 'Desativado', class: 'desativado' }
+            'sem_estoque': { text: 'Sem Estoque', class: 'sem_estoque' }
         };
 
         productsToRender.forEach(p => {
             const card = document.createElement('div');
             const isPublished = publishedProductIds.includes(p.id);
-            const productStatus = statusMap[p.status] || { text: 'Desconhecido', class: 'desativado' };
-            const displayStatus = productStatus.text;
-            const statusClass = productStatus.class;
+            const productStatus = statusMap[p.status] || { text: 'Sem Estoque', class: 'sem_estoque' };
 
             card.className = 'card product-card';
             card.innerHTML = `
                 <div class="product-card__image-container">
-                    <img src="${proxyImageUrl(p.imagem)}" alt="${p.nome}" loading="lazy" decoding="async" onerror="this.onerror=null;this.src='https://placehold.co/300x300/DB1472/FFFFFF?text=Erro+na+Imagem';">
-                    <span class="product-card__status-badge ${statusClass}">${displayStatus}</span>
+                    <img 
+                        src="${proxyImageUrl(p.imagem)}" 
+                        alt="${p.nome}" 
+                        loading="lazy"
+                        onerror="
+                            this.onerror=null;
+                            this.src='https://placehold.co/300x300/DB1472/FFFFFF?text=Erro+na+Imagem';
+                            this.parentNode.querySelector('.product-card__status-badge').textContent='Imagem não carregada';
+                        ">
+                    <span class="product-card__status-badge ${productStatus.class}">${productStatus.text}</span>
                 </div>
                 <div class="product-card__content">
                     <h3 class="product-card__name">${p.nome}</h3>
@@ -460,105 +601,91 @@
             grid.innerHTML = `<p style="text-align:center; grid-column: 1 / -1;">Nenhum produto ativo foi liberado para divulgação no momento.</p>`;
             return;
         }
-
-        try {
-            const detailPromises = productsToDisplay.map(p => fetch(`/api/facilzap-proxy?id=${p.id}`));
-            const detailResponses = await Promise.all(detailPromises);
-
-            for (const response of detailResponses) {
-                if (!response.ok) throw new Error(`Falha ao buscar detalhes de um produto (${response.status})`);
-            }
-            
-            const productDetails = await Promise.all(detailResponses.map(res => res.json()));
-            grid.innerHTML = '';
-
-            productsToDisplay.forEach((p, index) => {
-                const details = productDetails[index].data || productDetails[index];
-                const variations = details.estoque || [];
-                const availableVariations = variations.filter(v => v.estoque > 0);
-
-                if (availableVariations.length > 0) {
-                    const variationsHtml = availableVariations
-                        .map(v => `<span class="variation-tag">${v.grade_item_nome || v.nome || 'N/A'}</span>`)
-                        .join('');
-                    
-                    const price = customPrices[p.id] || p.preco_original;
-                    const card = document.createElement('div');
-                    card.className = 'card product-card';
-                    card.innerHTML = `
-                        <div class="product-card__image-container">
-                            <img src="${proxyImageUrl(p.imagem)}" alt="${p.nome}" loading="lazy" decoding="async" onerror="this.onerror=null;this.src='https://placehold.co/300x300/DB1472/FFFFFF?text=Erro+na+Imagem';">
-                        </div>
-                        <div class="product-card__content">
-                            <h3 class="product-card__name">${p.nome}</h3>
-                            <p class="product-card__price">R$ ${parseFloat(price).toFixed(2)}</p>
-                            <h4 class="variations-title">Numerações disponíveis:</h4>
-                            <div class="product-card__variations">
-                                ${variationsHtml}
-                            </div>
-                            <div class="product-card__actions">
-                                <button class="btn btn-primary" onclick="alert('Funcionalidade futura: Compartilhar produto.')"><i data-feather="share-2"></i> Compartilhar</button>
-                            </div>
-                        </div>
-                    `;
-                    grid.appendChild(card);
-                }
-            });
-            
-            if (grid.innerHTML === '') {
-                 grid.innerHTML = `<p style="text-align:center; grid-column: 1 / -1;">Todos os produtos liberados estão sem variações em estoque no momento.</p>`;
-            }
-
-        } catch (error) {
-            console.error("Erro ao renderizar produtos da revendedora:", error);
-            grid.innerHTML = `<p style="text-align:center; color: red; grid-column: 1 / -1;">Ocorreu um erro ao carregar a vitrine. Tente novamente mais tarde.</p>`;
-        } finally {
-            feather.replace();
-        }
-    }
-
-    // --- LÓGICA DO MODAL (SIMPLIFICADA E CORRIGIDA) ---
-    async function showProductDetails(productId) {
-        const product = allApiProducts.find(p => p.id === productId);
-        if (!product) return;
-
-        const modal = document.getElementById('product-details-modal');
-        const variationsContainer = document.getElementById('modal-variations-container');
         
-        document.getElementById('modal-product-name').textContent = product.nome;
-        document.getElementById('modal-main-image').src = proxyImageUrl(product.imagem);
-        variationsContainer.innerHTML = '<p>Carregando numerações...</p>';
-        
-        modal.classList.add('active');
-        feather.replace();
-
-        try {
-            const response = await fetch(`/api/facilzap-proxy?id=${productId}`);
-            if (!response.ok) throw new Error('Falha ao carregar detalhes do produto.');
-
-            const detailedData = await response.json();
-            const details = detailedData.data || detailedData;
-            
-            const variations = details.estoque || [];
-            
-            // **LÓGICA AJUSTADA**
-            // Filtra as variações com base no campo 'estoque' que o proxy já converteu para número.
-            const availableVariations = variations.filter(v => v.estoque > 0);
+        grid.innerHTML = ''; // Limpa antes de popular
+        productsToDisplay.forEach(p => {
+            const availableVariations = p.variacoes.filter(v => v.quantidade > 0);
 
             if (availableVariations.length > 0) {
                 const variationsHtml = availableVariations
-                    .map(v => `<span class="modal-variation-tag">${v.grade_item_nome || v.nome || v.name || 'N/A'}</span>`)
+                    .map(v => `<span class="variation-tag">${v.nome}</span>`)
                     .join('');
                 
-                variationsContainer.innerHTML = `<div class="modal-variations-list">${variationsHtml}</div>`;
-            } else {
-                variationsContainer.innerHTML = `<p>Nenhuma numeração com estoque encontrada.</p>`;
+                const card = document.createElement('div');
+                card.className = 'card product-card';
+                card.innerHTML = `
+                    <div class="product-card__image-container">
+                        <img 
+                            src="${proxyImageUrl(p.imagem)}" 
+                            alt="${p.nome}" 
+                            loading="lazy" 
+                            decoding="async" 
+                            onerror="this.onerror=null;this.src='https://placehold.co/300x300/DB1472/FFFFFF?text=Erro+na+Imagem';">
+                    </div>
+                    <div class="product-card__content">
+                        <h3 class="product-card__name">${p.nome}</h3>
+                        <p class="product-card__price">R$ ${parseFloat(p.preco_original).toFixed(2)}</p>
+                        <h4 class="variations-title">Numerações disponíveis:</h4>
+                        <div class="product-card__variations">
+                            ${variationsHtml}
+                        </div>
+                        <div class="product-card__actions">
+                            <button class="btn btn-primary" onclick="alert('Funcionalidade futura: Compartilhar produto.')"><i data-feather="share-2"></i> Compartilhar</button>
+                        </div>
+                    </div>
+                `;
+                grid.appendChild(card);
             }
+        });
 
-        } catch (error) {
-            console.error("Erro ao buscar detalhes do produto:", error);
-            variationsContainer.innerHTML = `<p style="color: red;">${error.message}</p>`;
+        if (grid.innerHTML === '') {
+             grid.innerHTML = `<p style="text-align:center; grid-column: 1 / -1;">Todos os produtos liberados estão sem variações em estoque no momento.</p>`;
         }
+        feather.replace();
+    }
+
+    // --- FUNÇÃO MELHORADA PARA EXIBIR DETALHES DO PRODUTO ---
+    function showProductDetails(productId) {
+        const modal = document.getElementById('product-details-modal');
+        const variationsTbody = document.getElementById('modal-variations-tbody');
+        
+        const product = allApiProducts.find(p => p.id === productId);
+        if (!product) {
+            console.error("Produto não encontrado na lista local:", productId);
+            showToast("Erro: Produto não encontrado.", "error");
+            return;
+        }
+
+        document.getElementById('modal-product-name').textContent = product.nome;
+        document.getElementById('modal-main-image').src = proxyImageUrl(product.imagem);
+        variationsTbody.innerHTML = '';
+        
+        if (product.variacoes && product.variacoes.length > 0) {
+            // Criação programática das linhas da tabela
+            product.variacoes.forEach(v => {
+                const row = document.createElement('tr');
+                
+                // Célula da numeração
+                const sizeCell = document.createElement('td');
+                sizeCell.textContent = v.nome;
+                row.appendChild(sizeCell);
+                
+                // Célula da disponibilidade
+                const stockCell = document.createElement('td');
+                const badge = document.createElement('span');
+                badge.className = v.quantidade > 0 ? 'stock-badge in-stock' : 'stock-badge out-of-stock';
+                badge.textContent = v.quantidade > 0 ? `Disponível (${v.quantidade})` : 'Esgotado';
+                stockCell.appendChild(badge);
+                row.appendChild(stockCell);
+                
+                variationsTbody.appendChild(row);
+            });
+        } else {
+            variationsTbody.innerHTML = '<tr><td colspan="2">Nenhuma variação encontrada para este produto.</td></tr>';
+        }
+        
+        modal.classList.add('active');
+        feather.replace();
     }
 
     function closeModal(modalId) {
