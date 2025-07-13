@@ -1,17 +1,22 @@
+# Define o diretório de publicação como a raiz do projeto.
 [build]
   publish = "."
 
+# Redireciona chamadas da API de produtos para a função correspondente.
 [[redirects]]
   from = "/api/*"
   to = "/.netlify/functions/:splat"
   status = 200
 
+# Redireciona chamadas de imagem para o proxy de imagens.
 [[redirects]]
   from = "/facilzap-images/*"
   to = "/.netlify/functions/image-proxy?url=:splat"
   status = 200
 
-[functions]
+# Configurações para todas as funções.
 [functions."*"]
+  # Aumenta o tempo limite para 30 segundos para evitar timeouts.
   timeout = 30
+  # Define o empacotador de Node.js a ser usado.
   node_bundler = "esbuild"
