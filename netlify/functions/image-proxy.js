@@ -15,6 +15,7 @@ export const handler = async (event) => {
         return { statusCode: 400, body: 'Caminho da imagem não fornecido.' };
     }
 
+    // A URL completa da imagem no servidor da FacilZap
     const imageUrl = `https://api.facilzap.app.br/${imagePath}`;
 
     try {
