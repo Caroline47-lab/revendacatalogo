@@ -294,13 +294,13 @@
         }
     }
     
-    // --- FUNÇÃO AUXILIAR PARA O PROXY DE IMAGENS ---
+    // --- FUNÇÃO AUXILIAR PARA O PROXY DE IMAGENS (CORRIGIDA) ---
     function proxyImageUrl(url) {
         if (!url || typeof url !== 'string') {
             return 'https://placehold.co/300x300/DB1472/FFFFFF?text=Sem+Imagem';
         }
-        // Usa o novo endpoint do proxy de imagem
-        return `/image-proxy?url=${encodeURIComponent(url)}`;
+        // CORREÇÃO: Usa o endpoint correto do proxy de imagens
+        return `/facilzap-images/${encodeURIComponent(url)}`;
     }
 
     // --- LÓGICA DA API E SINCRONIZAÇÃO (CORRIGIDA) ---
@@ -317,7 +317,6 @@
             while (currentPage <= MAX_PAGES) {
                 showToast(`Buscando página ${currentPage}...`, 'info');
                 
-                // CORREÇÃO: Usa os parâmetros 'page' e 'length'
                 const proxyUrl = `/api/facilzap-proxy?page=${currentPage}&length=100`;
                 const response = await fetch(proxyUrl);
                 
@@ -344,14 +343,15 @@
                         if (!estoqueData) return [];
                         if (Array.isArray(estoqueData)) {
                             return estoqueData.map(v => ({
-                                nome: v.nome || 'Sem nome',
+                                // Tenta vários campos possíveis para o nome da variação
+                                nome: v.nome || v.tamanho || v.variacao || 'Sem nome',
                                 quantidade: parseInt(v.estoque || v.quantidade || 0)
                             }));
                         }
                         if (typeof estoqueData === 'string') {
                             try {
                                 return JSON.parse(estoqueData).map(v => ({
-                                    nome: v.nome || 'Sem nome',
+                                    nome: v.nome || v.tamanho || v.variacao || 'Sem nome',
                                     quantidade: parseInt(v.estoque || v.quantidade || 0)
                                 }));
                             } catch { return []; }
