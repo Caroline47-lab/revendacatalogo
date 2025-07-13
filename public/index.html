@@ -286,13 +286,10 @@
         if (!url || typeof url !== 'string') {
             return 'https://placehold.co/300x300/DB1472/FFFFFF?text=Sem+Imagem';
         }
-        // Extrai o caminho da URL completa para passar ao proxy
         try {
+            // Extrai o caminho relativo da URL completa para passar ao proxy
             const path = new URL(url).pathname;
-            // O :splat no netlify.toml captura o caminho depois de /facilzap-images/
-            // Mas o nosso proxy de imagem espera um parâmetro 'url'.
-            // A regra correta no toml é to = "/.netlify/functions/image-proxy?url=:splat"
-            // E aqui passamos o caminho completo para o proxy.
+            // A função do proxy de imagem espera a URL original como um parâmetro
             return `/facilzap-images${path}`;
         } catch(e) {
             console.warn("URL de imagem inválida:", url);
