@@ -78,7 +78,6 @@
         .product-card__status-badge { position: absolute; top: 10px; right: 10px; padding: 4px 12px; border-radius: 50px; font-size: 0.75rem; font-weight: 600; color: var(--branco); text-transform: uppercase; }
         .product-card__status-badge.ativo { background-color: var(--verde-sucesso); }
         .product-card__status-badge.esgotado { background-color: var(--vermelho-perigo); }
-        /* O status desativado foi removido pois a API /produtos provavelmente não o retorna */
         .product-card__multi-photo-badge { position: absolute; bottom: 10px; left: 10px; background-color: rgba(0,0,0,0.6); color: white; padding: 4px 8px; border-radius: 6px; font-size: 0.8rem; display: inline-flex; align-items: center; gap: 5px; }
         .product-card__content { padding: 15px; flex-grow: 1; display: flex; flex-direction: column; }
         .product-card__name { font-size: 1.1rem; font-weight: 600; margin-bottom: 5px; }
@@ -281,6 +280,25 @@
             if (viewId === 'reseller-panel-view') renderResellerProducts();
         }
     }
+    
+    // --- FUNÇÃO AUXILIAR PARA O PROXY DE IMAGENS ---
+    function proxyImageUrl(url) {
+        if (!url || typeof url !== 'string') {
+            return 'https://placehold.co/300x300/DB1472/FFFFFF?text=Sem+Imagem';
+        }
+        // Extrai o caminho da URL completa para passar ao proxy
+        try {
+            const path = new URL(url).pathname;
+            // O :splat no netlify.toml captura o caminho depois de /facilzap-images/
+            // Mas o nosso proxy de imagem espera um parâmetro 'url'.
+            // A regra correta no toml é to = "/.netlify/functions/image-proxy?url=:splat"
+            // E aqui passamos o caminho completo para o proxy.
+            return `/facilzap-images${path}`;
+        } catch(e) {
+            console.warn("URL de imagem inválida:", url);
+            return 'https://placehold.co/300x300/DB1472/FFFFFF?text=URL+Inválida';
+        }
+    }
 
     // --- LÓGICA DA API E SINCRONIZAÇÃO ---
     async function syncFromFacilZap() {
@@ -290,14 +308,13 @@
 
         const allProducts = [];
         let currentPage = 1;
-        const PER_PAGE = 100; // Itens por página, conforme documentação da API
-        const MAX_PAGES = 200; // Limite de segurança para evitar loops infinitos
+        const PER_PAGE = 100;
+        const MAX_PAGES = 200;
 
         try {
             while (currentPage <= MAX_PAGES) {
                 showToast(`Buscando página ${currentPage}... (${allProducts.length} produtos)`, 'info');
                 
-                // Passa os parâmetros 'page' e 'length' para o proxy
                 const response = await fetch(`/api/facilzap-proxy?page=${currentPage}&length=${PER_PAGE}`);
                 
                 if (!response.ok) {
@@ -316,7 +333,6 @@
                 allProducts.push(...productsFromPage);
                 
                 if (productsFromPage.length < PER_PAGE) {
-                    // Se a API retornou menos que o máximo, é a última página.
                     console.log('Última página encontrada.');
                     break;
                 }
@@ -325,21 +341,15 @@
                 await new Promise(resolve => setTimeout(resolve, 200));
             }
 
-            // Mapeamento e processamento dos dados após a busca completa
             allApiProducts = allProducts.map(p => {
                 let photoList = [];
-                // A API retorna o campo 'imagens' como uma string JSON.
-                if (p.imagens) {
+                if (p.imagens && typeof p.imagens === 'string') {
                     try {
-                        const parsedImages = JSON.parse(p.imagens);
-                        if (Array.isArray(parsedImages)) {
-                            photoList = parsedImages;
-                        }
+                        photoList = JSON.parse(p.imagens);
                     } catch (e) {
-                        console.warn(`Não foi possível parsear o JSON de imagens para o produto ${p.id}: ${p.imagens}`);
+                        console.warn(`JSON de imagens inválido para produto ${p.id}`);
                     }
                 }
-                // Adiciona a imagem principal à galeria se ela não estiver lá
                 if (p.imagem && !photoList.includes(p.imagem)) {
                     photoList.unshift(p.imagem);
                 }
@@ -349,16 +359,14 @@
                     nome: p.nome,
                     sku: p.sku || 'N/A',
                     preco_original: p.preco,
-                    imagem: p.imagem, // Campo da imagem principal
-                    fotos: photoList, // Campo da galeria
+                    imagem: p.imagem,
+                    fotos: photoList,
                     estoque_total: p.total_estoque || 0,
                     variacoes: p.estoque || [],
-                    // O status é inferido, já que a API /produtos não o fornece diretamente
-                    status_api: 'ativo' 
+                    status_api: 'ativo'
                 };
             });
             
-            // Ordena a lista completa apenas uma vez
             const statusOrder = { 'ativo': 1, 'esgotado': 2 };
             allApiProducts.sort((a, b) => {
                 const statusA = a.estoque_total > 0 ? 'ativo' : 'esgotado';
@@ -398,7 +406,6 @@
             return;
         }
 
-        // A lista já está ordenada, apenas chamamos para carregar o primeiro lote
         loadMoreProducts();
     }
 
@@ -412,14 +419,13 @@
             const card = document.createElement('div');
             const isPublished = publishedProductIds.includes(p.id);
             
-            // A lógica de status agora é mais simples
             const displayStatus = p.estoque_total > 0 ? 'Ativo' : 'Esgotado';
             const statusClass = p.estoque_total > 0 ? 'ativo' : 'esgotado';
 
             card.className = 'card product-card';
             card.innerHTML = `
                 <div class="product-card__image-container">
-                    <img src="${p.imagem || 'https://via.placeholder.com/300'}" alt="${p.nome}" onerror="this.src='https://via.placeholder.com/300'">
+                    <img src="${proxyImageUrl(p.imagem)}" alt="${p.nome}" loading="lazy" decoding="async" onerror="this.onerror=null;this.src='https://placehold.co/300x300/DB1472/FFFFFF?text=Erro+na+Imagem';">
                     <span class="product-card__status-badge ${statusClass}">${displayStatus}</span>
                     ${p.fotos && p.fotos.length > 1 ? `<span class="product-card__multi-photo-badge"><i data-feather="image"></i> ${p.fotos.length}</span>` : ''}
                 </div>
@@ -465,17 +471,17 @@
         
         const mainImage = document.getElementById('modal-main-image');
         const thumbnailContainer = document.getElementById('modal-thumbnail-container');
-        mainImage.src = product.imagem || 'https://via.placeholder.com/400';
+        mainImage.src = proxyImageUrl(product.imagem);
         thumbnailContainer.innerHTML = '';
         
         if (product.fotos && product.fotos.length > 0) {
             product.fotos.forEach((foto, index) => {
                 const thumb = document.createElement('img');
-                thumb.src = foto;
+                thumb.src = proxyImageUrl(foto);
                 thumb.className = 'thumbnail';
                 if (index === 0) thumb.classList.add('active');
                 thumb.onclick = () => {
-                    mainImage.src = foto;
+                    mainImage.src = proxyImageUrl(foto);
                     document.querySelectorAll('.thumbnail').forEach(t => t.classList.remove('active'));
                     thumb.classList.add('active');
                 };
