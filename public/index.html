@@ -521,53 +521,62 @@
 
     // --- LÓGICA DO MODAL (CORRIGIDA) ---
     function showProductDetails(productId) {
-        const product = allApiProducts.find(p => p.id === productId);
-        if (!product) return;
-
         const modal = document.getElementById('product-details-modal');
         const variationsTbody = document.getElementById('modal-variations-tbody');
         
-        document.getElementById('modal-product-name').textContent = product.nome;
-        document.getElementById('modal-main-image').src = proxyImageUrl(product.imagem);
-        variationsTbody.innerHTML = ''; // Limpa a tabela
-        
-        modal.classList.add('active');
-        
-        if (product.variacoes && product.variacoes.length > 0) {
-            // CORREÇÃO: Ordena as variações numericamente
-            const sortedVariations = [...product.variacoes].sort((a, b) => {
-                const numA = parseInt(a.nome.replace(/\D/g, ''));
-                const numB = parseInt(b.nome.replace(/\D/g, ''));
-                return isNaN(numA) || isNaN(numB) 
-                    ? a.nome.localeCompare(b.nome) 
-                    : numA - numB;
-            });
+        try {
+            const product = allApiProducts.find(p => p.id === productId);
+            if (!product) {
+                console.error("Produto não encontrado na lista local:", productId);
+                showToast("Erro: Produto não encontrado.", "error");
+                return;
+            }
 
-            sortedVariations.forEach(v => {
-                const row = variationsTbody.insertRow();
-                // CORREÇÃO: Mostra a quantidade no texto
-                const availabilityText = v.quantidade > 0 
-                    ? `Disponível (${v.quantidade})` 
-                    : 'Esgotado';
+            document.getElementById('modal-product-name').textContent = product.nome;
+            document.getElementById('modal-main-image').src = proxyImageUrl(product.imagem);
+            variationsTbody.innerHTML = ''; // Limpa a tabela
+            
+            modal.classList.add('active');
+            
+            if (product.variacoes && product.variacoes.length > 0) {
+                // CORREÇÃO: Ordena as variações numericamente
+                const sortedVariations = [...product.variacoes].sort((a, b) => {
+                    const numA = parseInt(String(a.nome).replace(/\D/g, ''));
+                    const numB = parseInt(String(b.nome).replace(/\D/g, ''));
+                    return isNaN(numA) || isNaN(numB) 
+                        ? String(a.nome).localeCompare(String(b.nome)) 
+                        : numA - numB;
+                });
+
+                sortedVariations.forEach(v => {
+                    const row = variationsTbody.insertRow();
+                    const availabilityText = v.quantidade > 0 
+                        ? `Disponível (${v.quantidade})` 
+                        : 'Esgotado';
+                        
+                    const availabilityClass = v.quantidade > 0 
+                        ? 'in-stock' 
+                        : 'out-of-stock';
                     
-                const availabilityClass = v.quantidade > 0 
-                    ? 'in-stock' 
-                    : 'out-of-stock';
-                
-                row.innerHTML = `
-                    <td>${v.nome}</td>
-                    <td>
-                        <span class="stock-badge ${availabilityClass}">
-                            ${availabilityText}
-                        </span>
-                    </td>
-                `;
-            });
-        } else {
-            variationsTbody.innerHTML = `<tr><td colspan="2">Nenhuma variação encontrada para este produto.</td></tr>`;
+                    row.innerHTML = `
+                        <td>${v.nome}</td>
+                        <td>
+                            <span class="stock-badge ${availabilityClass}">
+                                ${availabilityText}
+                            </span>
+                        </td>
+                    `;
+                });
+            } else {
+                variationsTbody.innerHTML = `<tr><td colspan="2">Nenhuma variação encontrada para este produto.</td></tr>`;
+            }
+        } catch (error) {
+            console.error("Erro ao exibir detalhes do produto:", error);
+            variationsTbody.innerHTML = `<tr><td colspan="2" style="color:red;">Ocorreu um erro ao processar os detalhes.</td></tr>`;
+            showToast("Erro ao processar detalhes.", "error");
+        } finally {
+            feather.replace();
         }
-        
-        feather.replace();
     }
 
     function closeModal(modalId) {
