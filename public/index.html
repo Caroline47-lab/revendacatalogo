@@ -20,6 +20,7 @@
             --cinza-texto: #4A4A4A;
             --cinza-borda: #e0e0e0;
             --cinza-fundo: #f7f7f9;
+            --cinza-desativado: #888;
             --verde-sucesso: #28a745;
             --vermelho-perigo: #dc3545;
             --azul-info: #17a2b8;
@@ -77,7 +78,8 @@
         .product-card img { width: 100%; aspect-ratio: 1 / 1; object-fit: cover; display: block; }
         .product-card__status-badge { position: absolute; top: 10px; right: 10px; padding: 4px 12px; border-radius: 50px; font-size: 0.75rem; font-weight: 600; color: var(--branco); text-transform: uppercase; }
         .product-card__status-badge.ativo { background-color: var(--verde-sucesso); }
-        .product-card__status-badge.esgotado { background-color: var(--vermelho-perigo); }
+        .product-card__status-badge.sem_estoque { background-color: var(--vermelho-perigo); }
+        .product-card__status-badge.desativado { background-color: var(--cinza-desativado); }
         .product-card__content { padding: 15px; flex-grow: 1; display: flex; flex-direction: column; }
         .product-card__name { font-size: 1.1rem; font-weight: 600; margin-bottom: 5px; min-height: 48px; }
         .product-card__sku { font-size: 0.8rem; color: #888; margin-bottom: 10px; }
@@ -348,6 +350,21 @@
                     const cleanPath = url.startsWith('/') ? url.substring(1) : url;
                     return `https://api.facilzap.app.br/${cleanPath}`;
                 };
+
+                // **NOVA LÓGICA DE STATUS**
+                // Assume que a API retorna um campo `p.situacao` com 'ativo', 'desativado', etc.
+                // Se o campo não existir, usa a lógica antiga como fallback.
+                let status;
+                const situacaoFromApi = p.situacao ? p.situacao.toLowerCase() : '';
+                
+                if (situacaoFromApi === 'desativado') {
+                    status = 'desativado';
+                } else if ((p.total_estoque || 0) > 0) {
+                    status = 'ativo';
+                } else {
+                    status = 'sem_estoque';
+                }
+
                 return {
                     id: p.id,
                     nome: p.nome,
@@ -355,14 +372,16 @@
                     preco_original: p.preco,
                     imagem: fixUrl(p.imagem),
                     estoque_total: p.total_estoque || 0,
+                    status: status // Novo campo de status unificado
                 };
             });
             
-            const statusOrder = { 'ativo': 1, 'esgotado': 2 };
+            // **NOVA LÓGICA DE ORDENAÇÃO**
+            const statusOrder = { 'ativo': 1, 'sem_estoque': 2, 'desativado': 3 };
             allApiProducts.sort((a, b) => {
-                const statusA = a.estoque_total > 0 ? 'ativo' : 'esgotado';
-                const statusB = b.estoque_total > 0 ? 'ativo' : 'esgotado';
-                return statusOrder[statusA] - statusOrder[statusB];
+                const orderA = statusOrder[a.status] || 99;
+                const orderB = statusOrder[b.status] || 99;
+                return orderA - orderB;
             });
 
             showToast(`Sincronização completa! ${allApiProducts.length} produtos carregados.`, 'success');
@@ -403,11 +422,20 @@
         const paginationControls = document.getElementById('pagination-controls');
         const productsToRender = allApiProducts.slice(displayedProductsCount, displayedProductsCount + PRODUCTS_PER_LOAD);
 
+        const statusMap = {
+            'ativo': { text: 'Ativo', class: 'ativo' },
+            'sem_estoque': { text: 'Sem Estoque', class: 'sem_estoque' },
+            'desativado': { text: 'Desativado', class: 'desativado' }
+        };
+
         productsToRender.forEach(p => {
             const card = document.createElement('div');
             const isPublished = publishedProductIds.includes(p.id);
-            const displayStatus = p.estoque_total > 0 ? 'Ativo' : 'Esgotado';
-            const statusClass = p.estoque_total > 0 ? 'ativo' : 'esgotado';
+            
+            // **USA A NOVA LÓGICA DE STATUS**
+            const productStatus = statusMap[p.status] || { text: 'Desconhecido', class: 'desativado' };
+            const displayStatus = productStatus.text;
+            const statusClass = productStatus.class;
 
             card.className = 'card product-card';
             card.innerHTML = `
@@ -449,15 +477,15 @@
         const grid = document.getElementById('reseller-product-grid');
         grid.innerHTML = '<p style="text-align:center; grid-column: 1 / -1;">Carregando produtos da vitrine...</p>';
 
-        const productsToDisplay = allApiProducts.filter(p => publishedProductIds.includes(p.id) && p.estoque_total > 0);
+        // **FILTRA APENAS PRODUTOS COM STATUS 'ATIVO'**
+        const productsToDisplay = allApiProducts.filter(p => publishedProductIds.includes(p.id) && p.status === 'ativo');
 
         if (productsToDisplay.length === 0) {
-            grid.innerHTML = `<p style="text-align:center; grid-column: 1 / -1;">Nenhum produto foi liberado para divulgação no momento.</p>`;
+            grid.innerHTML = `<p style="text-align:center; grid-column: 1 / -1;">Nenhum produto ativo foi liberado para divulgação no momento.</p>`;
             return;
         }
 
         try {
-            // Busca os detalhes de todos os produtos publicados em paralelo para otimizar o carregamento.
             const detailPromises = productsToDisplay.map(p => fetch(`/api/facilzap-proxy?id=${p.id}`));
             const detailResponses = await Promise.all(detailPromises);
 
@@ -466,18 +494,15 @@
             }
             
             const productDetails = await Promise.all(detailResponses.map(res => res.json()));
-            grid.innerHTML = ''; // Limpa a mensagem de "carregando".
+            grid.innerHTML = '';
 
             productsToDisplay.forEach((p, index) => {
                 const details = productDetails[index].data || productDetails[index];
                 const variations = details.estoque || [];
                 
-                // **LÓGICA PRINCIPAL: Filtra para pegar APENAS as variações com estoque.**
                 const availableVariations = variations.filter(v => (parseInt(v.estoque, 10) || 0) > 0);
 
-                // **Só renderiza o card do produto se houver pelo menos uma variação disponível.**
                 if (availableVariations.length > 0) {
-                    // Cria as tags HTML apenas para as variações disponíveis.
                     const variationsHtml = availableVariations
                         .map(v => `<span class="variation-tag">${v.grade_item_nome || v.nome || 'N/A'}</span>`)
                         .join('');
@@ -507,7 +532,6 @@
                 }
             });
             
-            // Se, após o filtro, nenhum produto tiver variações em estoque, exibe uma mensagem.
             if (grid.innerHTML === '') {
                  grid.innerHTML = `<p style="text-align:center; grid-column: 1 / -1;">Todos os produtos liberados estão sem variações em estoque no momento.</p>`;
             }
@@ -554,7 +578,6 @@
                 variations.forEach(v => {
                     const variationName = v.grade_item_nome || v.nome || v.name || 'N/A';
                     const variationSku = v.sku || 'N/A';
-                    // **LÓGICA PRINCIPAL: Verifica apenas se o estoque é maior que zero, sem mostrar a quantidade.**
                     const stockAmount = parseInt(v.estoque, 10) || 0;
                     const availabilityText = stockAmount > 0 ? 'Disponível' : 'Indisponível';
                     const availabilityClass = stockAmount > 0 ? 'in-stock' : 'out-of-stock';
@@ -596,7 +619,6 @@
         localStorage.setItem('publishedProductIds', JSON.stringify(publishedProductIds));
         showToast('Lista para revendedoras atualizada!', 'success');
         
-        // Atualiza a visualização da revendedora caso esteja visível
         if (document.getElementById('reseller-panel-view').classList.contains('active')) {
             renderResellerProducts();
         }
