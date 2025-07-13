@@ -499,7 +499,7 @@
             const row = tbody.insertRow();
             const isPublished = publishedProductIds.includes(p.id);
             row.innerHTML = `
-                <td><img src="${proxyImageUrl(p.imagem)}" alt="${p.nome}" class="product-image" onerror="this.onerror=null; this.src='https://placehold.co/40x40/DB1472/FFFFFF?text=X';"></td>
+                <td><img src="${proxyImageUrl(p.imagem)}" alt="${p.nome}" class="product-image" onerror="this.src='https://placehold.co/40x40/DB1472/FFFFFF?text=X'"></td>
                 <td>${p.nome}</td>
                 <td>${p.sku}</td>
                 <td>R$ ${p.preco_original.toFixed(2)}</td>
@@ -601,7 +601,7 @@
 
 ### 2. O Ficheiro de Configuração (`netlify.toml`) Corrigido
 
-Este é o segundo ficheiro crucial. A regra de redirecionamento para as imagens foi simplificada para evitar erros.
+Este é o segundo ficheiro crucial. A regra de redirecionamento para as imagens foi simplificada para corresponder à forma como o `index.html` agora chama o proxy.
 
 
 ```toml
@@ -620,7 +620,7 @@ Este é o segundo ficheiro crucial. A regra de redirecionamento para as imagens 
   force = true
 
 # Redirecionamento para o proxy de IMAGENS (VERSÃO SIMPLIFICADA)
-# Esta regra agora aponta diretamente para a função, passando os parâmetros.
+# Esta regra agora aponta diretamente para a função, esperando o parâmetro 'url'.
 [[redirects]]
   from = "/facilzap-images"
   to = "/.netlify/functions/image-proxy"
