@@ -87,6 +87,23 @@
         .selection-control label { display: flex; align-items: center; gap: 10px; cursor: pointer; font-weight: 600; }
         .selection-control input[type="checkbox"] { width: 20px; height: 20px; accent-color: var(--rosa-pink); }
         
+        .product-card__variations {
+            margin-top: 10px;
+            margin-bottom: 15px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+        }
+        .variation-tag {
+            background-color: var(--cinza-fundo);
+            color: var(--cinza-texto);
+            padding: 4px 10px;
+            border-radius: 50px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            border: 1px solid var(--cinza-borda);
+        }
+
         /* --- Modal e Toast --- */
         .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); display: none; justify-content: center; align-items: flex-start; z-index: 2000; padding: 40px 15px; overflow-y: auto; }
         .modal-overlay.active { display: flex; }
@@ -421,42 +438,71 @@
         feather.replace();
     }
     
-    function renderResellerProducts() {
+    async function renderResellerProducts() {
         const grid = document.getElementById('reseller-product-grid');
-        grid.innerHTML = ''; // Limpa o grid para renderização
+        grid.innerHTML = '<p style="text-align:center; grid-column: 1 / -1;">Carregando produtos da vitrine...</p>';
 
-        // Filtra os produtos que foram marcados como "publicados" pelo admin
         const productsToDisplay = allApiProducts.filter(p => publishedProductIds.includes(p.id) && p.estoque_total > 0);
 
         if (productsToDisplay.length === 0) {
-            grid.innerHTML = `<p style="text-align:center; grid-column: 1 / -1;">Nenhum produto foi liberado para divulgação no momento. Fale com a empresa.</p>`;
+            grid.innerHTML = `<p style="text-align:center; grid-column: 1 / -1;">Nenhum produto foi liberado para divulgação no momento.</p>`;
             return;
         }
 
-        productsToDisplay.forEach(p => {
-            // Futuramente, aqui entrará a lógica para preços customizados.
-            const price = customPrices[p.id] || p.preco_original;
+        try {
+            const detailPromises = productsToDisplay.map(p => fetch(`/api/facilzap-proxy?id=${p.id}`));
+            const detailResponses = await Promise.all(detailPromises);
 
-            const card = document.createElement('div');
-            card.className = 'card product-card';
-            card.innerHTML = `
-                <div class="product-card__image-container">
-                    <img src="${proxyImageUrl(p.imagem)}" alt="${p.nome}" loading="lazy" decoding="async" onerror="this.onerror=null;this.src='https://placehold.co/300x300/DB1472/FFFFFF?text=Erro+na+Imagem';">
-                </div>
-                <div class="product-card__content">
-                    <h3 class="product-card__name">${p.nome}</h3>
-                    <p class="product-card__price">R$ ${parseFloat(price).toFixed(2)}</p>
-                    <div class="product-card__actions">
-                        <button class="btn btn-primary" onclick="alert('Funcionalidade futura: Compartilhar produto.')"><i data-feather="share-2"></i> Compartilhar</button>
-                    </div>
-                </div>
-            `;
-            grid.appendChild(card);
-        });
+            for (const response of detailResponses) {
+                if (!response.ok) throw new Error(`Falha ao buscar detalhes de um produto (${response.status})`);
+            }
+            
+            const productDetails = await Promise.all(detailResponses.map(res => res.json()));
+            grid.innerHTML = '';
 
-        feather.replace();
+            productsToDisplay.forEach((p, index) => {
+                const details = productDetails[index].data || productDetails[index];
+                const variations = details.estoque || [];
+                const availableVariations = variations.filter(v => (parseInt(v.estoque, 10) || 0) > 0);
+
+                if (availableVariations.length > 0) {
+                    const variationsHtml = availableVariations
+                        .map(v => `<span class="variation-tag">${v.grade_item_nome || v.nome || 'N/A'}</span>`)
+                        .join('');
+                    
+                    const price = customPrices[p.id] || p.preco_original;
+                    const card = document.createElement('div');
+                    card.className = 'card product-card';
+                    card.innerHTML = `
+                        <div class="product-card__image-container">
+                            <img src="${proxyImageUrl(p.imagem)}" alt="${p.nome}" loading="lazy" decoding="async" onerror="this.onerror=null;this.src='https://placehold.co/300x300/DB1472/FFFFFF?text=Erro+na+Imagem';">
+                        </div>
+                        <div class="product-card__content">
+                            <h3 class="product-card__name">${p.nome}</h3>
+                            <p class="product-card__price">R$ ${parseFloat(price).toFixed(2)}</p>
+                            <div class="product-card__variations">
+                                ${variationsHtml}
+                            </div>
+                            <div class="product-card__actions">
+                                <button class="btn btn-primary" onclick="alert('Funcionalidade futura: Compartilhar produto.')"><i data-feather="share-2"></i> Compartilhar</button>
+                            </div>
+                        </div>
+                    `;
+                    grid.appendChild(card);
+                }
+            });
+            
+            if (grid.innerHTML === '') {
+                 grid.innerHTML = `<p style="text-align:center; grid-column: 1 / -1;">Todos os produtos liberados estão sem variações em estoque no momento.</p>`;
+            }
+
+        } catch (error) {
+            console.error("Erro ao renderizar produtos da revendedora:", error);
+            grid.innerHTML = `<p style="text-align:center; color: red; grid-column: 1 / -1;">Ocorreu um erro ao carregar a vitrine. Tente novamente mais tarde.</p>`;
+        } finally {
+            feather.replace();
+        }
     }
-
 
     // --- LÓGICA DO MODAL ---
     async function showProductDetails(productId) {
@@ -483,9 +529,6 @@
             const detailedData = await response.json();
             const details = detailedData.data || detailedData;
             
-            // Log para depuração no console do navegador
-            console.log("Detalhes do produto recebidos:", JSON.stringify(details, null, 2));
-
             variationsTbody.innerHTML = '';
             const variations = details.estoque || [];
             if (variations.length > 0) {
@@ -493,14 +536,9 @@
                 variationHeader.textContent = `Variação (${variationTypeName})`;
 
                 variations.forEach(v => {
-                    // Acesso mais robusto às propriedades da variação
                     const variationName = v.grade_item_nome || v.nome || v.name || 'N/A';
                     const variationSku = v.sku || 'N/A';
-                    
-                    // Lógica de estoque mais robusta
-                    const stockValue = v.estoque !== undefined ? v.estoque : (v.stock !== undefined ? v.stock : 0);
-                    const stockAmount = parseInt(stockValue, 10) || 0; // Garante que é um número
-                    
+                    const stockAmount = parseInt(v.estoque, 10) || 0;
                     const availabilityText = stockAmount > 0 ? 'Disponível' : 'Indisponível';
                     const availabilityClass = stockAmount > 0 ? 'in-stock' : 'out-of-stock';
                     
@@ -510,7 +548,7 @@
                         <td>${variationSku}</td>
                         <td>
                             <span class="stock-badge ${availabilityClass}">
-                                ${availabilityText} (${stockAmount})
+                                ${availabilityText}
                             </span>
                         </td>
                     `;
