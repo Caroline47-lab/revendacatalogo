@@ -1,4 +1,4 @@
-# Este comando diz à Netlify onde está o seu site principal 
+# Este comando diz à Netlify onde está o seu site principal
 # e onde encontrar as funções especiais.
 [build]
   publish = "public"
@@ -14,4 +14,4 @@
 # Bloco de configuração para as funções (PARTE ADICIONADA)
 [functions]
   # Aumenta o tempo limite padrão de 10s para 30s
-  timeout = 30 
+  timeout = 30
