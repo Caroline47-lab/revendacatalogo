@@ -1,120 +1,59 @@
+// Usar 'node-fetch' pode ser necessário dependendo da versão do Node na Netlify.
+const fetch = require('node-fetch');
+
 exports.handler = async (event) => {
-    // Validação básica do parâmetro de URL
-    const encodedUrl = event.queryStringParameters.url;
-    if (!encodedUrl) {
-        return {
-            statusCode: 400,
-            body: JSON.stringify({ error: "Parâmetro 'url' não fornecido" })
-        };
+    // A URL da imagem é recebida como um parâmetro da requisição.
+    const url = event.queryStringParameters.url;
+    
+    if (!url) {
+        // Se nenhuma URL for recebida, retorna um erro.
+        return { statusCode: 400, body: JSON.stringify({ error: "URL não fornecida" }) };
     }
 
-    let imageUrl;
     try {
-        // Decodificação segura da URL
-        imageUrl = decodeURIComponent(encodedUrl);
+        // Apenas decodifica a URL para o formato original.
+        const imageUrl = decodeURIComponent(url);
         
-        // Validação da URL usando o construtor de URL
-        new URL(imageUrl);
-    } catch (error) {
-        console.error("URL inválida:", { encodedUrl, error: error.message });
-        return {
-            statusCode: 400,
-            body: JSON.stringify({ error: "URL inválida ou malformada" })
-        };
-    }
-
-    try {
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 10000); // Timeout de 10s
+        console.log("Proxy de Imagem buscando a URL:", imageUrl);
 
         const response = await fetch(imageUrl, {
-            headers: {
+            headers: { 
                 'User-Agent': 'Mozilla/5.0',
                 'Referer': 'https://facilzap.app.br/'
-            },
-            signal: controller.signal
+            }
         });
-        clearTimeout(timeoutId);
 
-        // Verificação de status HTTP
         if (!response.ok) {
-            console.error("Erro na origem:", {
+            console.error(`[ERROR] Falha ao buscar imagem no proxy:`, {
                 status: response.status,
-                url: imageUrl,
-                headers: Object.fromEntries(response.headers.entries())
+                url: imageUrl
             });
             return {
-                statusCode: response.status > 400 ? response.status : 502,
-                body: JSON.stringify({ 
-                    error: `Falha no servidor de origem: ${response.statusText}` 
-                })
+                statusCode: response.status,
+                body: JSON.stringify({ error: `Erro ${response.status}` })
             };
         }
 
-        // Verificação do tipo de conteúdo
-        const contentType = response.headers.get('content-type') || '';
-        if (!contentType.startsWith('image/')) {
-            console.error("Tipo de conteúdo inválido:", contentType);
-            return {
-                statusCode: 415,
-                body: JSON.stringify({ error: "O conteúdo solicitado não é uma imagem" })
-            };
-        }
-
-        // Limitação de tamanho (4MB)
-        const maxSize = 4 * 1024 * 1024;
-        const contentLength = response.headers.get('content-length');
-        if (contentLength && contentLength > maxSize) {
-            console.error("Imagem muito grande:", contentLength);
-            return {
-                statusCode: 413,
-                body: JSON.stringify({ error: "Arquivo excede o limite de 4MB" })
-            };
-        }
-
-        const buffer = await response.arrayBuffer();
+        const imageBuffer = await response.arrayBuffer();
         
-        // Verificação pós-download do tamanho
-        if (buffer.byteLength > maxSize) {
-            console.error("Tamanho real excedido:", buffer.byteLength);
-            return {
-                statusCode: 413,
-                body: JSON.stringify({ error: "Arquivo excede o limite de 4MB" })
-            };
-        }
-
         return {
             statusCode: 200,
             headers: {
-                'Content-Type': contentType,
-                'Cache-Control': 'public, max-age=86400, stale-while-revalidate=3600'
+                'Content-Type': response.headers.get('content-type'),
+                'Cache-Control': 'public, max-age=86400'
             },
-            body: Buffer.from(buffer).toString('base64'),
+            body: Buffer.from(imageBuffer).toString('base64'),
             isBase64Encoded: true
         };
-
-    } catch (error) {
-        // Tratamento específico para timeout
-        if (error.name === 'AbortError') {
-            console.error("Timeout na requisição:", imageUrl);
-            return {
-                statusCode: 504,
-                body: JSON.stringify({ error: "Timeout ao acessar a imagem" })
-            };
-        }
-
-        console.error("Erro crítico:", {
-            url: imageUrl,
-            error: error.message,
-            stack: error.stack
-        });
         
+    } catch (error) {
+        console.error("[ERROR] Erro fatal no proxy de imagem:", {
+            errorMessage: error.message,
+            requestedUrl: url
+        });
         return {
             statusCode: 500,
-            body: JSON.stringify({ 
-                error: "Erro interno do servidor",
-                details: error.message
-            })
+            body: JSON.stringify({ error: error.message })
         };
     }
 };
