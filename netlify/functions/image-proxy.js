@@ -1,5 +1,4 @@
-// A linha 'import fetch from 'node-fetch';' foi removida.
-// O Node.js 18+ (definido no package.json) já possui 'fetch' de forma nativa.
+// O Node.js 18+ já possui 'fetch' de forma nativa.
 
 /**
  * Esta função atua como um proxy para as imagens da FacilZap.
@@ -7,6 +6,7 @@
  * e a retorna para o navegador.
  */
 export const handler = async (event) => {
+    // Extrai o caminho da imagem do parâmetro 'url'
     const imagePath = event.queryStringParameters.url;
     const token = process.env.FACILZAP_TOKEN;
 
@@ -14,7 +14,8 @@ export const handler = async (event) => {
         return { statusCode: 400, body: 'Caminho da imagem não fornecido.' };
     }
 
-    const imageUrl = `https://api.facilzap.app.br/${imagePath}`;
+    // Monta a URL completa para buscar a imagem no servidor de origem
+    const imageUrl = `https://api.facilzap.app.br/${decodeURIComponent(imagePath)}`;
 
     try {
         const response = await fetch(imageUrl, {
@@ -22,6 +23,7 @@ export const handler = async (event) => {
         });
 
         if (!response.ok) {
+            console.error(`Falha ao buscar imagem: ${imageUrl}, Status: ${response.status}`);
             return { statusCode: response.status, body: response.statusText };
         }
 
@@ -31,7 +33,7 @@ export const handler = async (event) => {
             statusCode: 200,
             headers: {
                 'Content-Type': response.headers.get('content-type'),
-                'Cache-Control': 'public, max-age=86400'
+                'Cache-Control': 'public, max-age=86400' // Cache de 1 dia
             },
             body: Buffer.from(imageBuffer).toString('base64'),
             isBase64Encoded: true
