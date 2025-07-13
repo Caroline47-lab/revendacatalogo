@@ -4,8 +4,5 @@
   "description": "Proxy para a API FacilZap",
   "engines": {
     "node": "18.x"
-  },
-  "dependencies": {
-    "node-fetch": "^3.3.0"
   }
 }
