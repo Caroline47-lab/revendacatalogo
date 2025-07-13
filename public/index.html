@@ -299,7 +299,8 @@
         if (!url || typeof url !== 'string') {
             return 'https://placehold.co/300x300/DB1472/FFFFFF?text=Sem+Imagem';
         }
-        return `/.netlify/functions/image-proxy?url=${encodeURIComponent(url)}`;
+        // Usa o novo endpoint do proxy de imagem
+        return `/image-proxy?url=${encodeURIComponent(url)}`;
     }
 
     // --- LÓGICA DA API E SINCRONIZAÇÃO (CORRIGIDA) ---
@@ -320,8 +321,11 @@
                 const proxyUrl = `/api/facilzap-proxy?page=${currentPage}&length=100`;
                 const response = await fetch(proxyUrl);
                 
+                if (response.status === 401) {
+                    throw new Error("Token de autenticação inválido. Verifique a configuração na Netlify.");
+                }
                 if (!response.ok) {
-                    const errorData = await response.json();
+                    const errorData = await response.json().catch(() => ({}));
                     throw new Error(errorData.error || `Erro na API: ${response.statusText}`);
                 }
 
@@ -335,13 +339,28 @@
 
                 // CORREÇÃO: Processa os dados recebidos para o formato que o app precisa
                 const processedProducts = productsFromPage.map(p => {
-                    const estoqueTotalNumerico = parseInt(p.estoque_total) || 0;
-                    
-                    // O array de variações agora é criado aqui, mas será usado principalmente no modal
-                    const variacoes = p.estoque ? p.estoque.map(v => ({
-                        nome: v.nome,
-                        quantidade: parseInt(v.estoque) || 0
-                    })) : [];
+                    // Função robusta para tratar o campo de estoque
+                    const parseEstoque = (estoqueData) => {
+                        if (!estoqueData) return [];
+                        if (Array.isArray(estoqueData)) {
+                            return estoqueData.map(v => ({
+                                nome: v.nome || 'Sem nome',
+                                quantidade: parseInt(v.estoque || v.quantidade || 0)
+                            }));
+                        }
+                        if (typeof estoqueData === 'string') {
+                            try {
+                                return JSON.parse(estoqueData).map(v => ({
+                                    nome: v.nome || 'Sem nome',
+                                    quantidade: parseInt(v.estoque || v.quantidade || 0)
+                                }));
+                            } catch { return []; }
+                        }
+                        return [];
+                    };
+
+                    const variacoes = parseEstoque(p.estoque);
+                    const estoqueTotal = variacoes.reduce((total, v) => total + v.quantidade, 0);
 
                     return {
                         id: p.id,
@@ -349,9 +368,9 @@
                         sku: p.sku || 'N/A',
                         preco_original: p.preco,
                         imagem: p.imagem || null,
-                        estoque_total: estoqueTotalNumerico,
+                        estoque_total: estoqueTotal,
                         variacoes: variacoes, // Armazena as variações para uso posterior
-                        status: estoqueTotalNumerico > 0 ? 'ativo' : 'sem_estoque'
+                        status: estoqueTotal > 0 ? 'ativo' : 'sem_estoque'
                     };
                 });
                 
@@ -515,10 +534,25 @@
         modal.classList.add('active');
         
         if (product.variacoes && product.variacoes.length > 0) {
-            product.variacoes.forEach(v => {
+            // CORREÇÃO: Ordena as variações numericamente
+            const sortedVariations = [...product.variacoes].sort((a, b) => {
+                const numA = parseInt(a.nome.replace(/\D/g, ''));
+                const numB = parseInt(b.nome.replace(/\D/g, ''));
+                return isNaN(numA) || isNaN(numB) 
+                    ? a.nome.localeCompare(b.nome) 
+                    : numA - numB;
+            });
+
+            sortedVariations.forEach(v => {
                 const row = variationsTbody.insertRow();
-                const availabilityText = v.quantidade > 0 ? 'Disponível' : 'Esgotado';
-                const availabilityClass = v.quantidade > 0 ? 'in-stock' : 'out-of-stock';
+                // CORREÇÃO: Mostra a quantidade no texto
+                const availabilityText = v.quantidade > 0 
+                    ? `Disponível (${v.quantidade})` 
+                    : 'Esgotado';
+                    
+                const availabilityClass = v.quantidade > 0 
+                    ? 'in-stock' 
+                    : 'out-of-stock';
                 
                 row.innerHTML = `
                     <td>${v.nome}</td>
