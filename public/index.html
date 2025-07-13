@@ -331,17 +331,35 @@
                 await new Promise(resolve => setTimeout(resolve, 200));
             }
 
+            // *** CORREÇÃO APLICADA AQUI ***
             allApiProducts = allProducts.map(p => {
+                // Função para garantir que a URL da imagem seja completa
+                const fixUrl = (url) => {
+                    if (!url || typeof url !== 'string') return null;
+                    // Se a URL já for completa, retorna ela mesma
+                    if (url.startsWith('http')) return url;
+                    // Se for um caminho relativo, adiciona a base da API
+                    const cleanPath = url.startsWith('/') ? url.substring(1) : url;
+                    return `https://api.facilzap.app.br/${cleanPath}`;
+                };
+
                 let photoList = [];
                 if (p.imagens && typeof p.imagens === 'string') {
                     try {
-                        photoList = JSON.parse(p.imagens);
+                        const parsedImages = JSON.parse(p.imagens);
+                        if (Array.isArray(parsedImages)) {
+                            // Corrige cada URL na lista de fotos
+                            photoList = parsedImages.map(fixUrl).filter(Boolean);
+                        }
                     } catch (e) {
                         console.warn(`JSON de imagens inválido para produto ${p.id}`);
                     }
                 }
-                if (p.imagem && !photoList.includes(p.imagem)) {
-                    photoList.unshift(p.imagem);
+                
+                const mainImageUrl = fixUrl(p.imagem);
+
+                if (mainImageUrl && !photoList.includes(mainImageUrl)) {
+                    photoList.unshift(mainImageUrl);
                 }
 
                 return {
@@ -349,8 +367,8 @@
                     nome: p.nome,
                     sku: p.sku || 'N/A',
                     preco_original: p.preco,
-                    imagem: p.imagem,
-                    fotos: photoList,
+                    imagem: mainImageUrl, // Usa a URL corrigida
+                    fotos: photoList, // Usa a lista de URLs corrigidas
                     estoque_total: p.total_estoque || 0,
                     variacoes: p.estoque || [],
                     status_api: 'ativo'
