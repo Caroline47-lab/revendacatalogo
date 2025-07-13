@@ -192,6 +192,7 @@
                         <thead>
                             <tr>
                                 <th id="modal-variation-header">Variação</th>
+                                <th>SKU</th>
                                 <th>Disponibilidade</th>
                             </tr>
                         </thead>
@@ -449,7 +450,7 @@
         document.getElementById('modal-product-name').textContent = product.nome;
         document.getElementById('modal-product-sku').textContent = `SKU Pai: ${product.sku}`;
         document.getElementById('modal-main-image').src = proxyImageUrl(product.imagem);
-        variationsTbody.innerHTML = '<tr><td colspan="2">Carregando detalhes...</td></tr>';
+        variationsTbody.innerHTML = '<tr><td colspan="3">Carregando detalhes...</td></tr>';
         variationHeader.textContent = 'Variação';
         
         modal.classList.add('active');
@@ -471,6 +472,7 @@
 
                 variations.forEach(v => {
                     const variationName = v.grade_item_nome || v.nome || 'N/A';
+                    const variationSku = v.sku || 'N/A';
                     const stockAmount = v.estoque !== undefined ? v.estoque : 0;
                     const availabilityText = parseInt(stockAmount) > 0 ? 'Disponível' : 'Indisponível';
                     const availabilityClass = parseInt(stockAmount) > 0 ? 'in-stock' : 'out-of-stock';
@@ -478,6 +480,7 @@
                     const row = variationsTbody.insertRow();
                     row.innerHTML = `
                         <td>${variationName}</td>
+                        <td>${variationSku}</td>
                         <td>
                             <span class="stock-badge ${availabilityClass}">
                                 ${availabilityText}
@@ -487,12 +490,12 @@
                 });
             } else {
                 const row = variationsTbody.insertRow();
-                row.innerHTML = `<td colspan="2">Nenhuma variação de estoque encontrada.</td>`;
+                row.innerHTML = `<td colspan="3">Nenhuma variação de estoque encontrada.</td>`;
             }
 
         } catch (error) {
             console.error("Erro ao buscar detalhes do produto:", error);
-            variationsTbody.innerHTML = `<tr><td colspan="2" style="color: red;">${error.message}</td></tr>`;
+            variationsTbody.innerHTML = `<tr><td colspan="3" style="color: red;">${error.message}</td></tr>`;
         }
     }
 
