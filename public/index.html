@@ -286,15 +286,8 @@
         if (!url || typeof url !== 'string') {
             return 'https://placehold.co/300x300/DB1472/FFFFFF?text=Sem+Imagem';
         }
-        try {
-            // Extrai o caminho relativo da URL completa para passar ao proxy
-            const path = new URL(url).pathname;
-            // A função do proxy de imagem espera a URL original como um parâmetro
-            return `/facilzap-images${path}`;
-        } catch(e) {
-            console.warn("URL de imagem inválida:", url);
-            return 'https://placehold.co/300x300/DB1472/FFFFFF?text=URL+Inválida';
-        }
+        // Chama a função do proxy de imagem diretamente, passando a URL completa e codificada
+        return `/.netlify/functions/image-proxy?url=${encodeURIComponent(url)}`;
     }
 
     // --- LÓGICA DA API E SINCRONIZAÇÃO ---
