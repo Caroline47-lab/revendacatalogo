@@ -288,25 +288,20 @@
         const syncButton = document.querySelector('button[onclick="syncFromFacilZap()"]');
         if (syncButton) syncButton.disabled = true;
 
-        allApiProducts = [];
+        const allProducts = [];
         let currentPage = 1;
-        const MAX_PAGES = 200; // Limite de segurança para evitar loops infinitos
-        let totalFetched = 0;
+        const MAX_PAGES = 200; // Limite de segurança para evitar loops infinitos acidentais
 
         try {
             while (currentPage <= MAX_PAGES) {
-                showToast(`Buscando página ${currentPage}... (${totalFetched} produtos)`, 'info');
+                showToast(`Buscando página ${currentPage}... (${allProducts.length} produtos)`, 'info');
                 
                 const response = await fetch(`/api/facilzap-proxy?page=${currentPage}`);
                 
                 if (!response.ok) {
-                    const errorText = await response.text();
-                    // Se o erro for 404 (Not Found), é um sinal normal de que as páginas acabaram.
-                    if (response.status === 404) {
-                        console.log(`Página ${currentPage} não encontrada, finalizando a busca.`);
-                        break;
-                    }
-                    throw new Error(`Erro ${response.status}: ${errorText}`);
+                    // Se a API retornar um erro (ex: 404 Not Found), consideramos que as páginas acabaram.
+                    console.log(`Parando na página ${currentPage}, status: ${response.status}.`);
+                    break;
                 }
 
                 const data = await response.json();
@@ -318,41 +313,40 @@
                     break; 
                 }
                 
-                const getStatus = (status) => {
-                    if (typeof status === 'boolean') return status ? 'ativo' : 'inativo';
-                    if (typeof status !== 'string') return 'desativado';
-                    return status.toLowerCase().includes('ativ') ? 'ativo' : 'inativo';
-                };
-
-                const processedProducts = productsFromPage.map(p => {
-                    const getPhotoUrls = (photos) => {
-                        if (!photos || photos.length === 0) return [];
-                        if (typeof photos[0] === 'string') return photos;
-                        return photos.map(photoObj => photoObj.url);
-                    };
-                    const photoList = getPhotoUrls(p.fotos);
-                    return {
-                        id: p.id,
-                        nome: p.nome,
-                        sku: p.sku || 'N/A',
-                        preco_original: p.preco,
-                        imagem: photoList.length > 0 ? photoList[0] : null,
-                        fotos: photoList,
-                        estoque_total: p.total_estoque || 0,
-                        variacoes: p.estoque || [],
-                        status_api: getStatus(p.status_ativo)
-                    };
-                });
-                
-                allApiProducts.push(...processedProducts);
-                totalFetched = allApiProducts.length;
-                
+                allProducts.push(...productsFromPage);
                 currentPage++;
                 
-                // Pequeno delay para não sobrecarregar a UI e a API
-                await new Promise(resolve => setTimeout(resolve, 250));
+                // Pequeno delay para não sobrecarregar a API com requisições muito rápidas
+                await new Promise(resolve => setTimeout(resolve, 200));
             }
 
+            // Mapeamento e processamento dos dados após a busca completa
+            const getStatus = (status) => {
+                if (typeof status === 'boolean') return status ? 'ativo' : 'inativo';
+                if (typeof status !== 'string') return 'desativado';
+                return status.toLowerCase().includes('ativ') ? 'ativo' : 'inativo';
+            };
+
+            allApiProducts = allProducts.map(p => {
+                const getPhotoUrls = (photos) => {
+                    if (!photos || photos.length === 0) return [];
+                    if (typeof photos[0] === 'string') return photos;
+                    return photos.map(photoObj => photoObj.url);
+                };
+                const photoList = getPhotoUrls(p.fotos);
+                return {
+                    id: p.id,
+                    nome: p.nome,
+                    sku: p.sku || 'N/A',
+                    preco_original: p.preco,
+                    imagem: photoList.length > 0 ? photoList[0] : null,
+                    fotos: photoList,
+                    estoque_total: p.total_estoque || 0,
+                    variacoes: p.estoque || [],
+                    status_api: getStatus(p.status_ativo)
+                };
+            });
+            
             // Ordena a lista completa apenas uma vez
             const statusOrder = { 'ativo': 1, 'esgotado': 2, 'desativado': 3 };
             allApiProducts.sort((a, b) => {
@@ -361,7 +355,7 @@
                 return statusOrder[statusA] - statusOrder[statusB];
             });
 
-            showToast(`Sincronização completa! ${totalFetched} produtos carregados.`, 'success');
+            showToast(`Sincronização completa! ${allApiProducts.length} produtos carregados.`, 'success');
             localStorage.setItem('allApiProducts', JSON.stringify(allApiProducts));
             renderAdminProducts();
 
