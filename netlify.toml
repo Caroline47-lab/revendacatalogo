@@ -1,26 +1,24 @@
-# Define o diretório de publicação do site e a pasta das funções.
+# Build settings: define publish directory and functions folder.
 [build]
   publish = "public"
   functions = "netlify/functions"
 
-# Redireciona as chamadas da API de produtos para a função correspondente.
+# Redirect rule for the product API proxy.
 [[redirects]]
   from = "/api/*"
   to = "/.netlify/functions/:splat"
   status = 200
   force = true
 
-# Redireciona as chamadas de imagem para o proxy de imagens,
-# passando o caminho da imagem como um parâmetro 'url'.
+# Redirect rule for the image proxy.
 [[redirects]]
   from = "/facilzap-images/*"
   to = "/.netlify/functions/image-proxy?url=:splat"
   status = 200
   force = true
 
-# Configurações para as funções da Netlify.
+# Netlify Functions settings.
 [functions]
   node_bundler = "esbuild"
-  # Aumenta o tempo limite padrão de 10s para 30s para evitar que a 
-  # sincronização de muitos produtos seja interrompida.
+  # Increase the default timeout to 30s to prevent sync interruption.
   timeout = 30
