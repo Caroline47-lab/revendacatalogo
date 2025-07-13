@@ -79,7 +79,6 @@
         .product-card__status-badge { position: absolute; top: 10px; right: 10px; padding: 4px 12px; border-radius: 50px; font-size: 0.75rem; font-weight: 600; color: var(--branco); text-transform: uppercase; }
         .product-card__status-badge.ativo { background-color: var(--verde-sucesso); }
         .product-card__status-badge.sem_estoque { background-color: var(--vermelho-perigo); }
-        .product-card__status-badge.desativado { background-color: var(--cinza-desativado); }
         .product-card__content { padding: 15px; flex-grow: 1; display: flex; flex-direction: column; }
         .product-card__name { font-size: 1.1rem; font-weight: 600; margin-bottom: 5px; min-height: 48px; }
         .product-card__sku { font-size: 0.8rem; color: #888; margin-bottom: 10px; }
@@ -124,22 +123,12 @@
         .modal-body { display: grid; grid-template-columns: 1fr; gap: 30px; }
         @media(min-width: 768px) { .modal-body { grid-template-columns: 1fr 1fr; } }
         .modal-gallery .main-image { width: 100%; aspect-ratio: 1 / 1; object-fit: cover; border-radius: var(--borda-suave); margin-bottom: 10px; }
-        
-        /* Estilos para a nova lista de variações no modal */
-        .modal-variations-list {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 10px;
-            padding-top: 15px;
-        }
-        .modal-variation-tag {
-            background-color: var(--verde-sucesso);
-            color: var(--branco);
-            padding: 8px 16px;
-            border-radius: 50px;
-            font-size: 1rem;
-            font-weight: 600;
-        }
+        .modal-details .variations-table { width: 100%; border-collapse: collapse; margin-top: 15px; }
+        .modal-details .variations-table th, .modal-details .variations-table td { text-align: left; padding: 12px; border-bottom: 1px solid var(--cinza-fundo); }
+        .modal-details .variations-table th { font-weight: 600; }
+        .stock-badge { padding: 3px 8px; border-radius: 50px; font-size: 0.8rem; font-weight: 600; color: var(--branco); }
+        .stock-badge.in-stock { background-color: var(--verde-sucesso); }
+        .stock-badge.out-of-stock { background-color: var(--vermelho-perigo); }
 
         #toast { position: fixed; bottom: -100px; left: 50%; transform: translateX(-50%); background-color: #333; color: white; padding: 15px 25px; border-radius: 50px; transition: bottom 0.5s ease; z-index: 3000; }
     </style>
@@ -209,7 +198,7 @@
         </div>
     </section>
 
-    <!-- MODAL DE DETALHES DO PRODUTO (SIMPLIFICADO) -->
+    <!-- MODAL DE DETALHES DO PRODUTO (REVERTIDO PARA TABELA) -->
     <div id="product-details-modal" class="modal-overlay" onclick="closeModal('product-details-modal')">
         <div class="modal-content" onclick="event.stopPropagation()">
             <button class="modal-close-btn" onclick="closeModal('product-details-modal')"><i data-feather="x"></i></button>
@@ -221,10 +210,18 @@
                     <img id="modal-main-image" src="https://via.placeholder.com/400" alt="Imagem principal do produto">
                 </div>
                 <div class="modal-details">
-                    <h4>Numerações Disponíveis</h4>
-                    <div id="modal-variations-container">
-                        <!-- As tags das variações disponíveis serão injetadas aqui -->
-                    </div>
+                    <h4>Variações de Estoque</h4>
+                    <table class="variations-table">
+                        <thead>
+                            <tr>
+                                <th>Numeração</th>
+                                <th>Disponibilidade</th>
+                            </tr>
+                        </thead>
+                        <tbody id="modal-variations-tbody">
+                            <!-- As linhas da tabela serão injetadas aqui -->
+                        </tbody>
+                    </table>
                 </div>
             </div>
         </div>
@@ -305,65 +302,71 @@
         return `/.netlify/functions/image-proxy?url=${encodeURIComponent(url)}`;
     }
 
-    // --- LÓGICA DA API E SINCRONIZAÇÃO ---
+    // --- LÓGICA DA API E SINCRONIZAÇÃO (CORRIGIDA) ---
     async function syncFromFacilZap() {
         showToast('Iniciando sincronização...', 'info');
         const syncButton = document.querySelector('button[onclick="syncFromFacilZap()"]');
         if (syncButton) syncButton.disabled = true;
 
-        const allProducts = [];
+        allApiProducts = []; // Limpa a lista antes de sincronizar
         let currentPage = 1;
-        const PER_PAGE = 100;
-        const MAX_PAGES = 200;
+        const MAX_PAGES = 200; // Limite de segurança
 
         try {
             while (currentPage <= MAX_PAGES) {
-                showToast(`Buscando página ${currentPage}... (${allProducts.length} produtos)`, 'info');
-                const response = await fetch(`/api/facilzap-proxy?page=${currentPage}&length=${PER_PAGE}`);
+                showToast(`Buscando página ${currentPage}...`, 'info');
+                
+                // CORREÇÃO: Usa os parâmetros 'page' e 'length'
+                const proxyUrl = `/api/facilzap-proxy?page=${currentPage}&length=100`;
+                const response = await fetch(proxyUrl);
+                
                 if (!response.ok) {
-                    console.log(`Parando na página ${currentPage}, status: ${response.status}.`);
-                    break;
+                    const errorData = await response.json();
+                    throw new Error(errorData.error || `Erro na API: ${response.statusText}`);
                 }
+
                 const data = await response.json();
                 const productsFromPage = data.data || [];
+                
                 if (productsFromPage.length === 0) {
                     console.log(`Página ${currentPage} vazia. Fim da sincronização.`);
-                    break; 
+                    break;
                 }
-                allProducts.push(...productsFromPage);
-                if (productsFromPage.length < PER_PAGE) {
+
+                // CORREÇÃO: Processa os dados recebidos para o formato que o app precisa
+                const processedProducts = productsFromPage.map(p => {
+                    const estoqueTotalNumerico = parseInt(p.estoque_total) || 0;
+                    
+                    // O array de variações agora é criado aqui, mas será usado principalmente no modal
+                    const variacoes = p.estoque ? p.estoque.map(v => ({
+                        nome: v.nome,
+                        quantidade: parseInt(v.estoque) || 0
+                    })) : [];
+
+                    return {
+                        id: p.id,
+                        nome: p.nome,
+                        sku: p.sku || 'N/A',
+                        preco_original: p.preco,
+                        imagem: p.imagem || null,
+                        estoque_total: estoqueTotalNumerico,
+                        variacoes: variacoes, // Armazena as variações para uso posterior
+                        status: estoqueTotalNumerico > 0 ? 'ativo' : 'sem_estoque'
+                    };
+                });
+                
+                allApiProducts.push(...processedProducts);
+
+                if (productsFromPage.length < 100) {
                     console.log('Última página encontrada.');
                     break;
                 }
                 currentPage++;
-                await new Promise(resolve => setTimeout(resolve, 200));
             }
 
-            allApiProducts = allProducts.map(p => {
-                const fixUrl = (url) => {
-                    if (!url || typeof url !== 'string') return null;
-                    if (url.startsWith('http')) return url;
-                    const cleanPath = url.startsWith('/') ? url.substring(1) : url;
-                    return `https://api.facilzap.app.br/${cleanPath}`;
-                };
-
-                return {
-                    id: p.id,
-                    nome: p.nome,
-                    sku: p.sku || 'N/A',
-                    preco_original: p.preco,
-                    imagem: fixUrl(p.imagem),
-                    estoque_total: p.total_estoque || 0,
-                    status: p.status // Usa o status já tratado pelo proxy.js
-                };
-            });
-            
-            const statusOrder = { 'ativo': 1, 'sem_estoque': 2, 'desativado': 3 };
-            allApiProducts.sort((a, b) => {
-                const orderA = statusOrder[a.status] || 99;
-                const orderB = statusOrder[b.status] || 99;
-                return orderA - orderB;
-            });
+            // Ordena a lista final
+            const statusOrder = { 'ativo': 1, 'sem_estoque': 2 };
+            allApiProducts.sort((a, b) => (statusOrder[a.status] || 99) - (statusOrder[b.status] || 99));
 
             showToast(`Sincronização completa! ${allApiProducts.length} produtos carregados.`, 'success');
             localStorage.setItem('allApiProducts', JSON.stringify(allApiProducts));
@@ -371,7 +374,7 @@
 
         } catch (error) {
             console.error("Erro na sincronização:", error);
-            showToast(`Falha: ${error.message}`, 'error');
+            showToast(`Falha na sincronização: ${error.message}`, 'error');
         } finally {
             if (syncButton) syncButton.disabled = false;
             updateLastSyncTime();
@@ -405,22 +408,19 @@
 
         const statusMap = {
             'ativo': { text: 'Ativo', class: 'ativo' },
-            'sem_estoque': { text: 'Sem Estoque', class: 'sem_estoque' },
-            'desativado': { text: 'Desativado', class: 'desativado' }
+            'sem_estoque': { text: 'Sem Estoque', class: 'sem_estoque' }
         };
 
         productsToRender.forEach(p => {
             const card = document.createElement('div');
             const isPublished = publishedProductIds.includes(p.id);
-            const productStatus = statusMap[p.status] || { text: 'Desconhecido', class: 'desativado' };
-            const displayStatus = productStatus.text;
-            const statusClass = productStatus.class;
+            const productStatus = statusMap[p.status] || { text: 'Sem Estoque', class: 'sem_estoque' };
 
             card.className = 'card product-card';
             card.innerHTML = `
                 <div class="product-card__image-container">
                     <img src="${proxyImageUrl(p.imagem)}" alt="${p.nome}" loading="lazy" decoding="async" onerror="this.onerror=null;this.src='https://placehold.co/300x300/DB1472/FFFFFF?text=Erro+na+Imagem';">
-                    <span class="product-card__status-badge ${statusClass}">${displayStatus}</span>
+                    <span class="product-card__status-badge ${productStatus.class}">${productStatus.text}</span>
                 </div>
                 <div class="product-card__content">
                     <h3 class="product-card__name">${p.nome}</h3>
@@ -462,102 +462,78 @@
             grid.innerHTML = `<p style="text-align:center; grid-column: 1 / -1;">Nenhum produto ativo foi liberado para divulgação no momento.</p>`;
             return;
         }
+        
+        grid.innerHTML = ''; // Limpa antes de popular
+        productsToDisplay.forEach(p => {
+            const availableVariations = p.variacoes.filter(v => v.quantidade > 0);
 
-        try {
-            const detailPromises = productsToDisplay.map(p => fetch(`/api/facilzap-proxy?id=${p.id}`));
-            const detailResponses = await Promise.all(detailPromises);
-
-            for (const response of detailResponses) {
-                if (!response.ok) throw new Error(`Falha ao buscar detalhes de um produto (${response.status})`);
-            }
-            
-            const productDetails = await Promise.all(detailResponses.map(res => res.json()));
-            grid.innerHTML = '';
-
-            productsToDisplay.forEach((p, index) => {
-                const details = productDetails[index].data || productDetails[index];
-                const variations = details.estoque || [];
-                const availableVariations = variations.filter(v => (parseInt(v.estoque, 10) || 0) > 0);
-
-                if (availableVariations.length > 0) {
-                    const variationsHtml = availableVariations
-                        .map(v => `<span class="variation-tag">${v.grade_item_nome || v.nome || 'N/A'}</span>`)
-                        .join('');
-                    
-                    const price = customPrices[p.id] || p.preco_original;
-                    const card = document.createElement('div');
-                    card.className = 'card product-card';
-                    card.innerHTML = `
-                        <div class="product-card__image-container">
-                            <img src="${proxyImageUrl(p.imagem)}" alt="${p.nome}" loading="lazy" decoding="async" onerror="this.onerror=null;this.src='https://placehold.co/300x300/DB1472/FFFFFF?text=Erro+na+Imagem';">
+            if (availableVariations.length > 0) {
+                const variationsHtml = availableVariations
+                    .map(v => `<span class="variation-tag">${v.nome}</span>`)
+                    .join('');
+                
+                const card = document.createElement('div');
+                card.className = 'card product-card';
+                card.innerHTML = `
+                    <div class="product-card__image-container">
+                        <img src="${proxyImageUrl(p.imagem)}" alt="${p.nome}" loading="lazy" decoding="async" onerror="this.onerror=null;this.src='https://placehold.co/300x300/DB1472/FFFFFF?text=Erro+na+Imagem';">
+                    </div>
+                    <div class="product-card__content">
+                        <h3 class="product-card__name">${p.nome}</h3>
+                        <p class="product-card__price">R$ ${parseFloat(p.preco_original).toFixed(2)}</p>
+                        <h4 class="variations-title">Numerações disponíveis:</h4>
+                        <div class="product-card__variations">
+                            ${variationsHtml}
                         </div>
-                        <div class="product-card__content">
-                            <h3 class="product-card__name">${p.nome}</h3>
-                            <p class="product-card__price">R$ ${parseFloat(price).toFixed(2)}</p>
-                            <h4 class="variations-title">Numerações disponíveis:</h4>
-                            <div class="product-card__variations">
-                                ${variationsHtml}
-                            </div>
-                            <div class="product-card__actions">
-                                <button class="btn btn-primary" onclick="alert('Funcionalidade futura: Compartilhar produto.')"><i data-feather="share-2"></i> Compartilhar</button>
-                            </div>
+                        <div class="product-card__actions">
+                            <button class="btn btn-primary" onclick="alert('Funcionalidade futura: Compartilhar produto.')"><i data-feather="share-2"></i> Compartilhar</button>
                         </div>
-                    `;
-                    grid.appendChild(card);
-                }
-            });
-            
-            if (grid.innerHTML === '') {
-                 grid.innerHTML = `<p style="text-align:center; grid-column: 1 / -1;">Todos os produtos liberados estão sem variações em estoque no momento.</p>`;
+                    </div>
+                `;
+                grid.appendChild(card);
             }
+        });
 
-        } catch (error) {
-            console.error("Erro ao renderizar produtos da revendedora:", error);
-            grid.innerHTML = `<p style="text-align:center; color: red; grid-column: 1 / -1;">Ocorreu um erro ao carregar a vitrine. Tente novamente mais tarde.</p>`;
-        } finally {
-            feather.replace();
+        if (grid.innerHTML === '') {
+             grid.innerHTML = `<p style="text-align:center; grid-column: 1 / -1;">Todos os produtos liberados estão sem variações em estoque no momento.</p>`;
         }
+        feather.replace();
     }
 
-    // --- LÓGICA DO MODAL (SIMPLIFICADA) ---
-    async function showProductDetails(productId) {
+    // --- LÓGICA DO MODAL (CORRIGIDA) ---
+    function showProductDetails(productId) {
         const product = allApiProducts.find(p => p.id === productId);
         if (!product) return;
 
         const modal = document.getElementById('product-details-modal');
-        const variationsContainer = document.getElementById('modal-variations-container');
+        const variationsTbody = document.getElementById('modal-variations-tbody');
         
         document.getElementById('modal-product-name').textContent = product.nome;
         document.getElementById('modal-main-image').src = proxyImageUrl(product.imagem);
-        variationsContainer.innerHTML = '<p>Carregando numerações...</p>';
+        variationsTbody.innerHTML = ''; // Limpa a tabela
         
         modal.classList.add('active');
-        feather.replace();
-
-        try {
-            const response = await fetch(`/api/facilzap-proxy?id=${productId}`);
-            if (!response.ok) throw new Error('Falha ao carregar detalhes do produto.');
-
-            const detailedData = await response.json();
-            const details = detailedData.data || detailedData;
-            
-            const variations = details.estoque || [];
-            const availableVariations = variations.filter(v => (parseInt(v.estoque, 10) || 0) > 0);
-
-            if (availableVariations.length > 0) {
-                const variationsHtml = availableVariations
-                    .map(v => `<span class="modal-variation-tag">${v.grade_item_nome || v.nome || v.name || 'N/A'}</span>`)
-                    .join('');
+        
+        if (product.variacoes && product.variacoes.length > 0) {
+            product.variacoes.forEach(v => {
+                const row = variationsTbody.insertRow();
+                const availabilityText = v.quantidade > 0 ? 'Disponível' : 'Esgotado';
+                const availabilityClass = v.quantidade > 0 ? 'in-stock' : 'out-of-stock';
                 
-                variationsContainer.innerHTML = `<div class="modal-variations-list">${variationsHtml}</div>`;
-            } else {
-                variationsContainer.innerHTML = `<p>Nenhuma numeração com estoque encontrada.</p>`;
-            }
-
-        } catch (error) {
-            console.error("Erro ao buscar detalhes do produto:", error);
-            variationsContainer.innerHTML = `<p style="color: red;">${error.message}</p>`;
+                row.innerHTML = `
+                    <td>${v.nome}</td>
+                    <td>
+                        <span class="stock-badge ${availabilityClass}">
+                            ${availabilityText}
+                        </span>
+                    </td>
+                `;
+            });
+        } else {
+            variationsTbody.innerHTML = `<tr><td colspan="2">Nenhuma variação encontrada para este produto.</td></tr>`;
         }
+        
+        feather.replace();
     }
 
     function closeModal(modalId) {
