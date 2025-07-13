@@ -386,7 +386,6 @@
             while (currentPage <= MAX_PAGES) {
                 showToast(`Buscando página ${currentPage}...`, 'info');
                 const proxyUrl = `/api/facilzap-proxy?page=${currentPage}&length=100`;
-                // CORREÇÃO: Garantido que a chamada usa 'fetch' e não 'fetch2'.
                 const response = await fetch(proxyUrl);
                 
                 if (response.status === 401) throw new Error("Token de autenticação inválido.");
@@ -440,7 +439,6 @@
     async function testApiConnection() {
         showToast('Testando conexão...', 'info');
         try {
-            // CORREÇÃO: Garantido que a chamada usa 'fetch' e não 'fetch2'.
             const response = await fetch('/api/facilzap-proxy?page=1&length=5');
             const data = await response.json();
             console.log('[DEBUG] Teste da API:', { status: response.status, data });
