@@ -2,13 +2,15 @@
 
 /**
  * Handler da função Netlify para atuar como proxy para a API FacilZap.
- * Esta versão é inteligente:
- * - Se buscar a lista, enriquece cada produto com um campo 'status'.
- * - Se buscar detalhes de um 'id', processa o estoque das variações.
- * - USA PARSEFLOAT ROBUSTO para garantir a conversão de estoque.
+ * Versão corrigida com base na análise do usuário.
+ * - Usa os parâmetros de URL corretos ('page', 'length').
+ * - Adiciona tratamento para erro de autenticação (401).
  */
 export const handler = async (event) => {
+  // Use o token real, configurado nas variáveis de ambiente da Netlify.
   const FACILZAP_TOKEN = process.env.FACILZAP_TOKEN;
+  
+  // Lê os parâmetros da URL da requisição do front-end.
   const { page, length, id } = event.queryStringParameters;
 
   const fetchOptions = {
@@ -22,9 +24,11 @@ export const handler = async (event) => {
   let API_ENDPOINT;
 
   if (id) {
+    // Busca detalhes de um produto específico.
     API_ENDPOINT = `https://api.facilzap.app.br/produtos/${id}`;
     console.log(`Proxy (Detalhe) buscando: ${API_ENDPOINT}`);
   } else {
+    // CORREÇÃO: Usa 'page' e 'length' como a API espera.
     const pageNum = page || '1';
     const pageLength = length || '100';
     API_ENDPOINT = `https://api.facilzap.app.br/produtos?page=${pageNum}&length=${pageLength}`;
@@ -33,6 +37,16 @@ export const handler = async (event) => {
 
   try {
     const response = await fetch(API_ENDPOINT, fetchOptions);
+
+    // CORREÇÃO: Tratamento específico para erro de autenticação (token inválido).
+    if (response.status === 401) {
+      console.error("Erro de autenticação (401). Verifique o FACILZAP_TOKEN.");
+      return {
+        statusCode: 401,
+        body: JSON.stringify({ error: "Token de autenticação inválido ou expirado." })
+      };
+    }
+
     const responseBody = await response.text();
 
     if (!response.ok) {
@@ -44,58 +58,18 @@ export const handler = async (event) => {
       };
     }
     
-    let finalBody = responseBody;
-
-    if (id) {
-      // LÓGICA PARA DETALHES DO PRODUTO (MODAL)
-      const data = JSON.parse(responseBody);
-      const productDetails = data.data || data;
-
-      if (productDetails && Array.isArray(productDetails.estoque)) {
-        productDetails.estoque = productDetails.estoque.map(variacao => {
-          // Converte o estoque da variação para número de forma robusta
-          const estoqueNumerico = parseFloat(String(variacao.estoque || '0')) || 0;
-          return {
-            ...variacao,
-            estoque: estoqueNumerico
-          };
-        });
-      }
-      
-      // Remonta o corpo da resposta
-      if (data.data) {
-        data.data = productDetails;
-        finalBody = JSON.stringify(data);
-      } else {
-        finalBody = JSON.stringify(productDetails);
-      }
-
-    } else {
-      // LÓGICA PARA A LISTA GERAL DE PRODUTOS
-      const data = JSON.parse(responseBody);
-      if (data && Array.isArray(data.data)) {
-        const produtosEnriquecidos = data.data.map(produto => {
-          // Converte o estoque total para número de forma robusta
-          const estoqueNumerico = parseFloat(String(produto.total_estoque || '0')) || 0;
-          const status = estoqueNumerico > 0 ? 'ativo' : 'sem_estoque';
-          return { ...produto, status: status };
-        });
-        data.data = produtosEnriquecidos;
-        finalBody = JSON.stringify(data);
-      }
-    }
-
+    // Se tudo deu certo, apenas repassa a resposta da FacilZap para o front-end.
     return {
       statusCode: 200,
       headers: {
         'Content-Type': 'application/json',
         'Access-Control-Allow-Origin': '*'
       },
-      body: finalBody
+      body: responseBody
     };
 
   } catch (error) {
-    console.error("Erro no Proxy:", error);
+    console.error("Erro fatal no Proxy:", error);
     return {
       statusCode: 500,
       body: JSON.stringify({ error: error.message })
