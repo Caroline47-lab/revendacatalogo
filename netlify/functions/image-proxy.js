@@ -1,5 +1,4 @@
 // Usar 'node-fetch' pode ser necessário dependendo da versão do Node na Netlify.
-// Se estiver usando Node 18+, o fetch nativo pode ser usado.
 const fetch = require('node-fetch');
 
 exports.handler = async (event) => {
@@ -13,26 +12,29 @@ exports.handler = async (event) => {
   }
 
   try {
-    // CORREÇÃO: Lógica robusta para decodificar e corrigir URLs problemáticas.
     let imageUrl = decodeURIComponent(url)
-      .replace(/\/\//g, '/') // Remove barras duplas
-      .replace(':/', '://')   // Corrige o protocolo (ex: https:/ -> https://)
+      .replace(/\/\//g, '/')
+      .replace(':/', '://')
       .replace('http:/', 'http://')
       .replace('https:/', 'https://');
 
-    // Adiciona o protocolo https:// se estiver faltando.
     if (!imageUrl.startsWith('http')) {
       imageUrl = 'https://' + imageUrl;
     }
+
+    // LOG DE DEPURAÇÃO: Mostra a URL exata que está sendo buscada nos logs da função.
+    console.log("URL Sendo Buscada:", imageUrl);
     
     const response = await fetch(imageUrl, {
       headers: { 
-        'User-Agent': 'Mozilla/5.0', // Adiciona um User-Agent para evitar bloqueios.
-        'Referer': 'https://facilzap.app.br/' // Adiciona um Referer para simular origem.
+        'User-Agent': 'Mozilla/5.0',
+        'Referer': 'https://facilzap.app.br/' 
       }
     });
 
     if (!response.ok) {
+        // Log de erro mais detalhado
+        console.error(`Falha ao buscar imagem. Status: ${response.status}`, { url: imageUrl });
         return {
             statusCode: response.status,
             body: JSON.stringify({ error: `Falha ao buscar imagem. Status: ${response.statusText}`, url: imageUrl })
@@ -45,14 +47,14 @@ exports.handler = async (event) => {
       statusCode: 200,
       headers: {
         'Content-Type': response.headers.get('content-type'),
-        'Cache-Control': 'public, max-age=86400' // Adiciona cache para otimizar.
+        'Cache-Control': 'public, max-age=86400'
       },
       body: imageBuffer.toString('base64'),
       isBase64Encoded: true
     };
     
   } catch (error) {
-    console.error("Erro no proxy de imagem:", error);
+    console.error("Erro no proxy de imagem:", { errorMessage: error.message, requestedUrl: url });
     return {
       statusCode: 500,
       body: JSON.stringify({ 
