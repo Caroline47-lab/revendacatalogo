@@ -1,76 +1,56 @@
 exports.handler = async (event) => {
-    // 1. Validação de origem
-    const allowedOrigins = [
-        'https://revendacatalogo.netlify.app',
-        'https://cjotarasteirinhas.com.br'
-    ];
-    
-    const origin = event.headers.origin || event.headers.Origin;
-    if (!allowedOrigins.includes(origin)) {
-        return {
-            statusCode: 403,
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({ error: "Acesso não autorizado para este domínio" })
-        };
-    }
-
-    // 2. Processamento da URL da imagem
+    // 1. Validar parâmetro
     const encodedUrl = event.queryStringParameters.url;
-    if (!encodedUrl) {
-        return { statusCode: 400, body: "URL não fornecida" };
-    }
+    if (!encodedUrl) return { statusCode: 400, body: "URL ausente" };
 
+    // 2. Decodificar e corrigir URL
     let imageUrl;
     try {
-        imageUrl = decodeURIComponent(encodedUrl)
-            .replace(/\s/g, '')
-            .replace(/^\/\//, 'https://')
-            .trim();
-
-        // Correção automática para URLs incompletas
-        if (!imageUrl.includes('://') || imageUrl.startsWith('https://produtos/')) {
-            imageUrl = imageUrl.replace('https://produtos/', 'https://arquivos.facilzap.app.br/produtos/');
+        imageUrl = decodeURIComponent(encodedUrl);
+        
+        // Correção de URLs malformadas
+        imageUrl = imageUrl
+            .replace(/%3A(\d+)F/g, '%3A%$1F') // Corrige dupla codificação
+            .replace('://produtos/', '://arquivos.facilzap.app.br/produtos/');
+        
+        // Forçar domínio correto se faltante
+        if (!imageUrl.includes('://')) {
+            imageUrl = `https://arquivos.facilzap.app.br/${imageUrl.replace(/^\//, '')}`;
         }
-
+        
         const parsedUrl = new URL(imageUrl);
         
-        // 3. Validação de segurança
-        if (!['http:', 'https:'].includes(parsedUrl.protocol)) {
-            return { statusCode: 400, body: "Protocolo inválido" };
-        }
-        
+        // 3. Validar domínio
         if (!parsedUrl.hostname.endsWith('.facilzap.app.br')) {
-            return { statusCode: 403, body: "Domínio não permitido" };
+            return { statusCode: 403, body: "Domínio bloqueado" };
         }
-
-        // 4. Fetch da imagem (código mantido igual)
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 8000);
         
+        // 4. Buscar imagem
         const response = await fetch(imageUrl, {
-            signal: controller.signal,
-            headers: {
-                'User-Agent': 'Mozilla/5.0',
-                'Referer': 'https://facilzap.app.br/'
-            }
+            headers: { 'User-Agent': 'Mozilla/5.0' }
         });
         
-        clearTimeout(timeoutId);
-
-        // ... (restante do processamento da imagem) ...
-
+        // ... (processamento da imagem) ...
+        
         return {
             statusCode: 200,
             headers: {
-                'Content-Type': contentType,
-                'Cache-Control': 'public, max-age=31536000, immutable',
-                'Access-Control-Allow-Origin': origin // Permite o domínio solicitante
+                'Content-Type': response.headers.get('content-type'),
+                'Access-Control-Allow-Origin': 'https://cjotarasteirinhas.com.br'
             },
-            body: Buffer.from(buffer).toString('base64'),
+            body: Buffer.from(await response.arrayBuffer()).toString('base64'),
             isBase64Encoded: true
         };
-
+        
     } catch (error) {
-        // ... (tratamento de erros) ...
+        return {
+            statusCode: 500,
+            body: JSON.stringify({
+                error: "Erro no processamento",
+                originalUrl: encodedUrl,
+                processedUrl: imageUrl,
+                message: error.message
+            })
+        };
     }
 };
