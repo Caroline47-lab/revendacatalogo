@@ -79,7 +79,6 @@
         .product-card__status-badge { position: absolute; top: 10px; right: 10px; padding: 4px 12px; border-radius: 50px; font-size: 0.75rem; font-weight: 600; color: var(--branco); text-transform: uppercase; }
         .product-card__status-badge.ativo { background-color: var(--verde-sucesso); }
         .product-card__status-badge.sem_estoque { background-color: var(--vermelho-perigo); }
-        .product-card__status-badge.desativado { background-color: var(--cinza-desativado); }
         .product-card__content { padding: 15px; flex-grow: 1; display: flex; flex-direction: column; }
         .product-card__name { font-size: 1.1rem; font-weight: 600; margin-bottom: 5px; min-height: 48px; }
         .product-card__sku { font-size: 0.8rem; color: #888; margin-bottom: 10px; }
@@ -124,21 +123,12 @@
         .modal-body { display: grid; grid-template-columns: 1fr; gap: 30px; }
         @media(min-width: 768px) { .modal-body { grid-template-columns: 1fr 1fr; } }
         .modal-gallery .main-image { width: 100%; aspect-ratio: 1 / 1; object-fit: cover; border-radius: var(--borda-suave); margin-bottom: 10px; }
-        
-        .modal-variations-list {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 10px;
-            padding-top: 15px;
-        }
-        .modal-variation-tag {
-            background-color: var(--verde-sucesso);
-            color: var(--branco);
-            padding: 8px 16px;
-            border-radius: 50px;
-            font-size: 1rem;
-            font-weight: 600;
-        }
+        .modal-details .variations-table { width: 100%; border-collapse: collapse; margin-top: 15px; }
+        .modal-details .variations-table th, .modal-details .variations-table td { text-align: left; padding: 12px; border-bottom: 1px solid var(--cinza-fundo); }
+        .modal-details .variations-table th { font-weight: 600; }
+        .stock-badge { padding: 3px 8px; border-radius: 50px; font-size: 0.8rem; font-weight: 600; color: var(--branco); }
+        .stock-badge.in-stock { background-color: var(--verde-sucesso); }
+        .stock-badge.out-of-stock { background-color: var(--vermelho-perigo); }
 
         #toast { position: fixed; bottom: -100px; left: 50%; transform: translateX(-50%); background-color: #333; color: white; padding: 15px 25px; border-radius: 50px; transition: bottom 0.5s ease; z-index: 3000; }
     </style>
@@ -308,28 +298,16 @@
     // ========== CORREÇÃO 1: FUNÇÃO PARA PROCESSAR IMAGENS ==========
     function proxyImageUrl(url) {
         if (!url || typeof url !== 'string') {
-            console.log('URL de imagem inválida:', url);
             return 'https://placehold.co/300x300/DB1472/FFFFFF?text=Sem+Imagem';
         }
         
-        // Remove espaços, quebras de linha e caracteres especiais
-        let cleanUrl = url.trim()
-            .replace(/\s+/g, '')
-            .replace(/\n/g, '')
-            .replace(/\r/g, '');
-        
-        // Corrige URLs malformadas
-        if (!cleanUrl.startsWith('http://') && !cleanUrl.startsWith('https://')) {
-            cleanUrl = 'https://' + cleanUrl;
+        // URL absoluta - não modificar
+        if (url.startsWith('http')) {
+            return `/facilzap-images/${encodeURIComponent(url)}`;
         }
         
-        console.log('Processando imagem:', {
-            original: url,
-            cleaned: cleanUrl
-        });
-        
-        // Usa o proxy interno
-        return `/.netlify/functions/image-proxy?url=${encodeURIComponent(cleanUrl)}`;
+        // URL relativa - converter para absoluta
+        return `/facilzap-images/${encodeURIComponent('https://' + url)}`;
     }
 
     // ========== CORREÇÃO 2: FUNÇÃO MELHORADA PARA PROCESSAR VARIAÇÕES ==========
@@ -439,6 +417,7 @@
                         sku: p.sku || p.codigo || 'N/A',
                         preco_original: parseFloat(p.preco || p.valor || 0),
                         imagem: imagens.length > 0 ? imagens[0] : null,
+                        imagens_adicionais: imagens.slice(1), // Para uso futuro
                         estoque_total: estoqueTotal,
                         variacoes: variacoes,
                         status: estoqueTotal > 0 ? 'ativo' : 'sem_estoque'
@@ -449,11 +428,13 @@
                 
                 allApiProducts.push(...processedProducts);
                 
+                // Log de verificação crucial
                 console.log("Exemplo de produto processado:", {
-                    id: allApiProducts[0]?.id,
-                    nome: allApiProducts[0]?.nome,
-                    variacoes: allApiProducts[0]?.variacoes,
-                    imagem: allApiProducts[0]?.imagem
+                    id: processedProducts[0]?.id,
+                    nome: processedProducts[0]?.nome,
+                    variacoes: processedProducts[0]?.variacoes,
+                    imagem: processedProducts[0]?.imagem,
+                    estoque_original: productsFromPage[0]?.estoque
                 });
 
                 if (productsFromPage.length < 100) {
@@ -615,12 +596,7 @@
                 card.className = 'card product-card';
                 card.innerHTML = `
                     <div class="product-card__image-container">
-                        <img 
-                            src="${proxyImageUrl(p.imagem)}" 
-                            alt="${p.nome}" 
-                            loading="lazy" 
-                            decoding="async" 
-                            onerror="this.onerror=null;this.src='https://placehold.co/300x300/DB1472/FFFFFF?text=Erro+na+Imagem';">
+                        <img src="${proxyImageUrl(p.imagem)}" alt="${p.nome}" loading="lazy" decoding="async" onerror="this.onerror=null;this.src='https://placehold.co/300x300/DB1472/FFFFFF?text=Erro+na+Imagem';">
                     </div>
                     <div class="product-card__content">
                         <h3 class="product-card__name">${p.nome}</h3>
@@ -658,19 +634,19 @@
 
         document.getElementById('modal-product-name').textContent = product.nome;
         document.getElementById('modal-main-image').src = proxyImageUrl(product.imagem);
-        variationsTbody.innerHTML = '';
         
         if (product.variacoes && product.variacoes.length > 0) {
-            // Criação programática das linhas da tabela
+            variationsTbody.innerHTML = '';
+            
             product.variacoes.forEach(v => {
                 const row = document.createElement('tr');
                 
-                // Célula da numeração
+                // CÉLULA DA NUMERAÇÃO
                 const sizeCell = document.createElement('td');
                 sizeCell.textContent = v.nome;
                 row.appendChild(sizeCell);
                 
-                // Célula da disponibilidade
+                // CÉLULA DA DISPONIBILIDADE
                 const stockCell = document.createElement('td');
                 const badge = document.createElement('span');
                 badge.className = v.quantidade > 0 ? 'stock-badge in-stock' : 'stock-badge out-of-stock';
@@ -681,12 +657,13 @@
                 variationsTbody.appendChild(row);
             });
         } else {
-            variationsTbody.innerHTML = '<tr><td colspan="2">Nenhuma variação encontrada para este produto.</td></tr>';
+            variationsTbody.innerHTML = `<tr><td colspan="2">Nenhuma variação encontrada para este produto.</td></tr>`;
         }
         
         modal.classList.add('active');
         feather.replace();
     }
+
 
     function closeModal(modalId) {
         document.getElementById(modalId).classList.remove('active');
