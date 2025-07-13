@@ -13,17 +13,29 @@ exports.handler = async (event) => {
   }
 
   try {
-    // Decodifica a URL para garantir que caracteres especiais sejam tratados corretamente.
-    const decodedUrl = decodeURIComponent(url);
+    // CORREÇÃO: Lógica robusta para decodificar e corrigir URLs problemáticas.
+    let imageUrl = decodeURIComponent(url)
+      .replace(/\/\//g, '/') // Remove barras duplas
+      .replace(':/', '://')   // Corrige o protocolo (ex: https:/ -> https://)
+      .replace('http:/', 'http://')
+      .replace('https:/', 'https://');
+
+    // Adiciona o protocolo https:// se estiver faltando.
+    if (!imageUrl.startsWith('http')) {
+      imageUrl = 'https://' + imageUrl;
+    }
     
-    const response = await fetch(decodedUrl, {
-      headers: { 'User-Agent': 'Mozilla/5.0' } // Adiciona um User-Agent para evitar bloqueios.
+    const response = await fetch(imageUrl, {
+      headers: { 
+        'User-Agent': 'Mozilla/5.0', // Adiciona um User-Agent para evitar bloqueios.
+        'Referer': 'https://facilzap.app.br/' // Adiciona um Referer para simular origem.
+      }
     });
 
     if (!response.ok) {
         return {
             statusCode: response.status,
-            body: JSON.stringify({ error: `Falha ao buscar imagem. Status: ${response.statusText}` })
+            body: JSON.stringify({ error: `Falha ao buscar imagem. Status: ${response.statusText}`, url: imageUrl })
         };
     }
 
