@@ -342,18 +342,25 @@
                     const parseEstoque = (estoqueData) => {
                         if (!estoqueData) return [];
                         if (Array.isArray(estoqueData)) {
-                            return estoqueData.map(v => ({
-                                // Tenta vários campos possíveis para o nome da variação
-                                nome: v.nome || v.tamanho || v.variacao || 'Sem nome',
-                                quantidade: parseInt(v.estoque || v.quantidade || 0)
-                            }));
+                            return estoqueData.map(v => {
+                                // Pega o valor da variação
+                                const valorVariacao = v.nome || v.tamanho || v.variacao || 'N/A';
+                                return {
+                                    // CORREÇÃO: Formata o nome para "Tamanho: XX"
+                                    nome: `Tamanho: ${valorVariacao}`,
+                                    quantidade: parseInt(v.estoque || v.quantidade || 0)
+                                };
+                            });
                         }
                         if (typeof estoqueData === 'string') {
                             try {
-                                return JSON.parse(estoqueData).map(v => ({
-                                    nome: v.nome || v.tamanho || v.variacao || 'Sem nome',
-                                    quantidade: parseInt(v.estoque || v.quantidade || 0)
-                                }));
+                                return JSON.parse(estoqueData).map(v => {
+                                    const valorVariacao = v.nome || v.tamanho || v.variacao || 'N/A';
+                                    return {
+                                        nome: `Tamanho: ${valorVariacao}`,
+                                        quantidade: parseInt(v.estoque || v.quantidade || 0)
+                                    };
+                                });
                             } catch { return []; }
                         }
                         return [];
@@ -550,6 +557,7 @@
 
                 sortedVariations.forEach(v => {
                     const row = variationsTbody.insertRow();
+                    // CORREÇÃO: Mostra a quantidade no texto
                     const availabilityText = v.quantidade > 0 
                         ? `Disponível (${v.quantidade})` 
                         : 'Esgotado';
