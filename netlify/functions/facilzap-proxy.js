@@ -5,7 +5,7 @@
  * Esta versão é inteligente:
  * - Se receber um 'id', busca os detalhes de um único produto.
  * - Se buscar a lista, enriquece cada produto com um campo 'status'
- * para facilitar a lógica no front-end.
+ * baseado na lógica de disponibilidade (ativo/inativo e estoque).
  */
 export const handler = async (event) => {
   const FACILZAP_TOKEN = process.env.FACILZAP_TOKEN;
@@ -23,11 +23,9 @@ export const handler = async (event) => {
 
   // Roteamento da requisição baseado nos parâmetros recebidos
   if (id) {
-    // Se um ID foi fornecido, busca os detalhes do produto específico.
     API_ENDPOINT = `https://api.facilzap.app.br/produtos/${id}`;
     console.log(`Proxy (Detalhe) buscando: ${API_ENDPOINT}`);
   } else {
-    // Caso contrário, busca a lista paginada de produtos.
     const pageNum = page || '1';
     const pageLength = length || '100';
     API_ENDPOINT = `https://api.facilzap.app.br/produtos?page=${pageNum}&length=${pageLength}`;
@@ -47,50 +45,48 @@ export const handler = async (event) => {
       };
     }
     
-    // --- INÍCIO DA NOVA LÓGICA ---
-    // Se a requisição foi para a lista de produtos (sem 'id'),
-    // vamos modificar o corpo da resposta para adicionar o status.
     let finalBody = responseBody;
 
+    // Se a requisição foi para a lista de produtos, enriquece os dados.
     if (!id) {
       const data = JSON.parse(responseBody);
       
-      // Verifica se a resposta tem o formato esperado com a propriedade 'data'
       if (data && Array.isArray(data.data)) {
         
-        // Mapeia os produtos para adicionar o novo campo 'status'
         const produtosEnriquecidos = data.data.map(produto => {
           let status;
-          const situacaoFromApi = produto.situacao ? produto.situacao.toLowerCase() : '';
-          
-          if (situacaoFromApi === 'desativado') {
+
+          // **NOVA LÓGICA DE VERIFICAÇÃO DE STATUS**
+          // 1. Verifica se o produto está explicitamente marcado como inativo.
+          //    O campo `ativo` com valor `false` é um padrão comum em APIs.
+          if (produto.ativo === false) {
             status = 'desativado';
-          } else if ((produto.total_estoque || 0) > 0) {
-            status = 'ativo';
           } else {
-            status = 'sem_estoque';
+            // 2. Se o produto estiver ativo (ou o campo `ativo` não existir),
+            //    aí sim verificamos o estoque para definir o status final.
+            if ((produto.total_estoque || 0) > 0) {
+              status = 'ativo'; // Produto disponível para venda.
+            } else {
+              status = 'sem_estoque'; // Produto ativo no catálogo, mas sem estoque no momento.
+            }
           }
 
           // Retorna o produto original com o novo campo 'status'
           return { ...produto, status: status };
         });
 
-        // Substitui a lista de produtos original pela nova lista enriquecida
         data.data = produtosEnriquecidos;
-        
-        // Converte o objeto modificado de volta para uma string JSON
         finalBody = JSON.stringify(data);
       }
     }
-    // --- FIM DA NOVA LÓGICA ---
 
     return {
       statusCode: 200,
       headers: {
         'Content-Type': 'application/json',
-        'Access-Control-Allow-Origin': '*' // Permite que seu front-end acesse a API
+        'Access-Control-Allow-Origin': '*'
       },
-      body: finalBody // Retorna o corpo da resposta, modificado ou não
+      body: finalBody
     };
 
   } catch (error) {
