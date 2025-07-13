@@ -120,17 +120,26 @@
         @keyframes zoomIn { from { transform: scale(0.8); opacity: 0; } to { transform: scale(1); opacity: 1; } }
         .modal-close-btn { position: absolute; top: 15px; right: 15px; background: none; border: none; cursor: pointer; color: #888; }
         .modal-close-btn:hover { color: #000; }
-        .modal-header h3 { font-family: var(--font-titulo); color: var(--rosa-pink); margin-bottom: 5px; }
-        .modal-header .sku { font-size: 0.9rem; color: #888; margin-bottom: 20px; }
+        .modal-header h3 { font-family: var(--font-titulo); color: var(--rosa-pink); margin-bottom: 20px; }
         .modal-body { display: grid; grid-template-columns: 1fr; gap: 30px; }
         @media(min-width: 768px) { .modal-body { grid-template-columns: 1fr 1fr; } }
         .modal-gallery .main-image { width: 100%; aspect-ratio: 1 / 1; object-fit: cover; border-radius: var(--borda-suave); margin-bottom: 10px; }
-        .modal-details .variations-table { width: 100%; border-collapse: collapse; }
-        .modal-details .variations-table th, .modal-details .variations-table td { text-align: left; padding: 12px; border-bottom: 1px solid var(--cinza-fundo); }
-        .modal-details .variations-table th { font-weight: 600; }
-        .stock-badge { padding: 3px 8px; border-radius: 50px; font-size: 0.8rem; font-weight: 600; color: var(--branco); }
-        .stock-badge.in-stock { background-color: var(--verde-sucesso); }
-        .stock-badge.out-of-stock { background-color: var(--vermelho-perigo); }
+        
+        /* Estilos para a nova lista de variações no modal */
+        .modal-variations-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            padding-top: 15px;
+        }
+        .modal-variation-tag {
+            background-color: var(--verde-sucesso);
+            color: var(--branco);
+            padding: 8px 16px;
+            border-radius: 50px;
+            font-size: 1rem;
+            font-weight: 600;
+        }
 
         #toast { position: fixed; bottom: -100px; left: 50%; transform: translateX(-50%); background-color: #333; color: white; padding: 15px 25px; border-radius: 50px; transition: bottom 0.5s ease; z-index: 3000; }
     </style>
@@ -200,32 +209,22 @@
         </div>
     </section>
 
-    <!-- MODAL DE DETALHES DO PRODUTO -->
+    <!-- MODAL DE DETALHES DO PRODUTO (SIMPLIFICADO) -->
     <div id="product-details-modal" class="modal-overlay" onclick="closeModal('product-details-modal')">
         <div class="modal-content" onclick="event.stopPropagation()">
             <button class="modal-close-btn" onclick="closeModal('product-details-modal')"><i data-feather="x"></i></button>
             <div class="modal-header">
                 <h3 id="modal-product-name">Nome do Produto</h3>
-                <p id="modal-product-sku" class="sku">SKU: Default</p>
             </div>
             <div class="modal-body">
                 <div class="modal-gallery">
                     <img id="modal-main-image" src="https://via.placeholder.com/400" alt="Imagem principal do produto">
                 </div>
                 <div class="modal-details">
-                    <h4>Variações de Estoque</h4>
-                    <table class="variations-table">
-                        <thead>
-                            <tr>
-                                <th id="modal-variation-header">Variação</th>
-                                <th>SKU</th>
-                                <th>Disponibilidade</th>
-                            </tr>
-                        </thead>
-                        <tbody id="modal-variations-tbody">
-                            <!-- Linhas da tabela serão inseridas aqui via JS -->
-                        </tbody>
-                    </table>
+                    <h4>Numerações Disponíveis</h4>
+                    <div id="modal-variations-container">
+                        <!-- As tags das variações disponíveis serão injetadas aqui -->
+                    </div>
                 </div>
             </div>
         </div>
@@ -240,7 +239,7 @@
     let publishedProductIds = [];
     let customPrices = {};
     let displayedProductsCount = 0;
-    const PRODUCTS_PER_LOAD = 48; // Quantidade de produtos para exibir por vez
+    const PRODUCTS_PER_LOAD = 48;
 
     // --- INICIALIZAÇÃO DA APLICAÇÃO ---
     document.addEventListener('DOMContentLoaded', () => {
@@ -255,13 +254,10 @@
             allApiProducts = JSON.parse(savedProducts);
             renderAdminProducts(); 
         }
-
         const savedPublished = localStorage.getItem('publishedProductIds');
         if (savedPublished) publishedProductIds = JSON.parse(savedPublished);
-        
         const savedPrices = localStorage.getItem('customPrices');
         if (savedPrices) customPrices = JSON.parse(savedPrices);
-
         const savedTime = localStorage.getItem('lastSyncTime');
         if (savedTime) document.getElementById('last-sync-time').textContent = `Última sincronização: ${savedTime}`;
     }
@@ -351,20 +347,6 @@
                     return `https://api.facilzap.app.br/${cleanPath}`;
                 };
 
-                // **NOVA LÓGICA DE STATUS**
-                // Assume que a API retorna um campo `p.situacao` com 'ativo', 'desativado', etc.
-                // Se o campo não existir, usa a lógica antiga como fallback.
-                let status;
-                const situacaoFromApi = p.situacao ? p.situacao.toLowerCase() : '';
-                
-                if (situacaoFromApi === 'desativado') {
-                    status = 'desativado';
-                } else if ((p.total_estoque || 0) > 0) {
-                    status = 'ativo';
-                } else {
-                    status = 'sem_estoque';
-                }
-
                 return {
                     id: p.id,
                     nome: p.nome,
@@ -372,11 +354,10 @@
                     preco_original: p.preco,
                     imagem: fixUrl(p.imagem),
                     estoque_total: p.total_estoque || 0,
-                    status: status // Novo campo de status unificado
+                    status: p.status // Usa o status já tratado pelo proxy.js
                 };
             });
             
-            // **NOVA LÓGICA DE ORDENAÇÃO**
             const statusOrder = { 'ativo': 1, 'sem_estoque': 2, 'desativado': 3 };
             allApiProducts.sort((a, b) => {
                 const orderA = statusOrder[a.status] || 99;
@@ -431,8 +412,6 @@
         productsToRender.forEach(p => {
             const card = document.createElement('div');
             const isPublished = publishedProductIds.includes(p.id);
-            
-            // **USA A NOVA LÓGICA DE STATUS**
             const productStatus = statusMap[p.status] || { text: 'Desconhecido', class: 'desativado' };
             const displayStatus = productStatus.text;
             const statusClass = productStatus.class;
@@ -477,7 +456,6 @@
         const grid = document.getElementById('reseller-product-grid');
         grid.innerHTML = '<p style="text-align:center; grid-column: 1 / -1;">Carregando produtos da vitrine...</p>';
 
-        // **FILTRA APENAS PRODUTOS COM STATUS 'ATIVO'**
         const productsToDisplay = allApiProducts.filter(p => publishedProductIds.includes(p.id) && p.status === 'ativo');
 
         if (productsToDisplay.length === 0) {
@@ -499,7 +477,6 @@
             productsToDisplay.forEach((p, index) => {
                 const details = productDetails[index].data || productDetails[index];
                 const variations = details.estoque || [];
-                
                 const availableVariations = variations.filter(v => (parseInt(v.estoque, 10) || 0) > 0);
 
                 if (availableVariations.length > 0) {
@@ -517,12 +494,10 @@
                         <div class="product-card__content">
                             <h3 class="product-card__name">${p.nome}</h3>
                             <p class="product-card__price">R$ ${parseFloat(price).toFixed(2)}</p>
-                            
                             <h4 class="variations-title">Numerações disponíveis:</h4>
                             <div class="product-card__variations">
                                 ${variationsHtml}
                             </div>
-
                             <div class="product-card__actions">
                                 <button class="btn btn-primary" onclick="alert('Funcionalidade futura: Compartilhar produto.')"><i data-feather="share-2"></i> Compartilhar</button>
                             </div>
@@ -544,20 +519,17 @@
         }
     }
 
-    // --- LÓGICA DO MODAL (PAINEL ADMIN) ---
+    // --- LÓGICA DO MODAL (SIMPLIFICADA) ---
     async function showProductDetails(productId) {
         const product = allApiProducts.find(p => p.id === productId);
         if (!product) return;
 
         const modal = document.getElementById('product-details-modal');
-        const variationsTbody = document.getElementById('modal-variations-tbody');
-        const variationHeader = document.getElementById('modal-variation-header');
+        const variationsContainer = document.getElementById('modal-variations-container');
         
         document.getElementById('modal-product-name').textContent = product.nome;
-        document.getElementById('modal-product-sku').textContent = `SKU Pai: ${product.sku}`;
         document.getElementById('modal-main-image').src = proxyImageUrl(product.imagem);
-        variationsTbody.innerHTML = '<tr><td colspan="3">Carregando detalhes...</td></tr>';
-        variationHeader.textContent = 'Variação';
+        variationsContainer.innerHTML = '<p>Carregando numerações...</p>';
         
         modal.classList.add('active');
         feather.replace();
@@ -569,38 +541,22 @@
             const detailedData = await response.json();
             const details = detailedData.data || detailedData;
             
-            variationsTbody.innerHTML = '';
             const variations = details.estoque || [];
-            if (variations.length > 0) {
-                const variationTypeName = variations[0].grade_nome || 'Variação';
-                variationHeader.textContent = `Variação (${variationTypeName})`;
+            const availableVariations = variations.filter(v => (parseInt(v.estoque, 10) || 0) > 0);
 
-                variations.forEach(v => {
-                    const variationName = v.grade_item_nome || v.nome || v.name || 'N/A';
-                    const variationSku = v.sku || 'N/A';
-                    const stockAmount = parseInt(v.estoque, 10) || 0;
-                    const availabilityText = stockAmount > 0 ? 'Disponível' : 'Indisponível';
-                    const availabilityClass = stockAmount > 0 ? 'in-stock' : 'out-of-stock';
-                    
-                    const row = variationsTbody.insertRow();
-                    row.innerHTML = `
-                        <td>${variationName}</td>
-                        <td>${variationSku}</td>
-                        <td>
-                            <span class="stock-badge ${availabilityClass}">
-                                ${availabilityText}
-                            </span>
-                        </td>
-                    `;
-                });
+            if (availableVariations.length > 0) {
+                const variationsHtml = availableVariations
+                    .map(v => `<span class="modal-variation-tag">${v.grade_item_nome || v.nome || v.name || 'N/A'}</span>`)
+                    .join('');
+                
+                variationsContainer.innerHTML = `<div class="modal-variations-list">${variationsHtml}</div>`;
             } else {
-                const row = variationsTbody.insertRow();
-                row.innerHTML = `<td colspan="3">Nenhuma variação de estoque encontrada para este produto.</td>`;
+                variationsContainer.innerHTML = `<p>Nenhuma numeração com estoque encontrada.</p>`;
             }
 
         } catch (error) {
             console.error("Erro ao buscar detalhes do produto:", error);
-            variationsTbody.innerHTML = `<tr><td colspan="3" style="color: red;">${error.message}</td></tr>`;
+            variationsContainer.innerHTML = `<p style="color: red;">${error.message}</p>`;
         }
     }
 
