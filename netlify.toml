@@ -1,19 +1,17 @@
 [build]
-  publish = "public"
-  functions = "netlify/functions"
+  publish = "."
 
 [[redirects]]
   from = "/api/*"
   to = "/.netlify/functions/:splat"
   status = 200
-  force = true
 
 [[redirects]]
   from = "/facilzap-images/*"
   to = "/.netlify/functions/image-proxy?url=:splat"
   status = 200
-  force = true
 
 [functions]
-  node_bundler = "esbuild"
+[functions."*"]
   timeout = 30
+  node_bundler = "esbuild"
