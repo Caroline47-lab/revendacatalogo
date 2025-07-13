@@ -1,25 +1,28 @@
-# Build settings: define publish directory and functions folder.
+# Configuração de build
 [build]
-  publish = "public"
+  # Pasta onde o seu site (index.html, etc.) está localizado
+  publish = "public" 
+  # Pasta onde as suas funções de proxy estão localizadas
   functions = "netlify/functions"
 
-# Redirect rule for the product API proxy.
+# Redirecionamento para o proxy de DADOS da API
 [[redirects]]
   from = "/api/*"
-  to = "/.netlify/functions/:splat"
+  to = "/.netlify/functions/facilzap-proxy/:splat"
   status = 200
   force = true
 
-# Redirect rule for the image proxy.
+# Redirecionamento para o proxy de IMAGENS
 [[redirects]]
   from = "/facilzap-images/*"
   to = "/.netlify/functions/image-proxy?url=:splat"
   status = 200
   force = true
 
-# Settings for all functions, applied using a wildcard.
-# This syntax is more robust and can prevent parsing errors.
-[functions."*"]
+# Configurações das funções
+[functions]
   node_bundler = "esbuild"
-  # Increase the default timeout to 30s to prevent sync interruption.
+
+[functions."*"]
+  # Aumenta o tempo máximo de execução para 30 segundos
   timeout = 30
