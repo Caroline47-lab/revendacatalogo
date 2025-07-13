@@ -78,7 +78,7 @@
         .product-card__status-badge { position: absolute; top: 10px; right: 10px; padding: 4px 12px; border-radius: 50px; font-size: 0.75rem; font-weight: 600; color: var(--branco); text-transform: uppercase; }
         .product-card__status-badge.ativo { background-color: var(--verde-sucesso); }
         .product-card__status-badge.esgotado { background-color: var(--vermelho-perigo); }
-        .product-card__status-badge.desativado { background-color: var(--cinza-texto); }
+        /* O status desativado foi removido pois a API /produtos provavelmente não o retorna */
         .product-card__multi-photo-badge { position: absolute; bottom: 10px; left: 10px; background-color: rgba(0,0,0,0.6); color: white; padding: 4px 8px; border-radius: 6px; font-size: 0.8rem; display: inline-flex; align-items: center; gap: 5px; }
         .product-card__content { padding: 15px; flex-grow: 1; display: flex; flex-direction: column; }
         .product-card__name { font-size: 1.1rem; font-weight: 600; margin-bottom: 5px; }
@@ -290,16 +290,17 @@
 
         const allProducts = [];
         let currentPage = 1;
-        const MAX_PAGES = 200; // Limite de segurança para evitar loops infinitos acidentais
+        const PER_PAGE = 100; // Itens por página, conforme documentação da API
+        const MAX_PAGES = 200; // Limite de segurança para evitar loops infinitos
 
         try {
             while (currentPage <= MAX_PAGES) {
                 showToast(`Buscando página ${currentPage}... (${allProducts.length} produtos)`, 'info');
                 
-                const response = await fetch(`/api/facilzap-proxy?page=${currentPage}`);
+                // Passa os parâmetros 'page' e 'length' para o proxy
+                const response = await fetch(`/api/facilzap-proxy?page=${currentPage}&length=${PER_PAGE}`);
                 
                 if (!response.ok) {
-                    // Se a API retornar um erro (ex: 404 Not Found), consideramos que as páginas acabaram.
                     console.log(`Parando na página ${currentPage}, status: ${response.status}.`);
                     break;
                 }
@@ -308,50 +309,60 @@
                 const productsFromPage = data.data || [];
                 
                 if (productsFromPage.length === 0) {
-                    // Condição de saída principal: a página veio vazia.
                     console.log(`Página ${currentPage} vazia. Fim da sincronização.`);
                     break; 
                 }
                 
                 allProducts.push(...productsFromPage);
-                currentPage++;
                 
-                // Pequeno delay para não sobrecarregar a API com requisições muito rápidas
+                if (productsFromPage.length < PER_PAGE) {
+                    // Se a API retornou menos que o máximo, é a última página.
+                    console.log('Última página encontrada.');
+                    break;
+                }
+                
+                currentPage++;
                 await new Promise(resolve => setTimeout(resolve, 200));
             }
 
             // Mapeamento e processamento dos dados após a busca completa
-            const getStatus = (status) => {
-                if (typeof status === 'boolean') return status ? 'ativo' : 'inativo';
-                if (typeof status !== 'string') return 'desativado';
-                return status.toLowerCase().includes('ativ') ? 'ativo' : 'inativo';
-            };
-
             allApiProducts = allProducts.map(p => {
-                const getPhotoUrls = (photos) => {
-                    if (!photos || photos.length === 0) return [];
-                    if (typeof photos[0] === 'string') return photos;
-                    return photos.map(photoObj => photoObj.url);
-                };
-                const photoList = getPhotoUrls(p.fotos);
+                let photoList = [];
+                // A API retorna o campo 'imagens' como uma string JSON.
+                if (p.imagens) {
+                    try {
+                        const parsedImages = JSON.parse(p.imagens);
+                        if (Array.isArray(parsedImages)) {
+                            photoList = parsedImages;
+                        }
+                    } catch (e) {
+                        console.warn(`Não foi possível parsear o JSON de imagens para o produto ${p.id}: ${p.imagens}`);
+                    }
+                }
+                // Adiciona a imagem principal à galeria se ela não estiver lá
+                if (p.imagem && !photoList.includes(p.imagem)) {
+                    photoList.unshift(p.imagem);
+                }
+
                 return {
                     id: p.id,
                     nome: p.nome,
                     sku: p.sku || 'N/A',
                     preco_original: p.preco,
-                    imagem: photoList.length > 0 ? photoList[0] : null,
-                    fotos: photoList,
+                    imagem: p.imagem, // Campo da imagem principal
+                    fotos: photoList, // Campo da galeria
                     estoque_total: p.total_estoque || 0,
                     variacoes: p.estoque || [],
-                    status_api: getStatus(p.status_ativo)
+                    // O status é inferido, já que a API /produtos não o fornece diretamente
+                    status_api: 'ativo' 
                 };
             });
             
             // Ordena a lista completa apenas uma vez
-            const statusOrder = { 'ativo': 1, 'esgotado': 2, 'desativado': 3 };
+            const statusOrder = { 'ativo': 1, 'esgotado': 2 };
             allApiProducts.sort((a, b) => {
-                const statusA = a.status_api === 'inativo' ? 'desativado' : (a.estoque_total > 0 ? 'ativo' : 'esgotado');
-                const statusB = b.status_api === 'inativo' ? 'desativado' : (b.estoque_total > 0 ? 'ativo' : 'esgotado');
+                const statusA = a.estoque_total > 0 ? 'ativo' : 'esgotado';
+                const statusB = b.estoque_total > 0 ? 'ativo' : 'esgotado';
                 return statusOrder[statusA] - statusOrder[statusB];
             });
 
@@ -401,17 +412,9 @@
             const card = document.createElement('div');
             const isPublished = publishedProductIds.includes(p.id);
             
-            let displayStatus, statusClass;
-            if (p.status_api === 'inativo') {
-                displayStatus = 'Desativado';
-                statusClass = 'desativado';
-            } else if (p.estoque_total > 0) {
-                displayStatus = 'Ativo';
-                statusClass = 'ativo';
-            } else {
-                displayStatus = 'Esgotado';
-                statusClass = 'esgotado';
-            }
+            // A lógica de status agora é mais simples
+            const displayStatus = p.estoque_total > 0 ? 'Ativo' : 'Esgotado';
+            const statusClass = p.estoque_total > 0 ? 'ativo' : 'esgotado';
 
             card.className = 'card product-card';
             card.innerHTML = `
