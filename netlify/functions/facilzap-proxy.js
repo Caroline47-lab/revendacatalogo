@@ -3,9 +3,8 @@
 /**
  * Handler da função Netlify para atuar como proxy para a API FacilZap.
  * Esta versão é inteligente:
- * - Se receber um 'id', busca os detalhes de um único produto.
- * - Se buscar a lista, enriquece cada produto com um campo 'status'
- * baseado na contagem de estoque, tratando o dado corretamente.
+ * - Se buscar a lista, enriquece cada produto com um campo 'status'.
+ * - Se buscar detalhes de um 'id', processa o estoque das variações.
  */
 export const handler = async (event) => {
   const FACILZAP_TOKEN = process.env.FACILZAP_TOKEN;
@@ -21,7 +20,6 @@ export const handler = async (event) => {
 
   let API_ENDPOINT;
 
-  // Roteamento da requisição baseado nos parâmetros recebidos
   if (id) {
     API_ENDPOINT = `https://api.facilzap.app.br/produtos/${id}`;
     console.log(`Proxy (Detalhe) buscando: ${API_ENDPOINT}`);
@@ -47,31 +45,37 @@ export const handler = async (event) => {
     
     let finalBody = responseBody;
 
-    // Se a requisição foi para a lista de produtos, enriquece os dados.
-    if (!id) {
+    if (id) {
+      // **NOVA LÓGICA PARA DETALHES DO PRODUTO**
+      // Garante que o estoque de cada variação seja numérico.
       const data = JSON.parse(responseBody);
+      const productDetails = data.data || data;
+
+      if (productDetails && Array.isArray(productDetails.estoque)) {
+        productDetails.estoque = productDetails.estoque.map(variacao => {
+          return {
+            ...variacao,
+            estoque: parseFloat(variacao.estoque) || 0
+          };
+        });
+      }
       
+      if (data.data) {
+        data.data = productDetails;
+        finalBody = JSON.stringify(data);
+      } else {
+        finalBody = JSON.stringify(productDetails);
+      }
+
+    } else {
+      // **LÓGICA PARA A LISTA DE PRODUTOS**
+      const data = JSON.parse(responseBody);
       if (data && Array.isArray(data.data)) {
-        
         const produtosEnriquecidos = data.data.map(produto => {
-          let status;
-
-          // --- LÓGICA CORRIGIDA E DEFINITIVA ---
-          // 1. Converte o campo 'total_estoque' (que é uma string) para um número.
-          //    Usa parseFloat para lidar com casas decimais, se houver.
           const estoqueNumerico = parseFloat(produto.total_estoque) || 0;
-
-          // 2. Compara o valor numérico para definir o status.
-          if (estoqueNumerico > 0) {
-            status = 'ativo';
-          } else {
-            status = 'sem_estoque';
-          }
-
-          // Retorna o produto original com o novo campo 'status'
+          const status = estoqueNumerico > 0 ? 'ativo' : 'sem_estoque';
           return { ...produto, status: status };
         });
-
         data.data = produtosEnriquecidos;
         finalBody = JSON.stringify(data);
       }
