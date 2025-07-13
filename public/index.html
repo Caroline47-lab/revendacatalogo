@@ -176,6 +176,7 @@
                 <h1>Painel da Empresa</h1>
                 <div>
                     <button class="btn btn-primary" onclick="syncFromFacilZap()"><i data-feather="refresh-cw"></i> Sincronizar Produtos</button>
+                    <button class="btn btn-secondary" onclick="testApiConnection()">Testar API</button>
                     <button class="btn btn-outline" onclick="handleLogout()"><i data-feather="log-out"></i> Sair</button>
                 </div>
             </div>
@@ -294,34 +295,147 @@
         }
     }
     
-    // --- FUNÇÃO AUXILIAR PARA O PROXY DE IMAGENS (MELHORADA) ---
+    // ========== CORREÇÃO 1: FUNÇÃO PARA PROCESSAR IMAGENS ==========
     function proxyImageUrl(url) {
         if (!url || typeof url !== 'string') {
             console.log('URL de imagem inválida:', url);
             return 'https://placehold.co/300x300/DB1472/FFFFFF?text=Sem+Imagem';
         }
         
-        // Remove espaços e caracteres problemáticos
-        const cleanUrl = url.trim();
-        console.log('Proxy de imagem - URL limpa:', cleanUrl);
+        // Remove espaços, quebras de linha e caracteres especiais
+        let cleanUrl = url.trim()
+            .replace(/\s+/g, '')
+            .replace(/\n/g, '')
+            .replace(/\r/g, '');
         
-        // Usa o endpoint correto do proxy de imagens
-        const proxyUrl = `/facilzap-images/${encodeURIComponent(cleanUrl)}`;
-        console.log('Proxy de imagem - URL final:', proxyUrl);
+        // Corrige URLs malformadas
+        if (!cleanUrl.startsWith('http://') && !cleanUrl.startsWith('https://')) {
+            cleanUrl = 'https://' + cleanUrl;
+        }
         
-        return proxyUrl;
+        console.log('Processando imagem:', {
+            original: url,
+            cleaned: cleanUrl
+        });
+        
+        // Usa o proxy interno
+        return `/facilzap-images/${encodeURIComponent(cleanUrl)}`;
     }
 
+    // ========== CORREÇÃO 2: FUNÇÃO MELHORADA PARA PROCESSAR VARIAÇÕES ==========
+    function processVariations(estoqueData, produtoId) {
+        console.log(`[DEBUG] Processando variações para produto ${produtoId}:`, estoqueData);
+        
+        if (!estoqueData) {
+            console.log(`[DEBUG] Produto ${produtoId}: Sem dados de estoque`);
+            return [];
+        }
 
-    // --- LÓGICA DA API E SINCRONIZAÇÃO (VERSÃO MELHORADA) ---
+        let rawVariations = [];
+
+        try {
+            // Caso 1: Já é um array
+            if (Array.isArray(estoqueData)) {
+                rawVariations = estoqueData;
+            }
+            // Caso 2: É uma string JSON
+            else if (typeof estoqueData === 'string') {
+                try {
+                    const parsed = JSON.parse(estoqueData);
+                    rawVariations = Array.isArray(parsed) ? parsed : [parsed];
+                } catch (error) {
+                    console.error(`[ERROR] Erro ao fazer parse do JSON para produto ${produtoId}:`, error);
+                    return [];
+                }
+            }
+            // Caso 3: É um objeto
+            else if (typeof estoqueData === 'object') {
+                // Tenta diferentes estruturas possíveis
+                if (estoqueData.variations) {
+                    rawVariations = Array.isArray(estoqueData.variations) ? estoqueData.variations : [estoqueData.variations];
+                } else if (estoqueData.variacoes) {
+                    rawVariations = Array.isArray(estoqueData.variacoes) ? estoqueData.variacoes : [estoqueData.variacoes];
+                } else if (estoqueData.items) {
+                    rawVariations = Array.isArray(estoqueData.items) ? estoqueData.items : [estoqueData.items];
+                } else {
+                    // Trata como um único item
+                    rawVariations = [estoqueData];
+                }
+            }
+
+            console.log(`[DEBUG] Variações brutas encontradas para produto ${produtoId}:`, rawVariations);
+
+            // Processa cada variação
+            const processedVariations = rawVariations.map((variation, index) => {
+                console.log(`[DEBUG] Processando variação ${index} do produto ${produtoId}:`, variation);
+                
+                if (!variation || typeof variation !== 'object') {
+                    console.log(`[DEBUG] Variação ${index} inválida:`, variation);
+                    return null;
+                }
+
+                // Busca o nome da variação em diferentes campos possíveis
+                const possibleNameFields = [
+                    'nome', 'name', 'tamanho', 'size', 'variacao', 'variation', 
+                    'descricao', 'description', 'titulo', 'title', 'label'
+                ];
+                
+                let nomeVariacao = null;
+                for (const field of possibleNameFields) {
+                    if (variation[field] && variation[field].toString().trim()) {
+                        nomeVariacao = variation[field].toString().trim();
+                        break;
+                    }
+                }
+
+                // Se não encontrou nome, usa o índice
+                if (!nomeVariacao) {
+                    nomeVariacao = `Variação ${index + 1}`;
+                }
+
+                // Busca a quantidade em diferentes campos possíveis
+                const possibleQtyFields = [
+                    'estoque', 'quantidade', 'qty', 'stock', 'amount', 'disponivel', 'available'
+                ];
+                
+                let quantidade = 0;
+                for (const field of possibleQtyFields) {
+                    if (variation[field] !== undefined && variation[field] !== null) {
+                        const parsedQty = parseInt(variation[field]);
+                        if (!isNaN(parsedQty)) {
+                            quantidade = parsedQty;
+                            break;
+                        }
+                    }
+                }
+
+                const processedVariation = {
+                    nome: nomeVariacao,
+                    quantidade: quantidade
+                };
+
+                console.log(`[DEBUG] Variação processada:`, processedVariation);
+                return processedVariation;
+            }).filter(v => v !== null); // Remove variações nulas
+
+            console.log(`[DEBUG] Variações finais para produto ${produtoId}:`, processedVariations);
+            return processedVariations;
+
+        } catch (error) {
+            console.error(`[ERROR] Erro geral ao processar variações do produto ${produtoId}:`, error);
+            return [];
+        }
+    }
+
+    // ========== CORREÇÃO 3: FUNÇÃO SYNCFROMFACILZAP ATUALIZADA ==========
     async function syncFromFacilZap() {
         showToast('Iniciando sincronização...', 'info');
         const syncButton = document.querySelector('button[onclick="syncFromFacilZap()"]');
         if (syncButton) syncButton.disabled = true;
 
-        allApiProducts = []; // Limpa a lista antes de sincronizar
+        allApiProducts = [];
         let currentPage = 1;
-        const MAX_PAGES = 200; // Limite de segurança
+        const MAX_PAGES = 200;
 
         try {
             while (currentPage <= MAX_PAGES) {
@@ -341,135 +455,117 @@
                 const data = await response.json();
                 const productsFromPage = data.data || [];
                 
-                // LOG DETALHADO para debug
-                console.log(`Página ${currentPage} - Produtos recebidos:`, productsFromPage.length);
-                if (productsFromPage.length > 0) {
-                    console.log('Estrutura do primeiro produto:', productsFromPage[0]);
-                }
+                console.log(`[DEBUG] Página ${currentPage} - Produtos recebidos:`, productsFromPage.length);
                 
                 if (productsFromPage.length === 0) {
-                    console.log(`Página ${currentPage} vazia. Fim da sincronização.`);
+                    console.log(`[DEBUG] Página ${currentPage} vazia. Fim da sincronização.`);
                     break;
                 }
 
-                // PROCESSAMENTO MELHORADO dos produtos
+                // Processa os produtos desta página
                 const processedProducts = productsFromPage.map(p => {
-                    console.log(`Processando produto ${p.id}:`, {
+                    console.log(`[DEBUG] Processando produto ${p.id}:`, {
                         nome: p.nome,
                         imagem: p.imagem,
                         estoque: p.estoque,
-                        estoqueType: typeof p.estoque
+                        estoqueType: typeof p.estoque,
+                        estoqueKeys: p.estoque ? Object.keys(p.estoque) : 'N/A'
                     });
 
-                    // Função mais robusta para tratar variações
-                    const processVariations = (estoqueData) => {
-                        console.log(`Processando estoque para produto ${p.id}:`, estoqueData);
-                        
-                        if (!estoqueData) {
-                            console.log(`Produto ${p.id}: Sem dados de estoque`);
-                            return [];
-                        }
-
-                        let variations = [];
-
-                        // Se já é array
-                        if (Array.isArray(estoqueData)) {
-                            variations = estoqueData;
-                        }
-                        // Se é string JSON
-                        else if (typeof estoqueData === 'string') {
-                            try {
-                                variations = JSON.parse(estoqueData);
-                            } catch (error) {
-                                console.error(`Erro ao parsear JSON do estoque do produto ${p.id}:`, error);
-                                return [];
-                            }
-                        }
-                        // Se é objeto
-                        else if (typeof estoqueData === 'object') {
-                            // Tenta diferentes estruturas possíveis
-                            variations = estoqueData.variations || estoqueData.variacoes || [estoqueData];
-                        }
-
-                        // Processa as variações
-                        const processedVariations = variations.map(v => {
-                            // Tenta diferentes campos para o nome da variação
-                            const nomeVariacao = v.nome || v.tamanho || v.variacao || v.size || v.name || v.variation || 'Tamanho não especificado';
-                            
-                            // Tenta diferentes campos para a quantidade
-                            const quantidade = parseInt(v.estoque || v.quantidade || v.qty || v.stock || v.amount || 0);
-                            
-                            console.log(`Variação processada:`, { nomeVariacao, quantidade });
-                            
-                            return {
-                                nome: nomeVariacao.toString().includes('Tamanho:') ? nomeVariacao : `Tamanho: ${nomeVariacao}`,
-                                quantidade: quantidade
-                            };
-                        });
-
-                        return processedVariations;
-                    };
-
-                    const variacoes = processVariations(p.estoque);
+                    // Processa as variações usando a função corrigida
+                    const variacoes = processVariations(p.estoque, p.id);
                     const estoqueTotal = variacoes.reduce((total, v) => total + v.quantidade, 0);
 
-                    // Processamento da imagem
+                    // Processa a imagem
                     let imagemUrl = null;
-                    if (p.imagem) {
-                        // Remove possíveis caracteres problemáticos
+                    if (p.imagem && typeof p.imagem === 'string') {
                         imagemUrl = p.imagem.trim();
-                        console.log(`Produto ${p.id} - Imagem original:`, imagemUrl);
+                        console.log(`[DEBUG] Produto ${p.id} - Imagem processada:`, imagemUrl);
+                    } else {
+                        console.log(`[DEBUG] Produto ${p.id} - Imagem inválida:`, p.imagem);
                     }
 
                     const produto = {
                         id: p.id,
                         nome: p.nome || 'Nome não informado',
                         sku: p.sku || p.codigo || 'N/A',
-                        preco_original: p.preco || p.valor || 0,
+                        preco_original: parseFloat(p.preco || p.valor || 0),
                         imagem: imagemUrl,
                         estoque_total: estoqueTotal,
                         variacoes: variacoes,
                         status: estoqueTotal > 0 ? 'ativo' : 'sem_estoque',
-                        // Dados brutos para debugging
                         _raw: {
                             estoque_original: p.estoque,
                             imagem_original: p.imagem
                         }
                     };
 
-                    console.log(`Produto ${p.id} processado:`, produto);
+                    console.log(`[DEBUG] Produto ${p.id} finalizado:`, produto);
                     return produto;
                 });
                 
                 allApiProducts.push(...processedProducts);
 
                 if (productsFromPage.length < 100) {
-                    console.log('Última página encontrada.');
+                    console.log('[DEBUG] Última página encontrada.');
                     break;
                 }
                 currentPage++;
             }
 
-            // Ordena a lista final
+            // Ordena por status
             const statusOrder = { 'ativo': 1, 'sem_estoque': 2 };
             allApiProducts.sort((a, b) => (statusOrder[a.status] || 99) - (statusOrder[b.status] || 99));
 
             showToast(`Sincronização completa! ${allApiProducts.length} produtos carregados.`, 'success');
             localStorage.setItem('allApiProducts', JSON.stringify(allApiProducts));
             
-            // Log final para análise
-            console.log('Sincronização finalizada. Produtos carregados:', allApiProducts.length);
-            console.log('Produtos com imagem:', allApiProducts.filter(p => p.imagem).length);
-            console.log('Produtos com variações:', allApiProducts.filter(p => p.variacoes.length > 0).length);
+            console.log('[DEBUG] Sincronização finalizada:', {
+                total: allApiProducts.length,
+                comImagem: allApiProducts.filter(p => p.imagem).length,
+                comVariacoes: allApiProducts.filter(p => p.variacoes.length > 0).length,
+                ativos: allApiProducts.filter(p => p.status === 'ativo').length
+            });
             
             renderAdminProducts();
 
         } catch (error) {
-            console.error("Erro na sincronização:", error);
+            console.error("[ERROR] Erro na sincronização:", error);
             showToast(`Falha na sincronização: ${error.message}`, 'error');
         } finally {
             if (syncButton) syncButton.disabled = false;
             updateLastSyncTime();
+        }
+    }
+    
+    // ========== CORREÇÃO 5: FUNÇÃO PARA TESTAR A API ==========
+    async function testApiConnection() {
+        try {
+            showToast('Testando conexão com a API...', 'info');
+            
+            const response = await fetch('/api/facilzap-proxy?page=1&length=5');
+            const data = await response.json();
+            
+            console.log('[DEBUG] Teste da API:', {
+                status: response.status,
+                data: data,
+                products: data.data ? data.data.length : 0
+            });
+            
+            if (response.ok && data.data && data.data.length > 0) {
+                const firstProduct = data.data[0];
+                console.log('[DEBUG] Estrutura do primeiro produto:', firstProduct);
+                console.log('[DEBUG] Estoque do primeiro produto:', firstProduct.estoque);
+                console.log('[DEBUG] Tipo do estoque:', typeof firstProduct.estoque);
+                
+                showToast('Conexão com API OK! Verifique o console para detalhes.', 'success');
+            } else {
+                showToast('API conectada mas sem produtos.', 'info');
+            }
+            
+        } catch (error) {
+            console.error('[ERROR] Erro no teste da API:', error);
+            showToast(`Erro na conexão: ${error.message}`, 'error');
         }
     }
 
