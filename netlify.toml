@@ -13,6 +13,7 @@
   force = true
 
 # Redirecionamento para o proxy de IMAGENS
+# Esta regra é crucial para as imagens funcionarem.
 [[redirects]]
   from = "/facilzap-images/*"
   to = "/.netlify/functions/image-proxy?url=:splat"
