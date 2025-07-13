@@ -2,11 +2,20 @@
   publish = "public"
   functions = "netlify/functions"
 
+# Redireciona chamadas da API de produtos
 [[redirects]]
   from = "/api/*"
   to = "/.netlify/functions/:splat"
   status = 200
   force = true
 
+# NOVO: Redireciona chamadas de imagem para o proxy de imagem
+[[redirects]]
+  from = "/facilzap-images"
+  to = "/.netlify/functions/image-proxy"
+  status = 200
+  force = true
+
 [functions]
   node_bundler = "esbuild"
+  timeout = 30
