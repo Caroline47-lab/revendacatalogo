@@ -292,51 +292,34 @@
     let allApiProducts = [];
     let publishedProductIds = [];
 
-    // --- INICIALIZAÇÃO DA APLICAÇÃO ---
+    // --- INICIALIZAÇÃO E FUNÇÕES DE UTILIDADE ---
     document.addEventListener('DOMContentLoaded', () => {
         feather.replace();
         loadLocalData();
         setupNavigation();
         updateDashboard();
+        renderProductsTable(); // Renderiza a tabela com dados locais ao carregar
     });
 
-    function loadLocalData() {
-        const savedProducts = localStorage.getItem('erpProducts');
-        if (savedProducts) {
-            allApiProducts = JSON.parse(savedProducts);
-        }
-        const savedPublished = localStorage.getItem('erpPublished');
-        if (savedPublished) {
-            publishedProductIds = JSON.parse(savedPublished);
-        }
-        const savedTime = localStorage.getItem('erpLastSync');
-        if (savedTime) {
-            document.getElementById('last-sync-time').textContent = `Última sincronização: ${savedTime}`;
-        }
+    function showToast(message, type = 'info') {
+        const toast = document.getElementById('toast');
+        toast.textContent = message;
+        toast.style.backgroundColor = type === 'success' ? 'var(--success-color)' : (type === 'error' ? 'var(--danger-color)' : '#333');
+        toast.style.bottom = '20px';
+        setTimeout(() => { toast.style.bottom = '-100px'; }, 3000);
     }
 
-    function setupNavigation() {
-        document.querySelectorAll('.nav-link').forEach(link => {
-            link.addEventListener('click', (e) => {
-                e.preventDefault();
-                const pageId = e.currentTarget.dataset.page;
-                
-                document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
-                e.currentTarget.classList.add('active');
-
-                document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-                document.getElementById(pageId).classList.add('active');
-
-                // Renderiza a tabela/conteúdo da página ao navegar
-                if (pageId === 'products') renderProductsTable();
-                if (pageId === 'catalog') renderCatalogTable();
-                if (pageId === 'dashboard') updateDashboard();
-            });
-        });
+    function proxyImageUrl(url) {
+        if (!url || typeof url !== 'string') {
+            return 'https://placehold.co/300x300/DB1472/FFFFFF?text=Sem+Imagem';
+        }
+        if (url.startsWith('http')) {
+            return `/facilzap-images/${encodeURIComponent(url)}`;
+        }
+        return `/facilzap-images/${encodeURIComponent('https://' + url)}`;
     }
-
+    
     // --- LÓGICA DE NEGÓCIO E PROCESSAMENTO DE DADOS ---
-
     function parseVariationsFromObject(data) {
         if (Array.isArray(data)) {
             return data.map(item => ({
@@ -374,7 +357,22 @@
         return [];
     }
 
-    // --- LÓGICA DA API E SINCRONIZAÇÃO ---
+    // --- CARREGAMENTO DE DADOS E SINCRONIZAÇÃO ---
+    function loadLocalData() {
+        const savedProducts = localStorage.getItem('erpProducts');
+        if (savedProducts) {
+            allApiProducts = JSON.parse(savedProducts);
+        }
+        const savedPublished = localStorage.getItem('erpPublished');
+        if (savedPublished) {
+            publishedProductIds = JSON.parse(savedPublished);
+        }
+        const savedTime = localStorage.getItem('erpLastSync');
+        if (savedTime) {
+            document.getElementById('last-sync-time').textContent = `Última sincronização: ${savedTime}`;
+        }
+    }
+
     async function syncFromFacilZap() {
         showToast('Iniciando sincronização...', 'info');
         const syncButton = document.querySelector('button[onclick="syncFromFacilZap()"]');
@@ -426,7 +424,6 @@
             updateLastSyncTime();
             showToast(`Sincronização completa! ${allApiProducts.length} produtos carregados.`, 'success');
             
-            // Atualiza as visualizações
             updateDashboard();
             renderProductsTable();
             renderCatalogTable();
@@ -462,7 +459,26 @@
         localStorage.setItem('erpLastSync', now);
     }
     
-    // --- RENDERIZAÇÃO ---
+    // --- RENDERIZAÇÃO E INTERAÇÃO ---
+    function setupNavigation() {
+        document.querySelectorAll('.nav-link').forEach(link => {
+            link.addEventListener('click', (e) => {
+                e.preventDefault();
+                const pageId = e.currentTarget.dataset.page;
+                
+                document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
+                e.currentTarget.classList.add('active');
+
+                document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+                document.getElementById(pageId).classList.add('active');
+
+                if (pageId === 'products') renderProductsTable();
+                if (pageId === 'catalog') renderCatalogTable();
+                if (pageId === 'dashboard') updateDashboard();
+            });
+        });
+    }
+
     function updateDashboard() {
         document.getElementById('stat-total-products').textContent = allApiProducts.length;
         document.getElementById('stat-active-products').textContent = allApiProducts.filter(p => p.status === 'ativo').length;
@@ -474,6 +490,7 @@
         tbody.innerHTML = '';
         allApiProducts.forEach(p => {
             const row = tbody.insertRow();
+            const isPublished = publishedProductIds.includes(p.id);
             row.innerHTML = `
                 <td><img src="${proxyImageUrl(p.imagem)}" alt="${p.nome}" class="product-image" onerror="this.src='https://placehold.co/40x40/DB1472/FFFFFF?text=X'"></td>
                 <td>${p.nome}</td>
@@ -482,7 +499,7 @@
                 <td><span class="status-badge ${p.status}">${p.status.replace('_', ' ')}</span></td>
                 <td>
                     <label class="toggle-switch">
-                        <input type="checkbox" onchange="togglePublished(${p.id})" ${publishedProductIds.includes(p.id) ? 'checked' : ''}>
+                        <input type="checkbox" onchange="togglePublished(${p.id})" ${isPublished ? 'checked' : ''}>
                         <span class="slider"></span>
                     </label>
                 </td>
@@ -537,6 +554,7 @@
         }
 
         modal.classList.add('active');
+        feather.replace();
     }
 
     function closeModal(modalId) {
@@ -553,14 +571,6 @@
         localStorage.setItem('erpPublished', JSON.stringify(publishedProductIds));
         updateDashboard();
         showToast('Catálogo de revenda atualizado!', 'success');
-    }
-
-    function showToast(message, type = 'info') {
-        const toast = document.getElementById('toast');
-        toast.textContent = message;
-        toast.style.backgroundColor = type === 'success' ? 'var(--success-color)' : (type === 'error' ? 'var(--danger-color)' : '#333');
-        toast.style.bottom = '20px';
-        setTimeout(() => { toast.style.bottom = '-100px'; }, 3000);
     }
     </script>
 </body>
