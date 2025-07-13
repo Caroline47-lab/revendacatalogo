@@ -125,6 +125,7 @@
         @media(min-width: 768px) { .modal-body { grid-template-columns: 1fr 1fr; } }
         .modal-gallery .main-image { width: 100%; aspect-ratio: 1 / 1; object-fit: cover; border-radius: var(--borda-suave); margin-bottom: 10px; }
         
+        /* Estilos para a nova lista de variações no modal */
         .modal-variations-list {
             display: flex;
             flex-wrap: wrap;
@@ -352,6 +353,7 @@
                     sku: p.sku || 'N/A',
                     preco_original: p.preco,
                     imagem: fixUrl(p.imagem),
+                    estoque_total: p.total_estoque || 0,
                     status: p.status // Usa o status já tratado pelo proxy.js
                 };
             });
@@ -475,7 +477,7 @@
             productsToDisplay.forEach((p, index) => {
                 const details = productDetails[index].data || productDetails[index];
                 const variations = details.estoque || [];
-                const availableVariations = variations.filter(v => v.estoque > 0);
+                const availableVariations = variations.filter(v => (parseInt(v.estoque, 10) || 0) > 0);
 
                 if (availableVariations.length > 0) {
                     const variationsHtml = availableVariations
@@ -517,7 +519,7 @@
         }
     }
 
-    // --- LÓGICA DO MODAL (SIMPLIFICADA E CORRIGIDA) ---
+    // --- LÓGICA DO MODAL (SIMPLIFICADA) ---
     async function showProductDetails(productId) {
         const product = allApiProducts.find(p => p.id === productId);
         if (!product) return;
@@ -540,10 +542,7 @@
             const details = detailedData.data || detailedData;
             
             const variations = details.estoque || [];
-            
-            // **LÓGICA AJUSTADA**
-            // Filtra as variações com base no campo 'estoque' que o proxy já converteu para número.
-            const availableVariations = variations.filter(v => v.estoque > 0);
+            const availableVariations = variations.filter(v => (parseInt(v.estoque, 10) || 0) > 0);
 
             if (availableVariations.length > 0) {
                 const variationsHtml = availableVariations
