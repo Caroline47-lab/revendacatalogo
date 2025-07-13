@@ -81,14 +81,14 @@
         .product-card__content { padding: 15px; flex-grow: 1; display: flex; flex-direction: column; }
         .product-card__name { font-size: 1.1rem; font-weight: 600; margin-bottom: 5px; min-height: 48px; }
         .product-card__sku { font-size: 0.8rem; color: #888; margin-bottom: 10px; }
-        .product-card__price { font-size: 1.2rem; font-weight: 700; color: var(--cinza-texto); margin-bottom: 15px; }
+        .product-card__price { font-size: 1.2rem; font-weight: 700; color: var(--cinza-texto); margin-bottom: 10px; }
         .product-card__actions { margin-top: auto; padding-top: 15px; border-top: 1px solid var(--cinza-fundo); display: flex; gap: 10px; }
         .selection-control { background-color: var(--cinza-fundo); padding: 12px 15px; }
         .selection-control label { display: flex; align-items: center; gap: 10px; cursor: pointer; font-weight: 600; }
         .selection-control input[type="checkbox"] { width: 20px; height: 20px; accent-color: var(--rosa-pink); }
         
         .product-card__variations {
-            margin-top: 10px;
+            margin-top: 5px;
             margin-bottom: 15px;
             display: flex;
             flex-wrap: wrap;
@@ -102,6 +102,13 @@
             font-size: 0.8rem;
             font-weight: 600;
             border: 1px solid var(--cinza-borda);
+        }
+        .variations-title {
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: #888;
+            margin-top: 10px;
+            margin-bottom: 5px;
         }
 
         /* --- Modal e Toast --- */
@@ -450,6 +457,7 @@
         }
 
         try {
+            // Busca os detalhes de todos os produtos publicados em paralelo para otimizar o carregamento.
             const detailPromises = productsToDisplay.map(p => fetch(`/api/facilzap-proxy?id=${p.id}`));
             const detailResponses = await Promise.all(detailPromises);
 
@@ -458,14 +466,18 @@
             }
             
             const productDetails = await Promise.all(detailResponses.map(res => res.json()));
-            grid.innerHTML = '';
+            grid.innerHTML = ''; // Limpa a mensagem de "carregando".
 
             productsToDisplay.forEach((p, index) => {
                 const details = productDetails[index].data || productDetails[index];
                 const variations = details.estoque || [];
+                
+                // **LÓGICA PRINCIPAL: Filtra para pegar APENAS as variações com estoque.**
                 const availableVariations = variations.filter(v => (parseInt(v.estoque, 10) || 0) > 0);
 
+                // **Só renderiza o card do produto se houver pelo menos uma variação disponível.**
                 if (availableVariations.length > 0) {
+                    // Cria as tags HTML apenas para as variações disponíveis.
                     const variationsHtml = availableVariations
                         .map(v => `<span class="variation-tag">${v.grade_item_nome || v.nome || 'N/A'}</span>`)
                         .join('');
@@ -480,9 +492,12 @@
                         <div class="product-card__content">
                             <h3 class="product-card__name">${p.nome}</h3>
                             <p class="product-card__price">R$ ${parseFloat(price).toFixed(2)}</p>
+                            
+                            <h4 class="variations-title">Numerações disponíveis:</h4>
                             <div class="product-card__variations">
                                 ${variationsHtml}
                             </div>
+
                             <div class="product-card__actions">
                                 <button class="btn btn-primary" onclick="alert('Funcionalidade futura: Compartilhar produto.')"><i data-feather="share-2"></i> Compartilhar</button>
                             </div>
@@ -492,6 +507,7 @@
                 }
             });
             
+            // Se, após o filtro, nenhum produto tiver variações em estoque, exibe uma mensagem.
             if (grid.innerHTML === '') {
                  grid.innerHTML = `<p style="text-align:center; grid-column: 1 / -1;">Todos os produtos liberados estão sem variações em estoque no momento.</p>`;
             }
@@ -504,7 +520,7 @@
         }
     }
 
-    // --- LÓGICA DO MODAL ---
+    // --- LÓGICA DO MODAL (PAINEL ADMIN) ---
     async function showProductDetails(productId) {
         const product = allApiProducts.find(p => p.id === productId);
         if (!product) return;
@@ -538,6 +554,7 @@
                 variations.forEach(v => {
                     const variationName = v.grade_item_nome || v.nome || v.name || 'N/A';
                     const variationSku = v.sku || 'N/A';
+                    // **LÓGICA PRINCIPAL: Verifica apenas se o estoque é maior que zero, sem mostrar a quantidade.**
                     const stockAmount = parseInt(v.estoque, 10) || 0;
                     const availabilityText = stockAmount > 0 ? 'Disponível' : 'Indisponível';
                     const availabilityClass = stockAmount > 0 ? 'in-stock' : 'out-of-stock';
