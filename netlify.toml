@@ -1,21 +1,25 @@
+# Define o diretório de publicação e a pasta das funções
 [build]
   publish = "public"
   functions = "netlify/functions"
 
-# Redireciona chamadas da API de produtos
+# Redireciona chamadas da API de produtos para a função correspondente
 [[redirects]]
   from = "/api/*"
   to = "/.netlify/functions/:splat"
   status = 200
   force = true
 
-# NOVO: Redireciona chamadas de imagem para o proxy de imagem
+# Redireciona chamadas de imagem para o proxy de imagem,
+# passando o caminho da imagem como um parâmetro 'url'.
 [[redirects]]
-  from = "/facilzap-images"
-  to = "/.netlify/functions/image-proxy"
+  from = "/facilzap-images/*"
+  to = "/.netlify/functions/image-proxy?url=:splat"
   status = 200
   force = true
 
+# Configurações para as funções
 [functions]
   node_bundler = "esbuild"
+  # Aumenta o tempo limite para 30 segundos para evitar timeouts
   timeout = 30
