@@ -5,7 +5,7 @@
  * Esta versão é inteligente:
  * - Se receber um 'id', busca os detalhes de um único produto.
  * - Se buscar a lista, enriquece cada produto com um campo 'status'
- * baseado na lógica de disponibilidade (ativo/inativo e estoque).
+ * baseado estritamente na contagem de estoque.
  */
 export const handler = async (event) => {
   const FACILZAP_TOKEN = process.env.FACILZAP_TOKEN;
@@ -56,19 +56,12 @@ export const handler = async (event) => {
         const produtosEnriquecidos = data.data.map(produto => {
           let status;
 
-          // **NOVA LÓGICA DE VERIFICAÇÃO DE STATUS**
-          // 1. Verifica se o produto está explicitamente marcado como inativo.
-          //    O campo `ativo` com valor `false` é um padrão comum em APIs.
-          if (produto.ativo === false) {
-            status = 'desativado';
+          // **LÓGICA CORRIGIDA E SIMPLIFICADA BASEADA APENAS NO ESTOQUE**
+          // Conforme solicitado: > 0 é 'ativo', <= 0 é 'sem_estoque'.
+          if ((produto.total_estoque || 0) > 0) {
+            status = 'ativo'; // Produto disponível para venda.
           } else {
-            // 2. Se o produto estiver ativo (ou o campo `ativo` não existir),
-            //    aí sim verificamos o estoque para definir o status final.
-            if ((produto.total_estoque || 0) > 0) {
-              status = 'ativo'; // Produto disponível para venda.
-            } else {
-              status = 'sem_estoque'; // Produto ativo no catálogo, mas sem estoque no momento.
-            }
+            status = 'sem_estoque'; // Produto sem estoque no momento.
           }
 
           // Retorna o produto original com o novo campo 'status'
