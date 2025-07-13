@@ -493,7 +493,7 @@
             const row = tbody.insertRow();
             const isPublished = publishedProductIds.includes(p.id);
             row.innerHTML = `
-                <td><img src="${proxyImageUrl(p.imagem)}" alt="${p.nome}" class="product-image" onerror="this.onerror=null; this.src='https://placehold.co/40x40/DB1472/FFFFFF?text=X';"></td>
+                <td><img src="${proxyImageUrl(p.imagem)}" alt="${p.nome}" class="product-image" onerror="this.src='https://placehold.co/40x40/DB1472/FFFFFF?text=X'"></td>
                 <td>${p.nome}</td>
                 <td>${p.sku}</td>
                 <td>R$ ${p.preco_original.toFixed(2)}</td>
