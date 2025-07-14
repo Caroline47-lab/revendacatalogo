@@ -3,14 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Painel de Gestão de Catálogo (ERP)</title>
+    <title>Sistema de Gestão</title>
     
-    <!-- Google Fonts: Inter -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     
-    <!-- Feather Icons -->
     <script src="https://unpkg.com/feather-icons"></script>
 
     <style>
@@ -38,6 +36,52 @@
             color: var(--text-color);
             line-height: 1.5;
         }
+        
+        /* --- Estilos de Visibilidade --- */
+        .view {
+            display: none;
+        }
+        .view.active {
+            display: block;
+        }
+
+        /* --- Estilos da Landing Page --- */
+        #landing-view.active {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+        }
+        .landing-box {
+            text-align: center;
+            background-color: var(--card-bg);
+            padding: 3rem;
+            border-radius: var(--border-radius);
+            box-shadow: var(--shadow);
+            max-width: 450px;
+            width: 100%;
+        }
+        .landing-box h1 {
+            font-size: 1.875rem;
+            font-weight: 700;
+            color: var(--text-color);
+            margin-bottom: 0.5rem;
+        }
+        .landing-box p {
+            color: var(--text-light);
+            margin-bottom: 2rem;
+        }
+        .landing-box .btn-group {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+        .landing-box .btn {
+            text-decoration: none;
+            text-align: center;
+        }
+
+        /* --- Estilos Comuns dos Painéis --- */
         .app-container {
             display: flex;
             min-height: 100vh;
@@ -57,62 +101,26 @@
             margin-bottom: 2rem;
             text-align: center;
         }
-        .nav-menu {
-            list-style: none;
-            flex-grow: 1;
-        }
+        .nav-menu { list-style: none; flex-grow: 1; }
         .nav-item a {
-            display: flex;
-            align-items: center;
-            gap: 0.75rem;
-            padding: 0.75rem 1rem;
-            border-radius: 0.5rem;
-            text-decoration: none;
-            color: var(--text-light);
-            font-weight: 500;
-            transition: background-color 0.2s, color 0.2s;
+            display: flex; align-items: center; gap: 0.75rem; padding: 0.75rem 1rem;
+            border-radius: 0.5rem; text-decoration: none; color: var(--text-light);
+            font-weight: 500; transition: background-color 0.2s, color 0.2s;
         }
-        .nav-item a:hover {
-            background-color: #f1f5f9;
-            color: var(--text-color);
-        }
-        .nav-item a.active {
-            background-color: var(--primary-color);
-            color: white;
-        }
-        .sidebar-footer {
-            font-size: 0.8rem;
-            color: #94a3b8;
-            text-align: center;
-        }
-        .main-content {
-            flex-grow: 1;
-            padding: 2rem;
-            overflow-y: auto;
-        }
-        .page {
-            display: none;
-        }
-        .page.active {
-            display: block;
-            animation: fadeIn 0.4s ease-in-out;
-        }
+        .nav-item a:hover { background-color: #f1f5f9; color: var(--text-color); }
+        .nav-item a.active { background-color: var(--primary-color); color: white; }
+        .sidebar-footer { font-size: 0.8rem; color: #94a3b8; text-align: center; margin-top: 1rem; }
+        .main-content { flex-grow: 1; padding: 2rem; overflow-y: auto; }
+        .page { display: none; }
+        .page.active { display: block; animation: fadeIn 0.4s ease-in-out; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
         
-        .page-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 2rem;
-        }
-        .page-header h1 {
-            font-size: 1.75rem;
-            font-weight: 700;
-        }
+        .page-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; }
+        .page-header h1 { font-size: 1.75rem; font-weight: 700; }
         .btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 0.6rem 1.25rem; border-radius: 0.5rem; border: none; font-weight: 600; font-size: 0.9rem; cursor: pointer; transition: all 0.2s ease; }
         .btn-primary { background-color: var(--primary-color); color: white; }
         .btn-primary:hover { opacity: 0.9; }
-        .btn-secondary { background-color: var(--secondary-color); color: white; }
+        .btn-secondary { background-color: #334155; color: white; }
         .btn-secondary:hover { opacity: 0.9; }
         .btn-success { background-color: var(--success-color); color: white; }
         .btn-success:hover { opacity: 0.9; }
@@ -143,7 +151,6 @@
         input:checked + .slider { background-color: var(--primary-color); }
         input:checked + .slider:before { transform: translateX(20px); }
 
-        /* Modal */
         .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: none; justify-content: center; align-items: center; z-index: 1000; }
         .modal-overlay.active { display: flex; }
         .modal-content { background: var(--card-bg); padding: 2rem; border-radius: var(--border-radius); width: 90%; max-width: 600px; box-shadow: 0 25px 50px -12px rgb(0 0 0 / 0.25); }
@@ -171,109 +178,155 @@
         .stock-badge.in-stock { background-color: #dcfce7; color: #16a34a; }
         .stock-badge.out-of-stock { background-color: #fee2e2; color: #dc2626; }
 
-        .page-controls {
-            margin-bottom: 1.5rem;
-        }
+        .page-controls { margin-bottom: 1.5rem; }
         .search-input {
-            width: 100%;
-            max-width: 400px;
-            padding: 0.75rem 1rem;
-            border: 1px solid var(--border-color);
-            border-radius: 0.5rem;
-            font-size: 0.9rem;
-            background-color: var(--card-bg);
+            width: 100%; max-width: 400px; padding: 0.75rem 1rem; border: 1px solid var(--border-color);
+            border-radius: 0.5rem; font-size: 0.9rem; background-color: var(--card-bg);
             transition: border-color 0.2s, box-shadow 0.2s;
         }
         .search-input:focus {
-            outline: none;
-            border-color: var(--primary-color);
+            outline: none; border-color: var(--primary-color);
             box-shadow: 0 0 0 2px rgba(219, 20, 114, 0.2);
         }
         
         .variacao_nome {
-            font-weight: 600;
-            color: var(--primary-color);
-            background-color: #fce7f3;
-            padding: 0.2rem 0.6rem;
-            border-radius: 0.375rem;
-            display: inline-block;
+            font-weight: 600; color: var(--primary-color); background-color: #fce7f3;
+            padding: 0.2rem 0.6rem; border-radius: 0.375rem; display: inline-block;
+        }
+        .placeholder-card {
+            background-color: var(--card-bg); padding: 4rem 2rem; border-radius: var(--border-radius);
+            box-shadow: var(--shadow); text-align: center; color: var(--text-light);
         }
     </style>
 </head>
 <body>
 
-    <div class="app-container">
-        <aside class="sidebar">
-            <div class="sidebar-header">Meu ERP</div>
-            <ul class="nav-menu">
-                <li class="nav-item"><a href="#" class="nav-link active" data-page="dashboard"><i data-feather="home"></i> Visão Geral</a></li>
-                <li class="nav-item"><a href="#" class="nav-link" data-page="products"><i data-feather="package"></i> Produtos</a></li>
-                <li class="nav-item"><a href="#" class="nav-link" data-page="catalog"><i data-feather="book-open"></i> Catálogo Revenda</a></li>
-                <li class="nav-item"><a href="#" class="nav-link" data-page="resellers"><i data-feather="users"></i> Gerenciar Revendedoras</a></li>
-                <li class="nav-item"><a href="#" class="nav-link" data-page="sync"><i data-feather="refresh-cw"></i> Sincronização</a></li>
-            </ul>
-            <div class="sidebar-footer"><p>&copy; 2025 - Painel de Gestão</p></div>
-        </aside>
-
-        <main class="main-content">
-            <section id="dashboard" class="page active">
-                <div class="page-header"><h1>Visão Geral</h1></div>
-                <div class="stats-grid">
-                    <div class="stat-card"><p class="stat-card-title">Total de Produtos</p><p class="stat-card-value" id="stat-total-products">0</p></div>
-                    <div class="stat-card"><p class="stat-card-title">Produtos Ativos</p><p class="stat-card-value" id="stat-active-products">0</p></div>
-                    <div class="stat-card"><p class="stat-card-title">Publicados para Revenda</p><p class="stat-card-value" id="stat-published-products">0</p></div>
-                    <div class="stat-card"><p class="stat-card-title">Revendedoras Ativas</p><p class="stat-card-value" id="stat-active-resellers">0</p></div>
-                </div>
-            </section>
-
-            <section id="products" class="page">
-                <div class="page-header"><h1>Todos os Produtos</h1></div>
-                <div class="page-controls">
-                    <input type="text" id="product-search-input" class="search-input" placeholder="Buscar por nome do produto...">
-                </div>
-                <div class="table-container">
-                    <table class="product-table">
-                        <thead><tr><th>Imagem</th><th>Nome</th><th>Preço</th><th>Status</th><th>Publicar</th><th>Editar</th></tr></thead>
-                        <tbody id="products-table-body"></tbody>
-                    </table>
-                </div>
-            </section>
-            
-            <section id="catalog" class="page">
-                 <div class="page-header"><h1>Catálogo para Revendedoras</h1></div>
-                <div class="table-container">
-                    <table class="product-table">
-                        <thead><tr><th>Imagem</th><th>Nome</th><th>Preço</th><th>Variações Disponíveis</th></tr></thead>
-                        <tbody id="catalog-table-body"></tbody>
-                    </table>
-                </div>
-            </section>
-
-            <section id="resellers" class="page">
-                <div class="page-header"><h1>Gerenciar Revendedoras</h1></div>
-                <div class="table-container">
-                    <table class="product-table">
-                        <thead><tr><th>Nome</th><th>Documento</th><th>Telefone</th><th>Status</th><th>Ações</th></tr></thead>
-                        <tbody id="resellers-table-body"></tbody>
-                    </table>
-                </div>
-            </section>
-            
-            <section id="sync" class="page">
-                <div class="page-header"><h1>Sincronização com FacilZap</h1></div>
-                <div class="stat-card">
-                    <p>Clique nos botões abaixo para gerenciar a integração com a API.</p>
-                    <div style="margin-top: 1.5rem; display: flex; gap: 1rem;">
-                        <button class="btn btn-primary" onclick="syncFromFacilZap()"><i data-feather="refresh-cw"></i> Sincronizar Produtos</button>
-                        <button class="btn btn-secondary" onclick="testApiConnection()">Testar Conexão</button>
-                    </div>
-                    <p id="last-sync-time" style="margin-top: 1rem; color: var(--text-light); font-size: 0.9rem;">Última sincronização: Nunca</p>
-                </div>
-            </section>
-        </main>
+    <!-- VISÃO DA LANDING PAGE -->
+    <div id="landing-view" class="view active">
+        <div class="landing-box">
+            <h1>Bem-vindo(a) ao Sistema</h1>
+            <p>Selecione o painel que deseja acessar.</p>
+            <div class="btn-group">
+                <button id="show-empresa-panel" class="btn btn-primary">Acessar Painel da Empresa</button>
+                <button id="show-revendedor-panel" class="btn btn-secondary">Acessar Painel do Revendedor</button>
+            </div>
+        </div>
     </div>
 
-    <!-- MODAL DE DETALHES DO PRODUTO -->
+    <!-- VISÃO DO PAINEL DA EMPRESA -->
+    <div id="empresa-view" class="view">
+        <div class="app-container">
+            <aside class="sidebar">
+                <div class="sidebar-header">Meu ERP</div>
+                <ul class="nav-menu" id="empresa-nav">
+                    <li class="nav-item"><a href="#" class="nav-link active" data-page="dashboard"><i data-feather="home"></i> Visão Geral</a></li>
+                    <li class="nav-item"><a href="#" class="nav-link" data-page="products"><i data-feather="package"></i> Produtos</a></li>
+                    <li class="nav-item"><a href="#" class="nav-link" data-page="catalog"><i data-feather="book-open"></i> Catálogo Revenda</a></li>
+                    <li class="nav-item"><a href="#" class="nav-link" data-page="resellers"><i data-feather="users"></i> Gerenciar Revendedoras</a></li>
+                    <li class="nav-item"><a href="#" class="nav-link" data-page="sync"><i data-feather="refresh-cw"></i> Sincronização</a></li>
+                </ul>
+                <div class="sidebar-footer"><p>&copy; 2025 - Painel de Gestão</p></div>
+            </aside>
+            <main class="main-content">
+                <section id="dashboard" class="page active">
+                    <div class="page-header"><h1>Visão Geral</h1></div>
+                    <div class="stats-grid">
+                        <div class="stat-card"><p class="stat-card-title">Total de Produtos</p><p class="stat-card-value" id="stat-total-products">0</p></div>
+                        <div class="stat-card"><p class="stat-card-title">Produtos Ativos</p><p class="stat-card-value" id="stat-active-products">0</p></div>
+                        <div class="stat-card"><p class="stat-card-title">Publicados para Revenda</p><p class="stat-card-value" id="stat-published-products">0</p></div>
+                        <div class="stat-card"><p class="stat-card-title">Revendedoras Ativas</p><p class="stat-card-value" id="stat-active-resellers">0</p></div>
+                    </div>
+                </section>
+                <section id="products" class="page">
+                    <div class="page-header"><h1>Todos os Produtos</h1></div>
+                    <div class="page-controls"><input type="text" id="product-search-input" class="search-input" placeholder="Buscar por nome do produto..."></div>
+                    <div class="table-container">
+                        <table class="product-table">
+                            <thead><tr><th>Imagem</th><th>Nome</th><th>Preço</th><th>Status</th><th>Publicar</th><th>Editar</th></tr></thead>
+                            <tbody id="products-table-body"></tbody>
+                        </table>
+                    </div>
+                </section>
+                <section id="catalog" class="page">
+                     <div class="page-header"><h1>Catálogo para Revendedoras</h1></div>
+                    <div class="table-container">
+                        <table class="product-table">
+                            <thead><tr><th>Imagem</th><th>Nome</th><th>Preço</th><th>Variações Disponíveis</th></tr></thead>
+                            <tbody id="catalog-table-body"></tbody>
+                        </table>
+                    </div>
+                </section>
+                <section id="resellers" class="page">
+                    <div class="page-header"><h1>Gerenciar Revendedoras</h1></div>
+                    <div class="table-container">
+                        <table class="product-table">
+                            <thead><tr><th>Nome</th><th>Documento</th><th>Telefone</th><th>Status</th><th>Ações</th></tr></thead>
+                            <tbody id="resellers-table-body"></tbody>
+                        </table>
+                    </div>
+                </section>
+                <section id="sync" class="page">
+                    <div class="page-header"><h1>Sincronização com FacilZap</h1></div>
+                    <div class="stat-card">
+                        <p>Clique nos botões abaixo para gerenciar a integração com a API.</p>
+                        <div style="margin-top: 1.5rem; display: flex; gap: 1rem;">
+                            <button class="btn btn-primary" onclick="syncFromFacilZap()"><i data-feather="refresh-cw"></i> Sincronizar Produtos</button>
+                            <button class="btn btn-secondary" onclick="testApiConnection()">Testar Conexão</button>
+                        </div>
+                        <p id="last-sync-time" style="margin-top: 1rem; color: var(--text-light); font-size: 0.9rem;">Última sincronização: Nunca</p>
+                    </div>
+                </section>
+            </main>
+        </div>
+    </div>
+
+    <!-- VISÃO DO PAINEL DA REVENDEDORA -->
+    <div id="revendedor-view" class="view">
+        <div class="app-container">
+            <aside class="sidebar">
+                <div class="sidebar-header">Painel Revenda</div>
+                <ul class="nav-menu" id="revendedor-nav">
+                    <li class="nav-item"><a href="#" class="nav-link active" data-page="reseller-products"><i data-feather="tag"></i> Produtos</a></li>
+                    <li class="nav-item"><a href="#" class="nav-link" data-page="reseller-promotions"><i data-feather="gift"></i> Promoções</a></li>
+                    <li class="nav-item"><a href="#" class="nav-link" data-page="reseller-sales"><i data-feather="dollar-sign"></i> Vendas</a></li>
+                    <li class="nav-item"><a href="#" class="nav-link" data-page="reseller-settings"><i data-feather="settings"></i> Configurações do Catálogo</a></li>
+                </ul>
+                <div class="sidebar-footer"><p>&copy; 2025 - Catálogo de Revenda</p></div>
+            </aside>
+            <main class="main-content">
+                <section id="reseller-products" class="page active">
+                    <div class="page-header"><h1>Meus Produtos</h1></div>
+                    <div class="placeholder-card">
+                        <i data-feather="tag" class="w-16 h-16 mx-auto mb-4 text-gray-300"></i>
+                        <p>Aqui serão listados os produtos disponíveis para você revender.</p>
+                    </div>
+                </section>
+                <section id="reseller-promotions" class="page">
+                    <div class="page-header"><h1>Promoções</h1></div>
+                     <div class="placeholder-card">
+                        <i data-feather="gift" class="w-16 h-16 mx-auto mb-4 text-gray-300"></i>
+                        <p>Fique de olho nas promoções especiais para impulsionar suas vendas.</p>
+                    </div>
+                </section>
+                <section id="reseller-sales" class="page">
+                     <div class="page-header"><h1>Minhas Vendas</h1></div>
+                     <div class="placeholder-card">
+                        <i data-feather="dollar-sign" class="w-16 h-16 mx-auto mb-4 text-gray-300"></i>
+                        <p>Acompanhe o histórico e o desempenho de suas vendas.</p>
+                    </div>
+                </section>
+                <section id="reseller-settings" class="page">
+                    <div class="page-header"><h1>Configurações do meu Catálogo</h1></div>
+                    <div class="placeholder-card">
+                        <i data-feather="settings" class="w-16 h-16 mx-auto mb-4 text-gray-300"></i>
+                        <p>Personalize a aparência e as informações do seu catálogo de revenda.</p>
+                    </div>
+                </section>
+            </main>
+        </div>
+    </div>
+
+    <!-- MODAIS (COMPARTILHADOS) -->
     <div id="product-details-modal" class="modal-overlay">
         <div class="modal-content">
             <div class="modal-header"><h3 id="modal-product-name"></h3><button class="modal-close-btn" onclick="closeModal('product-details-modal')"><i data-feather="x"></i></button></div>
@@ -288,8 +341,6 @@
             </div>
         </div>
     </div>
-
-    <!-- MODAL DE ANÁLISE DA REVENDEDORA -->
     <div id="reseller-review-modal" class="modal-overlay">
         <div class="modal-content">
             <div class="modal-header"><h3 id="modal-reseller-name">Analisar Cadastro</h3><button class="modal-close-btn" onclick="closeModal('reseller-review-modal')"><i data-feather="x"></i></button></div>
@@ -307,34 +358,77 @@
             </div>
         </div>
     </div>
-
     <div id="toast"></div>
 
     <script>
-    // --- DADOS MOCKADOS ---
+    // --- DADOS MOCKADOS E VARIÁVEIS GLOBAIS ---
     let mockResellers = [
         { id: 1, name: 'Ana Silva', doc: '123.456.789-00', phone: '(11) 98765-4321', email: 'ana.silva@example.com', status: 'em_analise' },
         { id: 2, name: 'Joana Modas LTDA', doc: '12.345.678/0001-99', phone: '(21) 99999-8888', email: 'contato@joanamodas.com', status: 'aprovado' },
         { id: 3, name: 'Carlos Pereira', doc: '987.654.321-11', phone: '(31) 91234-5678', email: 'carlos.p@example.com', status: 'em_analise' },
         { id: 4, name: 'Mariana Costa', doc: '456.123.789-22', phone: '(41) 98877-6655', email: 'mari.costa@example.com', status: 'reprovado' },
     ];
-
-    // --- VARIÁVEIS GLOBAIS ---
     let allApiProducts = [];
     let publishedProductIds = [];
 
-    // --- INICIALIZAÇÃO E FUNÇÕES DE UTILIDADE ---
+    // --- INICIALIZAÇÃO ---
     document.addEventListener('DOMContentLoaded', () => {
+        setupViewSwitcher();
+        setupEmpresaPanel();
+        setupRevendedorPanel();
         feather.replace();
+    });
+    
+    // --- LÓGICA DE TROCA DE PAINEL ---
+    function setupViewSwitcher() {
+        const landingView = document.getElementById('landing-view');
+        const empresaView = document.getElementById('empresa-view');
+        const revendedorView = document.getElementById('revendedor-view');
+
+        document.getElementById('show-empresa-panel').addEventListener('click', () => {
+            landingView.classList.remove('active');
+            empresaView.classList.add('active');
+            feather.replace();
+        });
+
+        document.getElementById('show-revendedor-panel').addEventListener('click', () => {
+            landingView.classList.remove('active');
+            revendedorView.classList.add('active');
+            feather.replace();
+        });
+    }
+
+    // --- LÓGICA DO PAINEL DA EMPRESA ---
+    function setupEmpresaPanel() {
         loadLocalData();
-        setupNavigation();
+        setupEmpresaNavigation();
         updateDashboard();
         renderAllTables();
 
         document.getElementById('product-search-input').addEventListener('keyup', (e) => {
             renderProductsTable(e.target.value.toLowerCase());
         });
-    });
+    }
+
+    function setupEmpresaNavigation() {
+        const navContainer = document.getElementById('empresa-nav');
+        navContainer.addEventListener('click', (e) => {
+            const link = e.target.closest('.nav-link');
+            if (!link) return;
+            
+            e.preventDefault();
+            const pageId = link.dataset.page;
+            
+            navContainer.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
+            link.classList.add('active');
+
+            const mainContent = document.querySelector('#empresa-view .main-content');
+            mainContent.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+            mainContent.querySelector(`#${pageId}`).classList.add('active');
+            
+            feather.replace();
+        });
+    }
 
     function showToast(message, type = 'info') {
         const toast = document.getElementById('toast');
@@ -351,8 +445,6 @@
         return url.startsWith('http') ? `/facilzap-images?url=${encodeURIComponent(url)}` : `/facilzap-images?url=${encodeURIComponent('https://' + url)}`;
     }
     
-    // --- LÓGICA DE NEGÓCIO E PROCESSAMENTO DE DADOS ---
-    // CORREÇÃO: Função atualizada para tratar nomes de variação inconsistentes na origem.
     function processVariations(estoqueData) {
         if (!estoqueData) return [];
         if (typeof estoqueData === 'number') return [{ nome: 'Único', quantidade: estoqueData }];
@@ -360,29 +452,20 @@
         const parseItems = (items) => {
             return items.map(item => {
                 let nameValue = item.tamanho || item.variacao || item.nome || 'N/A';
-                
-                // Se o valor da variação for um objeto, tenta extrair a propriedade 'nome' dele.
                 if (typeof nameValue === 'object' && nameValue !== null) {
                     nameValue = nameValue.nome || nameValue.name || JSON.stringify(nameValue);
                 }
-                
                 let finalName = String(nameValue);
-                // Formata para 'Tamanho: XX' se for uma string parecida com um número.
                 if (!finalName.toLowerCase().startsWith('tamanho:') && !isNaN(parseInt(finalName))) {
                     finalName = `Tamanho: ${finalName}`;
                 }
-
-                return {
-                    nome: finalName,
-                    quantidade: parseInt(item.estoque || item.quantidade || 0)
-                };
+                return { nome: finalName, quantidade: parseInt(item.estoque || item.quantidade || 0) };
             });
         };
 
         if (typeof estoqueData === 'string') {
             try {
                 const parsed = JSON.parse(estoqueData);
-                // Garante que o resultado do parse seja tratado como um array.
                 return parseItems(Array.isArray(parsed) ? parsed : [parsed]);
             } catch { return []; }
         }
@@ -392,7 +475,6 @@
         return [];
     }
 
-    // --- CARREGAMENTO DE DADOS E SINCRONIZAÇÃO ---
     function loadLocalData() {
         const savedProducts = localStorage.getItem('erpProducts');
         if (savedProducts) allApiProducts = JSON.parse(savedProducts);
@@ -409,7 +491,7 @@
 
     async function syncFromFacilZap() {
         showToast('Iniciando sincronização...', 'info');
-        const syncButton = document.querySelector('button[onclick="syncFromFacilZap()"]');
+        const syncButton = document.querySelector('#empresa-view button[onclick="syncFromFacilZap()"]');
         if (syncButton) syncButton.disabled = true;
 
         allApiProducts = [];
@@ -471,22 +553,6 @@
         localStorage.setItem('erpLastSync', now);
     }
     
-    // --- RENDERIZAÇÃO E INTERAÇÃO ---
-    function setupNavigation() {
-        document.querySelectorAll('.nav-link').forEach(link => {
-            link.addEventListener('click', (e) => {
-                e.preventDefault();
-                const pageId = e.currentTarget.dataset.page;
-                document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
-                e.currentTarget.classList.add('active');
-                document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-                document.getElementById(pageId).classList.add('active');
-                renderAllTables();
-                updateDashboard();
-            });
-        });
-    }
-
     function updateDashboard() {
         document.getElementById('stat-total-products').textContent = allApiProducts.length;
         document.getElementById('stat-active-products').textContent = allApiProducts.filter(p => p.status === 'ativo').length;
@@ -505,9 +571,7 @@
         const tbody = document.getElementById('products-table-body');
         tbody.innerHTML = '';
 
-        const filteredProducts = allApiProducts.filter(p => 
-            p.nome.toLowerCase().includes(searchTerm)
-        );
+        const filteredProducts = allApiProducts.filter(p => p.nome.toLowerCase().includes(searchTerm));
 
         if (filteredProducts.length === 0) {
             const row = tbody.insertRow();
@@ -522,23 +586,11 @@
             const row = tbody.insertRow();
             const isPublished = publishedProductIds.includes(p.id);
 
-            const imgCell = row.insertCell();
-            const img = document.createElement('img');
-            img.src = proxyImageUrl(p.imagem);
-            img.alt = p.nome;
-            img.className = 'product-image';
-            img.onerror = () => { img.src = 'https://placehold.co/40x40/DB1472/FFFFFF?text=X'; };
-            imgCell.appendChild(img);
-
+            row.insertCell().innerHTML = `<img src="${proxyImageUrl(p.imagem)}" alt="${p.nome}" class="product-image" onerror="this.src='https://placehold.co/40x40/DB1472/FFFFFF?text=X'">`;
             row.insertCell().textContent = p.nome;
             row.insertCell().textContent = `R$ ${p.preco_original.toFixed(2)}`;
-
-            const statusCell = row.insertCell();
-            const statusBadge = document.createElement('span');
-            statusBadge.className = `status-badge ${p.status}`;
-            statusBadge.textContent = p.status.replace('_', ' ');
-            statusCell.appendChild(statusBadge);
-
+            row.insertCell().innerHTML = `<span class="status-badge ${p.status}">${p.status.replace('_', ' ')}</span>`;
+            
             const publishCell = row.insertCell();
             const toggleLabel = document.createElement('label');
             toggleLabel.className = 'toggle-switch';
@@ -546,19 +598,15 @@
             toggleInput.type = 'checkbox';
             toggleInput.checked = isPublished;
             toggleInput.addEventListener('change', () => togglePublished(p.id));
-            const toggleSlider = document.createElement('span');
-            toggleSlider.className = 'slider';
             toggleLabel.appendChild(toggleInput);
-            toggleLabel.appendChild(toggleSlider);
+            toggleLabel.appendChild(document.createElement('span')).className = 'slider';
             publishCell.appendChild(toggleLabel);
 
             const actionsCell = row.insertCell();
             const viewButton = document.createElement('button');
             viewButton.className = 'btn';
             viewButton.style.padding = '0.25rem 0.5rem';
-            const viewIcon = document.createElement('i');
-            viewIcon.setAttribute('data-feather', 'edit-2');
-            viewButton.appendChild(viewIcon);
+            viewButton.innerHTML = `<i data-feather="edit-2"></i>`;
             viewButton.addEventListener('click', () => showProductDetails(p.id));
             actionsCell.appendChild(viewButton);
         });
@@ -588,33 +636,22 @@
         tbody.innerHTML = '';
         mockResellers.forEach(r => {
             const row = tbody.insertRow();
-            
             row.insertCell().textContent = r.name;
             row.insertCell().textContent = r.doc;
             row.insertCell().textContent = r.phone;
-
-            const statusCell = row.insertCell();
-            const statusBadge = document.createElement('span');
-            statusBadge.className = `status-badge ${r.status}`;
-            statusBadge.textContent = r.status.replace('_', ' ');
-            statusCell.appendChild(statusBadge);
-
+            row.insertCell().innerHTML = `<span class="status-badge ${r.status}">${r.status.replace('_', ' ')}</span>`;
+            
             const actionsCell = row.insertCell();
             const reviewButton = document.createElement('button');
             reviewButton.className = 'btn';
             reviewButton.style.padding = '0.25rem 0.5rem';
-            const reviewIcon = document.createElement('i');
-            reviewIcon.setAttribute('data-feather', 'edit');
-            reviewButton.appendChild(reviewIcon);
-            const buttonText = document.createTextNode(' Analisar');
-            reviewButton.appendChild(buttonText);
+            reviewButton.innerHTML = `<i data-feather="edit"></i> Analisar`;
             reviewButton.addEventListener('click', () => showResellerReview(r.id));
             actionsCell.appendChild(reviewButton);
         });
         feather.replace();
     }
 
-    // CORREÇÃO: Função de exibição simplificada, pois os dados já estão formatados.
     function showProductDetails(productId) {
         const product = allApiProducts.find(p => p.id === productId);
         if (!product) return;
@@ -625,18 +662,8 @@
         if (product.variacoes && product.variacoes.length > 0) {
             product.variacoes.forEach(v => {
                 const row = tbody.insertRow();
-
-                const nameCell = row.insertCell();
-                const nameSpan = document.createElement('span');
-                nameSpan.className = 'variacao_nome';
-                nameSpan.textContent = v.nome; // Exibe o nome já formatado
-                nameCell.appendChild(nameSpan);
-
-                const stockCell = row.insertCell();
-                const badge = document.createElement('span');
-                badge.className = `stock-badge ${v.quantidade > 0 ? 'in-stock' : 'out-of-stock'}`;
-                badge.textContent = v.quantidade > 0 ? `Disponível (${v.quantidade})` : 'Esgotado';
-                stockCell.appendChild(badge);
+                row.insertCell().innerHTML = `<span class="variacao_nome">${v.nome}</span>`;
+                row.insertCell().innerHTML = `<span class="stock-badge ${v.quantidade > 0 ? 'in-stock' : 'out-of-stock'}">${v.quantidade > 0 ? `Disponível (${v.quantidade})` : 'Esgotado'}</span>`;
             });
         } else {
             tbody.innerHTML = '<tr><td colspan="2" style="text-align:center;">Nenhuma variação encontrada.</td></tr>';
@@ -685,6 +712,27 @@
         localStorage.setItem('erpPublished', JSON.stringify(publishedProductIds));
         updateDashboard();
         showToast('Catálogo de revenda atualizado!', 'success');
+    }
+
+    // --- LÓGICA DO PAINEL DA REVENDEDORA ---
+    function setupRevendedorPanel() {
+        const navContainer = document.getElementById('revendedor-nav');
+        navContainer.addEventListener('click', (e) => {
+            const link = e.target.closest('.nav-link');
+            if (!link) return;
+            
+            e.preventDefault();
+            const pageId = link.dataset.page;
+            
+            navContainer.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
+            link.classList.add('active');
+
+            const mainContent = document.querySelector('#revendedor-view .main-content');
+            mainContent.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+            mainContent.querySelector(`#${pageId}`).classList.add('active');
+            
+            feather.replace();
+        });
     }
     </script>
 </body>
