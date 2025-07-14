@@ -170,6 +170,26 @@
         .stock-badge { padding: 0.25rem 0.75rem; border-radius: 999px; font-size: 0.75rem; font-weight: 600; }
         .stock-badge.in-stock { background-color: #dcfce7; color: #16a34a; }
         .stock-badge.out-of-stock { background-color: #fee2e2; color: #dc2626; }
+
+        /* NOVO: Estilo para a barra de busca */
+        .page-controls {
+            margin-bottom: 1.5rem;
+        }
+        .search-input {
+            width: 100%;
+            max-width: 400px;
+            padding: 0.75rem 1rem;
+            border: 1px solid var(--border-color);
+            border-radius: 0.5rem;
+            font-size: 0.9rem;
+            background-color: var(--card-bg);
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+        .search-input:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 2px rgba(219, 20, 114, 0.2);
+        }
     </style>
 </head>
 <body>
@@ -200,9 +220,14 @@
 
             <section id="products" class="page">
                 <div class="page-header"><h1>Todos os Produtos</h1></div>
+                <!-- NOVO: Barra de busca adicionada -->
+                <div class="page-controls">
+                    <input type="text" id="product-search-input" class="search-input" placeholder="Buscar por nome do produto...">
+                </div>
                 <div class="table-container">
                     <table class="product-table">
-                        <thead><tr><th>Imagem</th><th>Nome</th><th>SKU</th><th>Preço</th><th>Status</th><th>Publicar</th><th>Editar</th></tr></thead>
+                        <!-- MUDANÇA: SKU removido do cabeçalho -->
+                        <thead><tr><th>Imagem</th><th>Nome</th><th>Preço</th><th>Status</th><th>Publicar</th><th>Editar</th></tr></thead>
                         <tbody id="products-table-body"></tbody>
                     </table>
                 </div>
@@ -299,6 +324,11 @@
         setupNavigation();
         updateDashboard();
         renderAllTables();
+
+        // NOVO: Event listener para a barra de busca
+        document.getElementById('product-search-input').addEventListener('keyup', (e) => {
+            renderProductsTable(e.target.value.toLowerCase());
+        });
     });
 
     function showToast(message, type = 'info') {
@@ -437,16 +467,22 @@
         renderResellersTable();
     }
 
-    function renderProductsTable() {
+    // MUDANÇA: Função atualizada para aceitar um termo de busca
+    function renderProductsTable(searchTerm = '') {
         const tbody = document.getElementById('products-table-body');
         tbody.innerHTML = '';
-        allApiProducts.forEach(p => {
+
+        const filteredProducts = allApiProducts.filter(p => 
+            p.nome.toLowerCase().includes(searchTerm)
+        );
+
+        filteredProducts.forEach(p => {
             const row = tbody.insertRow();
             const isPublished = publishedProductIds.includes(p.id);
+            // MUDANÇA: SKU removido da linha da tabela
             row.innerHTML = `
                 <td><img src="${proxyImageUrl(p.imagem)}" alt="${p.nome}" class="product-image" onerror="this.src='https://placehold.co/40x40/DB1472/FFFFFF?text=X'"></td>
                 <td>${p.nome}</td>
-                <td>${p.sku}</td>
                 <td>R$ ${p.preco_original.toFixed(2)}</td>
                 <td><span class="status-badge ${p.status}">${p.status.replace('_', ' ')}</span></td>
                 <td>
