@@ -312,6 +312,7 @@
                                     <th>Preço Base</th>
                                     <th>Sua Margem (%)</th>
                                     <th>Preço Final</th>
+                                    <th>Ativar no Catálogo</th>
                                     <th>Ações</th>
                                 </tr>
                             </thead>
@@ -400,6 +401,7 @@
     let allApiProducts = [];
     let publishedProductIds = [];
     let resellerProductMargins = {}; // { productId: margin, ... }
+    let resellerActiveProductIds = []; // { productId, ... }
 
     // --- INICIALIZAÇÃO ---
     document.addEventListener('DOMContentLoaded', () => {
@@ -511,6 +513,9 @@
 
         const savedMargins = localStorage.getItem('resellerMargins');
         if (savedMargins) resellerProductMargins = JSON.parse(savedMargins);
+
+        const savedResellerActive = localStorage.getItem('resellerActiveProducts');
+        if (savedResellerActive) resellerActiveProductIds = JSON.parse(savedResellerActive);
         
         const savedTime = localStorage.getItem('erpLastSync');
         if (savedTime) document.getElementById('last-sync-time').textContent = `Última sincronização: ${savedTime}`;
@@ -783,13 +788,14 @@
         const resellerProducts = allApiProducts.filter(p => publishedProductIds.includes(p.id));
 
         if (resellerProducts.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="6" style="text-align: center;">Nenhum produto disponível no momento.</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="7" style="text-align: center;">Nenhum produto disponível no momento.</td></tr>';
             return;
         }
 
         resellerProducts.forEach(p => {
             const margin = resellerProductMargins[p.id] || 30; // Default 30%
             const finalPrice = p.preco_original * (1 + margin / 100);
+            const isActive = resellerActiveProductIds.includes(p.id);
             const row = tbody.insertRow();
 
             row.insertCell().innerHTML = `<img src="${proxyImageUrl(p.imagem)}" alt="${p.nome}" class="product-image" onerror="this.src='https://placehold.co/40x40/DB1472/FFFFFF?text=X'">`;
@@ -797,6 +803,17 @@
             row.insertCell().textContent = `R$ ${p.preco_original.toFixed(2)}`;
             row.insertCell().textContent = `${margin}%`;
             row.insertCell().textContent = `R$ ${finalPrice.toFixed(2)}`;
+            
+            const activeCell = row.insertCell();
+            const toggleLabel = document.createElement('label');
+            toggleLabel.className = 'toggle-switch';
+            const toggleInput = document.createElement('input');
+            toggleInput.type = 'checkbox';
+            toggleInput.checked = isActive;
+            toggleInput.addEventListener('change', () => toggleResellerProductActive(p.id));
+            toggleLabel.appendChild(toggleInput);
+            toggleLabel.appendChild(document.createElement('span')).className = 'slider';
+            activeCell.appendChild(toggleLabel);
             
             const actionsCell = row.insertCell();
             const editButton = document.createElement('button');
@@ -807,6 +824,17 @@
             actionsCell.appendChild(editButton);
         });
         feather.replace();
+    }
+
+    function toggleResellerProductActive(productId) {
+        const index = resellerActiveProductIds.indexOf(productId);
+        if (index > -1) {
+            resellerActiveProductIds.splice(index, 1);
+        } else {
+            resellerActiveProductIds.push(productId);
+        }
+        localStorage.setItem('resellerActiveProducts', JSON.stringify(resellerActiveProductIds));
+        showToast('Visibilidade do produto no seu catálogo atualizada!', 'success');
     }
 
     function showResellerProductEditModal(productId) {
