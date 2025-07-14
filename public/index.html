@@ -147,6 +147,22 @@
         .modal-close-btn { background: none; border: none; cursor: pointer; color: var(--text-light); }
 
         #toast { position: fixed; bottom: -100px; left: 50%; transform: translateX(-50%); background-color: #333; color: white; padding: 1rem 1.5rem; border-radius: 0.5rem; transition: bottom 0.5s ease; z-index: 2000; box-shadow: var(--shadow); }
+        
+        /* CSS Adicional para badges de estoque no modal */
+        .stock-badge {
+            padding: 0.25rem 0.75rem;
+            border-radius: 999px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+        .stock-badge.in-stock {
+            background-color: #dcfce7;
+            color: #16a34a;
+        }
+        .stock-badge.out-of-stock {
+            background-color: #fee2e2;
+            color: #dc2626;
+        }
     </style>
 </head>
 <body>
@@ -490,32 +506,79 @@
     function renderProductsTable() {
         const tbody = document.getElementById('products-table-body');
         tbody.innerHTML = '';
+        
         allApiProducts.forEach(p => {
-            const row = tbody.insertRow();
+            const row = document.createElement('tr');
             const isPublished = publishedProductIds.includes(p.id);
-
-            // Criação programática das células para robustez
-            row.insertCell().innerHTML = `<img src="${proxyImageUrl(p.imagem)}" alt="${p.nome}" class="product-image" onerror="this.src='https://placehold.co/40x40/DB1472/FFFFFF?text=X'">`;
-            row.insertCell().textContent = p.nome;
-            row.insertCell().textContent = p.sku;
-            row.insertCell().textContent = `R$ ${p.preco_original.toFixed(2)}`;
-            row.insertCell().innerHTML = `<span class="status-badge ${p.status}">${p.status.replace('_', ' ')}</span>`;
             
-            const publishCell = row.insertCell();
+            // Célula de Imagem
+            const imgCell = document.createElement('td');
+            const img = document.createElement('img');
+            img.src = proxyImageUrl(p.imagem);
+            img.alt = p.nome;
+            img.className = 'product-image';
+            img.onerror = () => img.src = 'https://placehold.co/40x40/DB1472/FFFFFF?text=X';
+            imgCell.appendChild(img);
+            
+            // Células de Texto
+            const nameCell = document.createElement('td');
+            nameCell.textContent = p.nome;
+            
+            const skuCell = document.createElement('td');
+            skuCell.textContent = p.sku;
+            
+            const priceCell = document.createElement('td');
+            priceCell.textContent = `R$ ${p.preco_original.toFixed(2)}`;
+            
+            // Célula de Status
+            const statusCell = document.createElement('td');
+            const statusBadge = document.createElement('span');
+            statusBadge.className = `status-badge ${p.status}`;
+            statusBadge.textContent = p.status.replace('_', ' ');
+            statusCell.appendChild(statusBadge);
+            
+            // Célula de Publicação (Toggle)
+            const publishCell = document.createElement('td');
             const toggleLabel = document.createElement('label');
             toggleLabel.className = 'toggle-switch';
-            toggleLabel.innerHTML = `<input type="checkbox" onchange="togglePublished(${p.id})" ${isPublished ? 'checked' : ''}><span class="slider"></span>`;
+            
+            const toggleInput = document.createElement('input');
+            toggleInput.type = 'checkbox';
+            toggleInput.checked = isPublished;
+            toggleInput.addEventListener('change', () => togglePublished(p.id));
+            
+            const toggleSlider = document.createElement('span');
+            toggleSlider.className = 'slider';
+            
+            toggleLabel.appendChild(toggleInput);
+            toggleLabel.appendChild(toggleSlider);
             publishCell.appendChild(toggleLabel);
-
-            const actionsCell = row.insertCell();
+            
+            // Célula de Ações (Botão Visualizar)
+            const actionsCell = document.createElement('td');
             const viewButton = document.createElement('button');
             viewButton.className = 'btn';
             viewButton.style.padding = '0.25rem 0.5rem';
-            viewButton.innerHTML = '<i data-feather="eye"></i>';
-            // CORREÇÃO: Adiciona o event listener programaticamente
+            
+            const viewIcon = document.createElement('i');
+            viewIcon.setAttribute('data-feather', 'eye');
+            
+            viewButton.appendChild(viewIcon);
             viewButton.addEventListener('click', () => showProductDetails(p.id));
             actionsCell.appendChild(viewButton);
+            
+            // Montar a linha
+            row.appendChild(imgCell);
+            row.appendChild(nameCell);
+            row.appendChild(skuCell);
+            row.appendChild(priceCell);
+            row.appendChild(statusCell);
+            row.appendChild(publishCell);
+            row.appendChild(actionsCell);
+            
+            tbody.appendChild(row);
         });
+        
         feather.replace();
     }
 
@@ -550,34 +613,34 @@
         const tbody = document.getElementById('modal-variations-tbody');
         
         document.getElementById('modal-product-name').textContent = product.nome;
-        document.getElementById('modal-main-image').src = proxyImageUrl(product.imagem);
-        
-        tbody.innerHTML = ''; // Limpa antes de popular
+        tbody.innerHTML = '';
 
         if (product.variacoes && product.variacoes.length > 0) {
             product.variacoes.forEach(v => {
                 const row = document.createElement('tr');
                 
                 const nameCell = document.createElement('td');
-                // CORREÇÃO: Remove o prefixo "Tamanho: " para exibir apenas o número
                 nameCell.textContent = (v.nome || '').replace('Tamanho: ', '');
-                row.appendChild(nameCell);
                 
                 const stockCell = document.createElement('td');
                 const badge = document.createElement('span');
+                // Usa as novas classes de badge de estoque
                 badge.className = v.quantidade > 0 ? 'stock-badge in-stock' : 'stock-badge out-of-stock';
                 badge.textContent = v.quantidade > 0 ? `Disponível (${v.quantidade})` : 'Esgotado';
-                stockCell.appendChild(badge);
-                row.appendChild(stockCell);
                 
+                stockCell.appendChild(badge);
+                row.appendChild(nameCell);
+                row.appendChild(stockCell);
                 tbody.appendChild(row);
             });
         } else {
-            const row = tbody.insertRow();
-            const cell = row.insertCell();
+            const row = document.createElement('tr');
+            const cell = document.createElement('td');
             cell.colSpan = 2;
-            cell.textContent = 'Nenhuma variação encontrada para este produto.';
+            cell.textContent = 'Nenhuma variação encontrada';
             cell.style.textAlign = 'center';
+            row.appendChild(cell);
+            tbody.appendChild(row);
         }
         
         modal.classList.add('active');
