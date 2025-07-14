@@ -192,14 +192,15 @@
         .catalog-cart-icon { position: relative; }
         .cart-count { position: absolute; top: -8px; right: -8px; background-color: white; color: var(--reseller-primary-color); border-radius: 50%; width: 20px; height: 20px; display: flex; align-items: center; justify-content: center; font-size: 0.75rem; font-weight: 700; }
         
-        .catalog-search-container {
+        .catalog-content-body {
             background-color: var(--card-bg);
-            padding: 2rem 1rem;
-            margin-top: -60px; /* Puxa para cima para sobrepor o banner */
+            margin-top: -100px; /* Puxa para cima para sobrepor o banner */
             position: relative;
             z-index: 5;
             border-radius: 1.5rem 1.5rem 0 0;
+            padding-top: 80px; /* Espaço para a logo */
         }
+
         .catalog-search-wrapper {
             max-width: 700px;
             margin: 0 auto;
@@ -209,6 +210,7 @@
             border: 2px solid var(--reseller-primary-color);
             box-shadow: var(--shadow);
             overflow: hidden;
+            transform: translateY(-50%);
         }
         #catalog-search-input {
             flex-grow: 1;
@@ -315,8 +317,9 @@
             .catalog-banner-area {
                 height: 140px;
             }
-            .catalog-search-container {
-                margin-top: -40px;
+            .catalog-content-body {
+                margin-top: -80px;
+                padding-top: 60px;
             }
             .filter-bubble {
                 width: 50px;
@@ -1002,29 +1005,27 @@
                         <span id="cart-count" class="cart-count" style="display: none;">0</span>
                     </a>
                 </div>
+                <div class="catalog-banner-area">
+                    <!-- Esta área pode conter uma imagem de banner no futuro, por enquanto é o fundo colorido -->
+                </div>
                 <div class="catalog-logo-container">
                     <img id="catalog-logo" src="https://placehold.co/180x180/e2e8f0/334155?text=Logo" alt="Logo da loja">
                 </div>
             </div>
 
-            <div class="catalog-banner-area">
-                <!-- Esta área pode conter uma imagem de banner no futuro, por enquanto é o fundo colorido -->
-            </div>
-
-            <div class="catalog-search-container">
-                <div class="catalog-search-wrapper">
-                    <input type="text" id="catalog-search-input" placeholder="O que você procura?" value="${searchTerm}">
-                    <button id="catalog-search-btn"><i data-feather="search"></i></button>
-                </div>
-            </div>
-
             <main id="catalog-main-container">
-                <div id="catalog-main-content">
-                    <div class="catalog-filters-container">
-                        <h3>COMPRE POR TAMANHO</h3>
-                        <div id="catalog-filters" class="filter-bubbles"></div>
+                <div class="catalog-content-body">
+                    <div class="catalog-search-wrapper">
+                        <input type="text" id="catalog-search-input" placeholder="O que você procura?" value="${searchTerm}">
+                        <button id="catalog-search-btn"><i data-feather="search"></i></button>
                     </div>
-                    <div id="catalog-product-grid" class="catalog-grid"></div>
+                    <div id="catalog-main-content">
+                        <div class="catalog-filters-container">
+                            <h3>COMPRE POR TAMANHO</h3>
+                            <div id="catalog-filters" class="filter-bubbles"></div>
+                        </div>
+                        <div id="catalog-product-grid" class="catalog-grid"></div>
+                    </div>
                 </div>
                 <div id="product-detail-content" style="display: none;"></div>
             </main>
