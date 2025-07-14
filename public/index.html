@@ -149,47 +149,56 @@
         #catalog-preview-view { background-color: #f8fafc; }
         .catalog-top-bar { background: linear-gradient(90deg, var(--reseller-primary-color), var(--reseller-secondary-color)); color: white; text-align: center; padding: 0.5rem; font-size: 0.8rem; font-weight: 500; }
         
-        .catalog-hero-section {
+        .catalog-header-container {
             position: relative;
-            background-color: var(--reseller-secondary-color);
-            padding-bottom: 80px; /* Espaço para a logo e a barra de busca */
         }
-        .catalog-main-header {
+
+        .catalog-gradient-bar {
+            background: linear-gradient(90deg, var(--reseller-primary-color), var(--reseller-secondary-color));
+            height: 60px;
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: 1rem 1.5rem;
+            padding: 0 1.5rem;
         }
-        .catalog-main-header button, .catalog-main-header a {
+        
+        .catalog-gradient-bar button, .catalog-gradient-bar a {
             color: white;
             background: none;
             border: none;
             cursor: pointer;
         }
-        .catalog-hero-logo-container {
+
+        .catalog-banner-area {
+            background-color: var(--reseller-secondary-color);
+            height: 190px;
+        }
+
+        .catalog-logo-container {
             position: absolute;
-            top: 50%;
+            top: 60px; /* Altura da barra de gradiente */
             left: 50%;
-            transform: translate(-50%, -50%);
+            transform: translate(-50%, -50%); /* Centraliza na borda */
             z-index: 10;
         }
-        .catalog-hero-logo-container img {
-            height: 180px; 
-            width: 180px;  
+        .catalog-logo-container img {
+            height: 160px; 
+            width: 160px;  
             border-radius: 50%;
             object-fit: cover;
             border: 5px solid white; 
             box-shadow: 0 5px 20px rgba(0,0,0,0.2);
         }
         .catalog-cart-icon { position: relative; }
-        .cart-count { position: absolute; top: -8px; right: -8px; background-color: var(--reseller-primary-color); color: white; border-radius: 50%; width: 20px; height: 20px; display: flex; align-items: center; justify-content: center; font-size: 0.75rem; font-weight: 700; }
+        .cart-count { position: absolute; top: -8px; right: -8px; background-color: white; color: var(--reseller-primary-color); border-radius: 50%; width: 20px; height: 20px; display: flex; align-items: center; justify-content: center; font-size: 0.75rem; font-weight: 700; }
         
         .catalog-search-container {
-            position: absolute;
-            bottom: -28px;
-            left: 5%;
-            width: 90%;
+            background-color: var(--card-bg);
+            padding: 2rem 1rem;
+            margin-top: -60px; /* Puxa para cima para sobrepor o banner */
+            position: relative;
             z-index: 5;
+            border-radius: 1.5rem 1.5rem 0 0;
         }
         .catalog-search-wrapper {
             max-width: 700px;
@@ -215,7 +224,7 @@
             cursor: pointer;
         }
 
-        .catalog-filters-container { padding: 4rem 1rem 1.5rem 1rem; background-color: var(--card-bg); text-align: center; }
+        .catalog-filters-container { padding: 2rem 1rem 1.5rem 1rem; background-color: var(--card-bg); text-align: center; }
         .catalog-filters-container h3 {
             color: var(--reseller-primary-color);
             font-weight: 700;
@@ -299,15 +308,15 @@
             .product-detail-info h1 { 
                 font-size: 1.8rem; 
             }
-            .catalog-hero-logo-container img {
+            .catalog-logo-container img {
                 height: 120px;
                 width: 120px;
             }
-            .catalog-hero-section {
-                padding-bottom: 60px;
+            .catalog-banner-area {
+                height: 140px;
             }
-            .catalog-filters-container {
-                padding-top: 3rem;
+            .catalog-search-container {
+                margin-top: -40px;
             }
             .filter-bubble {
                 width: 50px;
@@ -985,22 +994,27 @@
         catalogView.innerHTML = `
             <div class="catalog-top-bar">USE O CUPOM: PRIMEIRACOMPRA &nbsp;&bull;&nbsp; APROVEITE 10% OFF &nbsp;&bull;&nbsp; FRETE GRÁTIS EM COMPRAS ACIMA DE R$599</div>
             
-            <div class="catalog-hero-section">
-                <header class="catalog-main-header">
+            <div class="catalog-header-container">
+                <div class="catalog-gradient-bar">
                     <button id="catalog-menu-toggle"><i data-feather="menu"></i></button>
                     <a href="#" id="cart-button" class="catalog-cart-icon">
                         <i data-feather="shopping-cart"></i>
                         <span id="cart-count" class="cart-count" style="display: none;">0</span>
                     </a>
-                </header>
-                <div class="catalog-hero-logo-container">
+                </div>
+                <div class="catalog-logo-container">
                     <img id="catalog-logo" src="https://placehold.co/180x180/e2e8f0/334155?text=Logo" alt="Logo da loja">
                 </div>
-                <div class="catalog-search-container">
-                    <div class="catalog-search-wrapper">
-                        <input type="text" id="catalog-search-input" placeholder="O que você procura?" value="${searchTerm}">
-                        <button id="catalog-search-btn"><i data-feather="search"></i></button>
-                    </div>
+            </div>
+
+            <div class="catalog-banner-area">
+                <!-- Esta área pode conter uma imagem de banner no futuro, por enquanto é o fundo colorido -->
+            </div>
+
+            <div class="catalog-search-container">
+                <div class="catalog-search-wrapper">
+                    <input type="text" id="catalog-search-input" placeholder="O que você procura?" value="${searchTerm}">
+                    <button id="catalog-search-btn"><i data-feather="search"></i></button>
                 </div>
             </div>
 
@@ -1043,9 +1057,13 @@
             .map(nome => nome.replace('Tamanho: ', '').trim());
         const allVariations = [...new Set(allVariationNames)];
         
-        filtersContainer.innerHTML = `<button class="filter-bubble ${sizeFilter === '' ? 'active' : ''}" data-size="">Todos</button>`;
+        filtersContainer.innerHTML = ``; // Limpa os filtros antes de adicionar
         allVariations.sort((a,b) => a - b).forEach(size => {
-            filtersContainer.innerHTML += `<button class="filter-bubble ${sizeFilter === size ? 'active' : ''}" data-size="${size}">${size}</button>`;
+            const filterButton = document.createElement('button');
+            filterButton.className = `filter-bubble ${sizeFilter === size ? 'active' : ''}`;
+            filterButton.dataset.size = size;
+            filterButton.textContent = size;
+            filtersContainer.appendChild(filterButton);
         });
         
         if (searchTerm) activeCatalogProducts = activeCatalogProducts.filter(p => p.nome.toLowerCase().includes(searchTerm));
