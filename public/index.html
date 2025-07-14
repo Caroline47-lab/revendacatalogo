@@ -24,6 +24,7 @@
             --border-color: #e2e8f0;
             --success-color: #10b981;
             --danger-color: #ef4444;
+            --warning-color: #f59e0b;
             --info-color: #3b82f6;
             --font-sans: 'Inter', sans-serif;
             --shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
@@ -113,24 +114,28 @@
         .btn-primary:hover { opacity: 0.9; }
         .btn-secondary { background-color: var(--secondary-color); color: white; }
         .btn-secondary:hover { opacity: 0.9; }
+        .btn-success { background-color: var(--success-color); color: white; }
+        .btn-success:hover { opacity: 0.9; }
+        .btn-danger { background-color: var(--danger-color); color: white; }
+        .btn-danger:hover { opacity: 0.9; }
         
         .stats-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 1.5rem; margin-bottom: 2rem; }
         .stat-card { background-color: var(--card-bg); padding: 1.5rem; border-radius: var(--border-radius); box-shadow: var(--shadow); }
         .stat-card-title { font-size: 0.9rem; color: var(--text-light); margin-bottom: 0.5rem; }
         .stat-card-value { font-size: 2rem; font-weight: 700; }
 
-        .table-container { background-color: var(--card-bg); border-radius: var(--border-radius); box-shadow: var(--shadow); overflow: hidden; }
+        .table-container { background-color: var(--card-bg); border-radius: var(--border-radius); box-shadow: var(--shadow); overflow-x: auto; }
         .product-table { width: 100%; border-collapse: collapse; }
-        .product-table th, .product-table td { padding: 1rem; text-align: left; border-bottom: 1px solid var(--border-color); }
+        .product-table th, .product-table td { padding: 1rem; text-align: left; border-bottom: 1px solid var(--border-color); white-space: nowrap; }
         .product-table th { background-color: #f8fafc; font-size: 0.8rem; text-transform: uppercase; color: var(--text-light); }
         .product-table td { font-size: 0.9rem; }
         .product-image { width: 40px; height: 40px; object-fit: cover; border-radius: 0.25rem; }
         
         .status-badge { padding: 0.25rem 0.75rem; border-radius: 999px; font-size: 0.75rem; font-weight: 600; text-transform: capitalize; }
-        .status-badge.ativo { background-color: #dcfce7; color: #16a34a; }
-        .status-badge.sem_estoque { background-color: #fee2e2; color: #dc2626; }
+        .status-badge.ativo, .status-badge.aprovado { background-color: #dcfce7; color: #16a34a; }
+        .status-badge.sem_estoque, .status-badge.reprovado { background-color: #fee2e2; color: #dc2626; }
+        .status-badge.em_analise { background-color: #fef3c7; color: #d97706; }
         
-        /* Switch Toggle para Publicar */
         .toggle-switch { position: relative; display: inline-block; width: 44px; height: 24px; }
         .toggle-switch input { opacity: 0; width: 0; height: 0; }
         .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #ccc; transition: .4s; border-radius: 34px; }
@@ -142,27 +147,29 @@
         .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: none; justify-content: center; align-items: center; z-index: 1000; }
         .modal-overlay.active { display: flex; }
         .modal-content { background: var(--card-bg); padding: 2rem; border-radius: var(--border-radius); width: 90%; max-width: 600px; box-shadow: 0 25px 50px -12px rgb(0 0 0 / 0.25); }
-        .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; }
+        .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; }
         .modal-header h3 { font-size: 1.25rem; }
         .modal-close-btn { background: none; border: none; cursor: pointer; color: var(--text-light); }
+        
+        .modal-body-grid { display: grid; grid-template-columns: 1fr 2fr; gap: 1.5rem; align-items: flex-start; }
+        .modal-image-container img { width: 100%; height: auto; border-radius: var(--border-radius); object-fit: cover; border: 1px solid var(--border-color); }
+        @media (max-width: 640px) {
+            .modal-body-grid { grid-template-columns: 1fr; }
+            .modal-image-container { text-align: center; margin-bottom: 1rem; }
+            .modal-image-container img { max-width: 200px; }
+        }
+
+        .modal-footer { margin-top: 1.5rem; display: flex; justify-content: flex-end; gap: 0.75rem; }
+        .info-list { list-style: none; padding: 0; }
+        .info-list li { display: flex; justify-content: space-between; padding: 0.5rem 0; border-bottom: 1px solid var(--border-color); }
+        .info-list li:last-child { border-bottom: none; }
+        .info-list strong { color: var(--text-color); }
 
         #toast { position: fixed; bottom: -100px; left: 50%; transform: translateX(-50%); background-color: #333; color: white; padding: 1rem 1.5rem; border-radius: 0.5rem; transition: bottom 0.5s ease; z-index: 2000; box-shadow: var(--shadow); }
         
-        /* CSS Adicional para badges de estoque no modal */
-        .stock-badge {
-            padding: 0.25rem 0.75rem;
-            border-radius: 999px;
-            font-size: 0.75rem;
-            font-weight: 600;
-        }
-        .stock-badge.in-stock {
-            background-color: #dcfce7;
-            color: #16a34a;
-        }
-        .stock-badge.out-of-stock {
-            background-color: #fee2e2;
-            color: #dc2626;
-        }
+        .stock-badge { padding: 0.25rem 0.75rem; border-radius: 999px; font-size: 0.75rem; font-weight: 600; }
+        .stock-badge.in-stock { background-color: #dcfce7; color: #16a34a; }
+        .stock-badge.out-of-stock { background-color: #fee2e2; color: #dc2626; }
     </style>
 </head>
 <body>
@@ -171,106 +178,58 @@
         <aside class="sidebar">
             <div class="sidebar-header">Meu ERP</div>
             <ul class="nav-menu">
-                <li class="nav-item">
-                    <a href="#" class="nav-link active" data-page="dashboard">
-                        <i data-feather="home"></i> Visão Geral
-                    </a>
-                </li>
-                <li class="nav-item">
-                    <a href="#" class="nav-link" data-page="products">
-                        <i data-feather="package"></i> Produtos
-                    </a>
-                </li>
-                <li class="nav-item">
-                    <a href="#" class="nav-link" data-page="catalog">
-                        <i data-feather="book-open"></i> Catálogo Revenda
-                    </a>
-                </li>
-                 <li class="nav-item">
-                    <a href="#" class="nav-link" data-page="sync">
-                        <i data-feather="refresh-cw"></i> Sincronização
-                    </a>
-                </li>
+                <li class="nav-item"><a href="#" class="nav-link active" data-page="dashboard"><i data-feather="home"></i> Visão Geral</a></li>
+                <li class="nav-item"><a href="#" class="nav-link" data-page="products"><i data-feather="package"></i> Produtos</a></li>
+                <li class="nav-item"><a href="#" class="nav-link" data-page="catalog"><i data-feather="book-open"></i> Catálogo Revenda</a></li>
+                <li class="nav-item"><a href="#" class="nav-link" data-page="resellers"><i data-feather="users"></i> Gerenciar Revendedoras</a></li>
+                <li class="nav-item"><a href="#" class="nav-link" data-page="sync"><i data-feather="refresh-cw"></i> Sincronização</a></li>
             </ul>
-            <div class="sidebar-footer">
-                <p>&copy; 2025 - Painel de Gestão</p>
-            </div>
+            <div class="sidebar-footer"><p>&copy; 2025 - Painel de Gestão</p></div>
         </aside>
 
         <main class="main-content">
-            <!-- PÁGINA: VISÃO GERAL -->
             <section id="dashboard" class="page active">
-                <div class="page-header">
-                    <h1>Visão Geral</h1>
-                </div>
+                <div class="page-header"><h1>Visão Geral</h1></div>
                 <div class="stats-grid">
-                    <div class="stat-card">
-                        <p class="stat-card-title">Total de Produtos</p>
-                        <p class="stat-card-value" id="stat-total-products">0</p>
-                    </div>
-                    <div class="stat-card">
-                        <p class="stat-card-title">Produtos Ativos (com estoque)</p>
-                        <p class="stat-card-value" id="stat-active-products">0</p>
-                    </div>
-                    <div class="stat-card">
-                        <p class="stat-card-title">Publicados para Revenda</p>
-                        <p class="stat-card-value" id="stat-published-products">0</p>
-                    </div>
+                    <div class="stat-card"><p class="stat-card-title">Total de Produtos</p><p class="stat-card-value" id="stat-total-products">0</p></div>
+                    <div class="stat-card"><p class="stat-card-title">Produtos Ativos</p><p class="stat-card-value" id="stat-active-products">0</p></div>
+                    <div class="stat-card"><p class="stat-card-title">Publicados para Revenda</p><p class="stat-card-value" id="stat-published-products">0</p></div>
+                    <div class="stat-card"><p class="stat-card-title">Revendedoras Ativas</p><p class="stat-card-value" id="stat-active-resellers">0</p></div>
                 </div>
             </section>
 
-            <!-- PÁGINA: PRODUTOS -->
             <section id="products" class="page">
-                <div class="page-header">
-                    <h1>Todos os Produtos</h1>
-                </div>
+                <div class="page-header"><h1>Todos os Produtos</h1></div>
                 <div class="table-container">
                     <table class="product-table">
-                        <thead>
-                            <tr>
-                                <th>Imagem</th>
-                                <th>Nome</th>
-                                <th>SKU</th>
-                                <th>Preço</th>
-                                <th>Status</th>
-                                <th>Publicar</th>
-                                <th>Ações</th>
-                            </tr>
-                        </thead>
-                        <tbody id="products-table-body">
-                            <!-- Linhas da tabela serão inseridas aqui -->
-                        </tbody>
+                        <thead><tr><th>Imagem</th><th>Nome</th><th>SKU</th><th>Preço</th><th>Status</th><th>Publicar</th><th>Editar</th></tr></thead>
+                        <tbody id="products-table-body"></tbody>
                     </table>
                 </div>
             </section>
             
-            <!-- PÁGINA: CATÁLOGO REVENDA -->
             <section id="catalog" class="page">
-                 <div class="page-header">
-                    <h1>Catálogo para Revendedoras</h1>
-                </div>
+                 <div class="page-header"><h1>Catálogo para Revendedoras</h1></div>
                 <div class="table-container">
                     <table class="product-table">
-                        <thead>
-                            <tr>
-                                <th>Imagem</th>
-                                <th>Nome</th>
-                                <th>Preço</th>
-                                <th>Variações Disponíveis</th>
-                            </tr>
-                        </thead>
-                        <tbody id="catalog-table-body">
-                            <!-- Linhas da tabela serão inseridas aqui -->
-                        </tbody>
+                        <thead><tr><th>Imagem</th><th>Nome</th><th>Preço</th><th>Variações Disponíveis</th></tr></thead>
+                        <tbody id="catalog-table-body"></tbody>
+                    </table>
+                </div>
+            </section>
+
+            <section id="resellers" class="page">
+                <div class="page-header"><h1>Gerenciar Revendedoras</h1></div>
+                <div class="table-container">
+                    <table class="product-table">
+                        <thead><tr><th>Nome</th><th>Documento</th><th>Telefone</th><th>Status</th><th>Ações</th></tr></thead>
+                        <tbody id="resellers-table-body"></tbody>
                     </table>
                 </div>
             </section>
             
-            <!-- PÁGINA: SINCRONIZAÇÃO -->
             <section id="sync" class="page">
-                <div class="page-header">
-                    <h1>Sincronização com FacilZap</h1>
-                </div>
+                <div class="page-header"><h1>Sincronização com FacilZap</h1></div>
                 <div class="stat-card">
                     <p>Clique nos botões abaixo para gerenciar a integração com a API.</p>
                     <div style="margin-top: 1.5rem; display: flex; gap: 1rem;">
@@ -283,20 +242,37 @@
         </main>
     </div>
 
-    <!-- MODAL DE DETALHES -->
+    <!-- MODAL DE DETALHES DO PRODUTO -->
     <div id="product-details-modal" class="modal-overlay">
         <div class="modal-content">
-            <div class="modal-header">
-                <h3 id="modal-product-name"></h3>
-                <button class="modal-close-btn" onclick="closeModal('product-details-modal')"><i data-feather="x"></i></button>
+            <div class="modal-header"><h3 id="modal-product-name"></h3><button class="modal-close-btn" onclick="closeModal('product-details-modal')"><i data-feather="x"></i></button></div>
+            <div class="modal-body-grid">
+                <div class="modal-image-container"><img id="modal-main-image" src="" alt="Imagem do Produto"></div>
+                <div class="modal-details-container">
+                    <table class="product-table">
+                        <thead><tr><th>Variação</th><th>Estoque</th></tr></thead>
+                        <tbody id="modal-variations-tbody"></tbody>
+                    </table>
+                </div>
             </div>
+        </div>
+    </div>
+
+    <!-- MODAL DE ANÁLISE DA REVENDEDORA -->
+    <div id="reseller-review-modal" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-header"><h3 id="modal-reseller-name">Analisar Cadastro</h3><button class="modal-close-btn" onclick="closeModal('reseller-review-modal')"><i data-feather="x"></i></button></div>
             <div class="modal-body">
-                <table class="product-table">
-                    <thead>
-                        <tr><th>Variação</th><th>Estoque</th></tr>
-                    </thead>
-                    <tbody id="modal-variations-tbody"></tbody>
-                </table>
+                <ul class="info-list">
+                    <li><strong>Nome:</strong> <span id="review-reseller-name"></span></li>
+                    <li><strong>Documento (CPF/CNPJ):</strong> <span id="review-reseller-doc"></span></li>
+                    <li><strong>Telefone:</strong> <span id="review-reseller-phone"></span></li>
+                    <li><strong>E-mail:</strong> <span id="review-reseller-email"></span></li>
+                </ul>
+            </div>
+            <div class="modal-footer">
+                <button id="reprove-btn" class="btn btn-danger">Reprovar</button>
+                <button id="approve-btn" class="btn btn-success">Aprovar</button>
             </div>
         </div>
     </div>
@@ -304,6 +280,14 @@
     <div id="toast"></div>
 
     <script>
+    // --- DADOS MOCKADOS ---
+    let mockResellers = [
+        { id: 1, name: 'Ana Silva', doc: '123.456.789-00', phone: '(11) 98765-4321', email: 'ana.silva@example.com', status: 'em_analise' },
+        { id: 2, name: 'Joana Modas LTDA', doc: '12.345.678/0001-99', phone: '(21) 99999-8888', email: 'contato@joanamodas.com', status: 'aprovado' },
+        { id: 3, name: 'Carlos Pereira', doc: '987.654.321-11', phone: '(31) 91234-5678', email: 'carlos.p@example.com', status: 'em_analise' },
+        { id: 4, name: 'Mariana Costa', doc: '456.123.789-22', phone: '(41) 98877-6655', email: 'mari.costa@example.com', status: 'reprovado' },
+    ];
+
     // --- VARIÁVEIS GLOBAIS ---
     let allApiProducts = [];
     let publishedProductIds = [];
@@ -314,7 +298,7 @@
         loadLocalData();
         setupNavigation();
         updateDashboard();
-        renderProductsTable();
+        renderAllTables();
     });
 
     function showToast(message, type = 'info') {
@@ -329,64 +313,35 @@
         if (!url || typeof url !== 'string' || url.trim() === '') {
             return 'https://placehold.co/300x300/DB1472/FFFFFF?text=Sem+Imagem';
         }
-        if (url.startsWith('http')) {
-            return `/facilzap-images?url=${encodeURIComponent(url)}`;
-        }
-        return `/facilzap-images?url=${encodeURIComponent('https://' + url)}`;
+        return url.startsWith('http') ? `/facilzap-images?url=${encodeURIComponent(url)}` : `/facilzap-images?url=${encodeURIComponent('https://' + url)}`;
     }
     
     // --- LÓGICA DE NEGÓCIO E PROCESSAMENTO DE DADOS ---
-    function parseVariationsFromObject(data) {
-        if (Array.isArray(data)) {
-            return data.map(item => ({
-                nome: item.tamanho || item.variacao || item.nome || 'N/A',
-                quantidade: parseInt(item.estoque || item.quantidade || 0)
-            }));
-        }
-        if (typeof data === 'object' && data !== null) {
-            return [{
-                nome: data.tamanho || data.variacao || data.nome || 'Único',
-                quantidade: parseInt(data.estoque || data.quantidade || 0)
-            }];
-        }
-        return [];
-    }
-    
-    function processVariations(estoqueData, produtoId) {
+    function processVariations(estoqueData) {
         if (!estoqueData) return [];
-        if (typeof estoqueData === 'number') {
-            return [{ nome: 'Único', quantidade: estoqueData }];
-        }
+        if (typeof estoqueData === 'number') return [{ nome: 'Único', quantidade: estoqueData }];
         if (typeof estoqueData === 'string') {
             const asNumber = parseInt(estoqueData);
-            if (!isNaN(asNumber)) {
-                return [{ nome: 'Único', quantidade: asNumber }];
-            }
-            try {
-                const parsed = JSON.parse(estoqueData);
-                return parseVariationsFromObject(parsed);
-            } catch { return []; }
+            if (!isNaN(asNumber)) return [{ nome: 'Único', quantidade: asNumber }];
+            try { return JSON.parse(estoqueData).map(item => ({ nome: item.tamanho || item.variacao || 'N/A', quantidade: parseInt(item.estoque || 0) })); } catch { return []; }
         }
-        if (typeof estoqueData === 'object') {
-            return parseVariationsFromObject(estoqueData);
-        }
+        if (Array.isArray(estoqueData)) return estoqueData.map(item => ({ nome: item.tamanho || item.variacao || 'N/A', quantidade: parseInt(item.estoque || 0) }));
         return [];
     }
 
     // --- CARREGAMENTO DE DADOS E SINCRONIZAÇÃO ---
     function loadLocalData() {
         const savedProducts = localStorage.getItem('erpProducts');
-        if (savedProducts) {
-            allApiProducts = JSON.parse(savedProducts);
-        }
+        if (savedProducts) allApiProducts = JSON.parse(savedProducts);
+        
         const savedPublished = localStorage.getItem('erpPublished');
-        if (savedPublished) {
-            publishedProductIds = JSON.parse(savedPublished);
-        }
+        if (savedPublished) publishedProductIds = JSON.parse(savedPublished);
+
+        const savedResellers = localStorage.getItem('erpResellers');
+        if (savedResellers) mockResellers = JSON.parse(savedResellers);
+        
         const savedTime = localStorage.getItem('erpLastSync');
-        if (savedTime) {
-            document.getElementById('last-sync-time').textContent = `Última sincronização: ${savedTime}`;
-        }
+        if (savedTime) document.getElementById('last-sync-time').textContent = `Última sincronização: ${savedTime}`;
     }
 
     async function syncFromFacilZap() {
@@ -401,49 +356,29 @@
         try {
             while (currentPage <= MAX_PAGES) {
                 showToast(`Buscando página ${currentPage}...`, 'info');
-                const proxyUrl = `/api/facilzap-proxy?page=${currentPage}&length=100`;
-                const response = await fetch(proxyUrl);
-                
-                if (response.status === 401) throw new Error("Token de autenticação inválido.");
+                const response = await fetch(`/api/facilzap-proxy?page=${currentPage}&length=100`);
                 if (!response.ok) throw new Error(`Erro na API: ${response.statusText}`);
-
                 const data = await response.json();
                 const productsFromPage = data.data || [];
-                
                 if (productsFromPage.length === 0) break;
 
                 const processedProducts = productsFromPage.map(p => {
-                    const variacoes = processVariations(p.estoque, p.id);
+                    const variacoes = processVariations(p.estoque);
                     const estoqueTotal = variacoes.reduce((total, v) => total + v.quantidade, 0);
                     const imagens = typeof p.imagem === 'string' ? p.imagem.split(',').map(url => url.trim()) : [];
-                    
-                    return {
-                        id: p.id,
-                        nome: p.nome || 'Nome não informado',
-                        sku: p.sku || 'N/A',
-                        preco_original: parseFloat(p.preco || 0),
-                        imagem: imagens.length > 0 ? imagens[0] : null,
-                        imagens_adicionais: imagens.slice(1),
-                        estoque_total: estoqueTotal,
-                        variacoes: variacoes,
-                        status: estoqueTotal > 0 ? 'ativo' : 'sem_estoque'
-                    };
+                    return { id: p.id, nome: p.nome || 'Nome não informado', sku: p.sku || 'N/A', preco_original: parseFloat(p.preco || 0), imagem: imagens[0] || null, estoque_total: estoqueTotal, variacoes: variacoes, status: estoqueTotal > 0 ? 'ativo' : 'sem_estoque' };
                 });
                 
                 allApiProducts.push(...processedProducts);
                 currentPage++;
             }
 
-            const statusOrder = { 'ativo': 1, 'sem_estoque': 2 };
-            allApiProducts.sort((a, b) => (statusOrder[a.status] || 99) - (statusOrder[b.status] || 99));
-
+            allApiProducts.sort((a, b) => (a.status === 'ativo' ? -1 : 1));
             localStorage.setItem('erpProducts', JSON.stringify(allApiProducts));
             updateLastSyncTime();
             showToast(`Sincronização completa! ${allApiProducts.length} produtos carregados.`, 'success');
-            
+            renderAllTables();
             updateDashboard();
-            renderProductsTable();
-            renderCatalogTable();
 
         } catch (error) {
             console.error("Erro na sincronização:", error);
@@ -457,15 +392,12 @@
         showToast('Testando conexão...', 'info');
         try {
             const response = await fetch('/api/facilzap-proxy?page=1&length=5');
-            const data = await response.json();
-            console.log('[DEBUG] Teste da API:', { status: response.status, data });
-            if (response.ok && data.data) {
+            if (response.ok && (await response.json()).data) {
                 showToast('Conexão com API OK!', 'success');
             } else {
-                throw new Error(data.error || 'Resposta inválida da API.');
+                throw new Error('Resposta inválida da API.');
             }
         } catch (error) {
-            console.error('[ERROR] Teste da API falhou:', error);
             showToast(`Erro na conexão: ${error.message}`, 'error');
         }
     }
@@ -482,16 +414,12 @@
             link.addEventListener('click', (e) => {
                 e.preventDefault();
                 const pageId = e.currentTarget.dataset.page;
-                
                 document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
                 e.currentTarget.classList.add('active');
-
                 document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
                 document.getElementById(pageId).classList.add('active');
-
-                if (pageId === 'products') renderProductsTable();
-                if (pageId === 'catalog') renderCatalogTable();
-                if (pageId === 'dashboard') updateDashboard();
+                renderAllTables();
+                updateDashboard();
             });
         });
     }
@@ -500,85 +428,39 @@
         document.getElementById('stat-total-products').textContent = allApiProducts.length;
         document.getElementById('stat-active-products').textContent = allApiProducts.filter(p => p.status === 'ativo').length;
         document.getElementById('stat-published-products').textContent = publishedProductIds.length;
+        document.getElementById('stat-active-resellers').textContent = mockResellers.filter(r => r.status === 'aprovado').length;
     }
 
-    // FUNÇÃO renderProductsTable CORRIGIDA
+    function renderAllTables() {
+        renderProductsTable();
+        renderCatalogTable();
+        renderResellersTable();
+    }
+
     function renderProductsTable() {
         const tbody = document.getElementById('products-table-body');
         tbody.innerHTML = '';
-        
         allApiProducts.forEach(p => {
-            const row = document.createElement('tr');
+            const row = tbody.insertRow();
             const isPublished = publishedProductIds.includes(p.id);
-            
-            // Célula de Imagem
-            const imgCell = document.createElement('td');
-            const img = document.createElement('img');
-            img.src = proxyImageUrl(p.imagem);
-            img.alt = p.nome;
-            img.className = 'product-image';
-            img.onerror = () => img.src = 'https://placehold.co/40x40/DB1472/FFFFFF?text=X';
-            imgCell.appendChild(img);
-            
-            // Células de Texto
-            const nameCell = document.createElement('td');
-            nameCell.textContent = p.nome;
-            
-            const skuCell = document.createElement('td');
-            skuCell.textContent = p.sku;
-            
-            const priceCell = document.createElement('td');
-            priceCell.textContent = `R$ ${p.preco_original.toFixed(2)}`;
-            
-            // Célula de Status
-            const statusCell = document.createElement('td');
-            const statusBadge = document.createElement('span');
-            statusBadge.className = `status-badge ${p.status}`;
-            statusBadge.textContent = p.status.replace('_', ' ');
-            statusCell.appendChild(statusBadge);
-            
-            // Célula de Publicação (Toggle)
-            const publishCell = document.createElement('td');
-            const toggleLabel = document.createElement('label');
-            toggleLabel.className = 'toggle-switch';
-            
-            const toggleInput = document.createElement('input');
-            toggleInput.type = 'checkbox';
-            toggleInput.checked = isPublished;
-            toggleInput.addEventListener('change', () => togglePublished(p.id));
-            
-            const toggleSlider = document.createElement('span');
-            toggleSlider.className = 'slider';
-            
-            toggleLabel.appendChild(toggleInput);
-            toggleLabel.appendChild(toggleSlider);
-            publishCell.appendChild(toggleLabel);
-            
-            // Célula de Ações (Botão Visualizar)
-            const actionsCell = document.createElement('td');
-            const viewButton = document.createElement('button');
-            viewButton.className = 'btn';
-            viewButton.style.padding = '0.25rem 0.5rem';
-            
-            const viewIcon = document.createElement('i');
-            viewIcon.setAttribute('data-feather', 'eye');
-            
-            viewButton.appendChild(viewIcon);
-            viewButton.addEventListener('click', () => showProductDetails(p.id));
-            actionsCell.appendChild(viewButton);
-            
-            // Montar a linha
-            row.appendChild(imgCell);
-            row.appendChild(nameCell);
-            row.appendChild(skuCell);
-            row.appendChild(priceCell);
-            row.appendChild(statusCell);
-            row.appendChild(publishCell);
-            row.appendChild(actionsCell);
-            
-            tbody.appendChild(row);
+            row.innerHTML = `
+                <td><img src="${proxyImageUrl(p.imagem)}" alt="${p.nome}" class="product-image" onerror="this.src='https://placehold.co/40x40/DB1472/FFFFFF?text=X'"></td>
+                <td>${p.nome}</td>
+                <td>${p.sku}</td>
+                <td>R$ ${p.preco_original.toFixed(2)}</td>
+                <td><span class="status-badge ${p.status}">${p.status.replace('_', ' ')}</span></td>
+                <td>
+                    <label class="toggle-switch">
+                        <input type="checkbox" onchange="togglePublished(${p.id})" ${isPublished ? 'checked' : ''}>
+                        <span class="slider"></span>
+                    </label>
+                </td>
+                <td>
+                    <button class="btn" style="padding: 0.25rem 0.5rem;" onclick="showProductDetails(${p.id})">
+                        <i data-feather="edit-2"></i>
+                    </button>
+                </td>`;
         });
-        
         feather.replace();
     }
 
@@ -586,65 +468,83 @@
         const tbody = document.getElementById('catalog-table-body');
         tbody.innerHTML = '';
         const publishedProducts = allApiProducts.filter(p => publishedProductIds.includes(p.id) && p.status === 'ativo');
-
         if (publishedProducts.length === 0) {
             tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;">Nenhum produto publicado para revenda.</td></tr>';
             return;
         }
-
         publishedProducts.forEach(p => {
-            const row = tbody.insertRow();
             const variationsText = p.variacoes.filter(v => v.quantidade > 0).map(v => v.nome).join(', ');
-            row.innerHTML = `
+            tbody.insertRow().innerHTML = `
                 <td><img src="${proxyImageUrl(p.imagem)}" alt="${p.nome}" class="product-image" onerror="this.src='https://placehold.co/40x40/DB1472/FFFFFF?text=X'"></td>
                 <td>${p.nome}</td>
                 <td>R$ ${p.preco_original.toFixed(2)}</td>
-                <td>${variationsText || 'Nenhuma'}</td>
-            `;
+                <td>${variationsText || 'Nenhuma'}</td>`;
         });
     }
 
-    // FUNÇÃO showProductDetails CORRIGIDA
+    function renderResellersTable() {
+        const tbody = document.getElementById('resellers-table-body');
+        tbody.innerHTML = '';
+        mockResellers.forEach(r => {
+            const row = tbody.insertRow();
+            row.innerHTML = `
+                <td>${r.name}</td>
+                <td>${r.doc}</td>
+                <td>${r.phone}</td>
+                <td><span class="status-badge ${r.status}">${r.status.replace('_', ' ')}</span></td>
+                <td>
+                    <button class="btn" style="padding: 0.25rem 0.5rem;" onclick="showResellerReview(${r.id})">
+                        <i data-feather="edit"></i> Analisar
+                    </button>
+                </td>`;
+        });
+        feather.replace();
+    }
+
     function showProductDetails(productId) {
         const product = allApiProducts.find(p => p.id === productId);
         if (!product) return;
-
-        const modal = document.getElementById('product-details-modal');
-        const tbody = document.getElementById('modal-variations-tbody');
-        
         document.getElementById('modal-product-name').textContent = product.nome;
+        document.getElementById('modal-main-image').src = proxyImageUrl(product.imagem);
+        const tbody = document.getElementById('modal-variations-tbody');
         tbody.innerHTML = '';
-
         if (product.variacoes && product.variacoes.length > 0) {
             product.variacoes.forEach(v => {
-                const row = document.createElement('tr');
-                
-                const nameCell = document.createElement('td');
-                nameCell.textContent = (v.nome || '').replace('Tamanho: ', '');
-                
-                const stockCell = document.createElement('td');
-                const badge = document.createElement('span');
-                // Usa as novas classes de badge de estoque
-                badge.className = v.quantidade > 0 ? 'stock-badge in-stock' : 'stock-badge out-of-stock';
-                badge.textContent = v.quantidade > 0 ? `Disponível (${v.quantidade})` : 'Esgotado';
-                
-                stockCell.appendChild(badge);
-                row.appendChild(nameCell);
-                row.appendChild(stockCell);
-                tbody.appendChild(row);
+                tbody.insertRow().innerHTML = `
+                    <td>${(v.nome || '').replace('Tamanho: ', '')}</td>
+                    <td><span class="stock-badge ${v.quantidade > 0 ? 'in-stock' : 'out-of-stock'}">${v.quantidade > 0 ? `Disponível (${v.quantidade})` : 'Esgotado'}</span></td>`;
             });
         } else {
-            const row = document.createElement('tr');
-            const cell = document.createElement('td');
-            cell.colSpan = 2;
-            cell.textContent = 'Nenhuma variação encontrada';
-            cell.style.textAlign = 'center';
-            row.appendChild(cell);
-            tbody.appendChild(row);
+            tbody.innerHTML = '<tr><td colspan="2" style="text-align:center;">Nenhuma variação encontrada.</td></tr>';
         }
+        document.getElementById('product-details-modal').classList.add('active');
+    }
+
+    function showResellerReview(resellerId) {
+        const reseller = mockResellers.find(r => r.id === resellerId);
+        if (!reseller) return;
+        document.getElementById('modal-reseller-name').textContent = `Analisar: ${reseller.name}`;
+        document.getElementById('review-reseller-name').textContent = reseller.name;
+        document.getElementById('review-reseller-doc').textContent = reseller.doc;
+        document.getElementById('review-reseller-phone').textContent = reseller.phone;
+        document.getElementById('review-reseller-email').textContent = reseller.email;
         
-        modal.classList.add('active');
-        feather.replace();
+        document.getElementById('approve-btn').onclick = () => updateResellerStatus(resellerId, 'aprovado');
+        document.getElementById('reprove-btn').onclick = () => updateResellerStatus(resellerId, 'reprovado');
+        
+        document.getElementById('reseller-review-modal').classList.add('active');
+    }
+
+    function updateResellerStatus(resellerId, newStatus) {
+        const reseller = mockResellers.find(r => r.id === resellerId);
+        if(reseller) {
+            reseller.status = newStatus;
+            localStorage.setItem('erpResellers', JSON.stringify(mockResellers));
+            renderResellersTable();
+            updateDashboard();
+            closeModal('reseller-review-modal');
+            showToast(`Revendedora ${newStatus === 'aprovado' ? 'aprovada' : 'reprovada'}!`, 'success');
+        }
     }
 
     function closeModal(modalId) {
