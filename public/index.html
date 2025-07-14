@@ -445,33 +445,58 @@
         return url.startsWith('http') ? `/facilzap-images?url=${encodeURIComponent(url)}` : `/facilzap-images?url=${encodeURIComponent('https://' + url)}`;
     }
     
+    // Função corrigida para processar variações
     function processVariations(estoqueData) {
         if (!estoqueData) return [];
-        if (typeof estoqueData === 'number') return [{ nome: 'Único', quantidade: estoqueData }];
-
-        const parseItems = (items) => {
-            return items.map(item => {
-                let nameValue = item.tamanho || item.variacao || item.nome || 'N/A';
-                if (typeof nameValue === 'object' && nameValue !== null) {
-                    nameValue = nameValue.nome || nameValue.name || JSON.stringify(nameValue);
-                }
-                let finalName = String(nameValue);
-                if (!finalName.toLowerCase().startsWith('tamanho:') && !isNaN(parseInt(finalName))) {
-                    finalName = `Tamanho: ${finalName}`;
-                }
-                return { nome: finalName, quantidade: parseInt(item.estoque || item.quantidade || 0) };
-            });
+        
+        // Função para extrair nomes de variações de forma segura
+        const extractVariationName = (item) => {
+            if (typeof item === 'string') return item;
+            if (typeof item === 'object' && item !== null) {
+                return item.tamanho || item.variacao || item.nome || 'N/A';
+            }
+            return String(item);
         };
+
+        // Tratamento para diferentes tipos de estoqueData
+        if (typeof estoqueData === 'number') {
+            return [{ nome: 'Único', quantidade: estoqueData }];
+        }
 
         if (typeof estoqueData === 'string') {
             try {
                 const parsed = JSON.parse(estoqueData);
-                return parseItems(Array.isArray(parsed) ? parsed : [parsed]);
-            } catch { return []; }
+                return Array.isArray(parsed) 
+                    ? parsed.map(item => ({
+                        nome: extractVariationName(item),
+                        quantidade: parseInt(item.estoque || item.quantidade || 0)
+                    }))
+                    : [{
+                        nome: extractVariationName(parsed),
+                        quantidade: parseInt(parsed.estoque || parsed.quantidade || 0)
+                    }];
+            } catch (e) {
+                return [{
+                    nome: estoqueData,
+                    quantidade: 0
+                }];
+            }
         }
+
         if (Array.isArray(estoqueData)) {
-            return parseItems(estoqueData);
+            return estoqueData.map(item => ({
+                nome: extractVariationName(item),
+                quantidade: parseInt(item.estoque || item.quantidade || 0)
+            }));
         }
+
+        if (typeof estoqueData === 'object' && estoqueData !== null) {
+            return [{
+                nome: extractVariationName(estoqueData),
+                quantidade: parseInt(estoqueData.estoque || estoqueData.quantidade || 0)
+            }];
+        }
+
         return [];
     }
 
@@ -655,20 +680,46 @@
     function showProductDetails(productId) {
         const product = allApiProducts.find(p => p.id === productId);
         if (!product) return;
+        
         document.getElementById('modal-product-name').textContent = product.nome;
         document.getElementById('modal-main-image').src = proxyImageUrl(product.imagem);
+        
         const tbody = document.getElementById('modal-variations-tbody');
         tbody.innerHTML = '';
+        
         if (product.variacoes && product.variacoes.length > 0) {
             product.variacoes.forEach(v => {
                 const row = tbody.insertRow();
-                row.insertCell().innerHTML = `<span class="variacao_nome">${v.nome}</span>`;
-                row.insertCell().innerHTML = `<span class="stock-badge ${v.quantidade > 0 ? 'in-stock' : 'out-of-stock'}">${v.quantidade > 0 ? `Disponível (${v.quantidade})` : 'Esgotado'}</span>`;
+                
+                const nameCell = row.insertCell();
+                const nameSpan = document.createElement('span');
+                nameSpan.className = 'variacao_nome';
+                
+                // Garante que o nome é uma string
+                nameSpan.textContent = typeof v.nome === 'string' 
+                    ? v.nome 
+                    : (v.nome?.toString() || 'N/A');
+                    
+                nameCell.appendChild(nameSpan);
+                
+                const stockCell = row.insertCell();
+                const badge = document.createElement('span');
+                badge.className = `stock-badge ${v.quantidade > 0 ? 'in-stock' : 'out-of-stock'}`;
+                badge.textContent = v.quantidade > 0 
+                    ? `Disponível (${v.quantidade})` 
+                    : 'Esgotado';
+                stockCell.appendChild(badge);
             });
         } else {
-            tbody.innerHTML = '<tr><td colspan="2" style="text-align:center;">Nenhuma variação encontrada.</td></tr>';
+            const row = tbody.insertRow();
+            const cell = row.insertCell();
+            cell.colSpan = 2;
+            cell.textContent = 'Nenhuma variação encontrada.';
+            cell.style.textAlign = 'center';
         }
+        
         document.getElementById('product-details-modal').classList.add('active');
+        feather.replace();
     }
 
     function showResellerReview(resellerId) {
