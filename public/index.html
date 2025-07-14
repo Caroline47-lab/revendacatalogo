@@ -300,18 +300,37 @@
         .catalog-footer { text-align: center; padding: 2rem; background-color: #334155; color: white; }
         .catalog-footer a { color: var(--reseller-secondary-color); text-decoration: none; font-weight: 600; }
 
+        /* --- NOVOS ESTILOS - PÁGINA DE DETALHES DO PRODUTO --- */
         #product-detail-view { padding: 2rem 1rem; max-width: 1200px; margin: auto; }
         .product-detail-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; }
         .product-detail-images img { width: 100%; border-radius: var(--border-radius); box-shadow: var(--shadow); }
-        .product-detail-info h1 { font-size: 2.2rem; font-weight: 700; margin-bottom: 1rem; }
-        .product-detail-info .price { font-size: 2rem; font-weight: 700; color: var(--reseller-primary-color); margin-bottom: 1.5rem; }
-        .variation-group { margin-bottom: 1.5rem; }
-        .variation-group label { font-size: 1rem; font-weight: 600; display: block; margin-bottom: 0.75rem; }
-        .variation-options { display: flex; gap: 0.75rem; flex-wrap: wrap; }
-        .variation-options .option { display: block; padding: 0.75rem 1.25rem; border: 2px solid var(--border-color); border-radius: 999px; cursor: pointer; transition: all 0.2s ease; }
-        .variation-options input[type="radio"] { display: none; }
-        .variation-options input[type="radio"]:checked + .option { border-color: var(--reseller-primary-color); background-color: var(--reseller-primary-color); color: white; }
-        .product-detail-info .btn { width: 100%; padding: 1rem; font-size: 1.1rem; background-color: var(--reseller-primary-color); }
+        .product-detail-info h1 { font-size: 2rem; font-weight: 700; margin-bottom: 0.5rem; }
+        
+        .product-detail-tags { display: flex; gap: 0.5rem; margin-bottom: 1rem; }
+        .product-detail-tag { padding: 0.25rem 0.75rem; border-radius: 0.25rem; font-size: 0.75rem; font-weight: 700; color: white; }
+        .product-detail-tag.highlight { background-color: var(--reseller-primary-color); }
+        .product-detail-tag.launch { background-color: #8b5cf6; }
+
+        .product-detail-rating { display: flex; align-items: center; gap: 0.25rem; color: #f59e0b; margin-bottom: 1rem; }
+        
+        .product-detail-price-container .price-from { text-decoration: line-through; color: var(--text-light); font-size: 1rem; margin-right: 0.5rem; }
+        .product-detail-price-container .price-to { font-size: 2rem; font-weight: 700; color: var(--reseller-primary-color); }
+        .product-detail-installments { color: var(--text-light); font-size: 0.9rem; margin-bottom: 1.5rem; }
+
+        .size-options-container { margin-bottom: 1.5rem; }
+        .size-options-container > label { display: block; font-weight: 600; margin-bottom: 0.75rem; }
+        .size-grid { display: flex; flex-wrap: wrap; gap: 1rem; }
+        .size-option { text-align: center; }
+        .size-option .size-label { font-weight: 500; margin-bottom: 0.5rem; }
+        .quantity-stepper { display: flex; align-items: center; justify-content: center; border: 1px solid var(--border-color); border-radius: 999px; }
+        .quantity-stepper button { background: transparent; border: none; cursor: pointer; padding: 0.5rem; font-size: 1.2rem; line-height: 1; color: var(--text-color); }
+        .quantity-stepper input { width: 40px; text-align: center; border: none; background: transparent; font-size: 1rem; font-weight: 600; -moz-appearance: textfield; }
+        .quantity-stepper input::-webkit-outer-spin-button, .quantity-stepper input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+
+        .buy-button { width: 100%; padding: 1rem; font-size: 1.1rem; background-color: var(--reseller-primary-color); border-radius: 0.5rem; margin-bottom: 1.5rem; }
+
+        .product-info-icons { display: flex; justify-content: space-around; gap: 1rem; text-align: center; font-size: 0.8rem; color: var(--text-light); padding-top: 1.5rem; border-top: 1px solid var(--border-color); }
+        .product-info-icons div { display: flex; flex-direction: column; align-items: center; gap: 0.5rem; max-width: 100px; }
         
         /* --- MELHORIAS DE RESPONSIVIDADE --- */
         @media (max-width: 768px) {
@@ -345,6 +364,20 @@
                 font-size: 1.8rem; 
             }
             
+            .catalog-grid {
+                grid-template-columns: repeat(2, 1fr); /* Duas colunas no mobile */
+                gap: 1rem;
+            }
+            .catalog-product-card img {
+                height: 200px; /* Altura de imagem ajustada para cards menores */
+            }
+             .catalog-product-card h3 {
+                font-size: 0.9rem;
+            }
+            .catalog-product-card .price {
+                font-size: 1rem;
+            }
+
             .catalog-banner-area {
                 height: 250px; /* Altura do banner para mobile */
             }
@@ -1176,47 +1209,123 @@
 
         const margin = resellerProductMargins[product.id] || 30;
         const finalPrice = product.preco_original * (1 + margin / 100);
+        const priceFrom = finalPrice / 0.92; // Simula um desconto de 8% para exibição
 
         document.getElementById('catalog-main-content').style.display = 'none';
         const detailContent = document.getElementById('product-detail-content');
         detailContent.style.display = 'block';
+
+        const variationsHTML = product.variacoes.map(v => {
+            const size = String(v.nome || '').replace('Tamanho: ', '').trim();
+            return `
+                <div class="size-option">
+                    <div class="size-label">${size}</div>
+                    <div class="quantity-stepper" data-variation-name="${v.nome}">
+                        <button class="quantity-btn" data-action="decrease">-</button>
+                        <input type="number" class="quantity-input" value="0" min="0" readonly>
+                        <button class="quantity-btn" data-action="increase">+</button>
+                    </div>
+                </div>
+            `;
+        }).join('');
+
         detailContent.innerHTML = `
-            <div class="product-detail-grid">
-                <div class="product-detail-images"><img src="${proxyImageUrl(product.imagem)}" alt="${product.nome}"></div>
-                <div class="product-detail-info">
-                    <h1>${product.nome}</h1>
-                    <p class="price">R$ ${finalPrice.toFixed(2)}</p>
-                    <div class="variation-group">
-                        <label>Tamanho:</label>
-                        <div class="variation-options" id="detail-variation-options">
-                            ${product.variacoes.map((v, index) => `
-                                <label>
-                                    <input type="radio" name="variation" value="${v.nome}" ${index === 0 ? 'checked' : ''}>
-                                    <span class="option">${String(v.nome || '').replace('Tamanho: ', '')}</span>
-                                </label>
-                            `).join('')}
+            <div id="product-detail-view">
+                <div class="product-detail-grid">
+                    <div class="product-detail-images">
+                        <img src="${proxyImageUrl(product.imagem)}" alt="${product.nome}">
+                    </div>
+                    <div class="product-detail-info">
+                        <div class="product-detail-tags">
+                            <span class="product-detail-tag highlight">-8%</span>
+                            <span class="product-detail-tag highlight">DESTAQUE</span>
+                            <span class="product-detail-tag launch">LANÇAMENTO</span>
+                        </div>
+                        <h1>${product.nome}</h1>
+                        <div class="product-detail-rating">
+                            <i data-feather="star" fill="#f59e0b" stroke="#f59e0b"></i>
+                            <i data-feather="star" fill="#f59e0b" stroke="#f59e0b"></i>
+                            <i data-feather="star" fill="#f59e0b" stroke="#f59e0b"></i>
+                            <i data-feather="star" fill="#f59e0b" stroke="#f59e0b"></i>
+                            <i data-feather="star" fill="#f59e0b" stroke="#f59e0b"></i>
+                        </div>
+                        <div class="product-detail-price-container">
+                            <span class="price-from">De R$ ${priceFrom.toFixed(2)}</span>
+                            <span class="price-to">A Partir de: R$ ${finalPrice.toFixed(2)}</span>
+                        </div>
+                        <div class="product-detail-installments">
+                            ou 3x de R$ ${(finalPrice / 3).toFixed(2)} Sem juros
+                        </div>
+
+                        <div class="size-options-container">
+                            <label>Tamanho:</label>
+                            <div class="size-grid">
+                                ${variationsHTML}
+                            </div>
+                        </div>
+                        
+                        <button class="btn buy-button" id="detail-buy-btn" data-product-id="${product.id}">COMPRAR</button>
+
+                        <div class="product-info-icons">
+                            <div><i data-feather="truck"></i><span>Despacho em até 72hs úteis</span></div>
+                            <div><i data-feather="credit-card"></i><span>Pague no cartão de crédito</span></div>
+                            <div><i data-feather="box"></i><span>Receba o produto que está esperando</span></div>
                         </div>
                     </div>
-                    <button class="btn" id="detail-add-to-cart-btn" data-product-id="${product.id}">Adicionar ao Carrinho</button>
                 </div>
             </div>
         `;
-        
-        document.getElementById('detail-add-to-cart-btn').addEventListener('click', (e) => {
-            const selectedVariation = detailContent.querySelector('input[name="variation"]:checked').value;
-            addToCart(e.target.dataset.productId, selectedVariation);
+
+        // Adiciona listeners para os novos seletores de quantidade
+        detailContent.addEventListener('click', e => {
+            if (e.target.classList.contains('quantity-btn')) {
+                const stepper = e.target.closest('.quantity-stepper');
+                const input = stepper.querySelector('.quantity-input');
+                let currentValue = parseInt(input.value);
+                const action = e.target.dataset.action;
+
+                if (action === 'increase') {
+                    input.value = currentValue + 1;
+                } else if (action === 'decrease' && currentValue > 0) {
+                    input.value = currentValue - 1;
+                }
+            }
         });
+
+        // Adiciona listener para o novo botão "COMPRAR"
+        detailContent.querySelector('#detail-buy-btn').addEventListener('click', e => {
+            const productId = e.target.dataset.productId;
+            const sizeOptions = detailContent.querySelectorAll('.quantity-stepper');
+            let itemsAdded = 0;
+            sizeOptions.forEach(option => {
+                const quantity = parseInt(option.querySelector('.quantity-input').value);
+                if (quantity > 0) {
+                    const variationName = option.dataset.variationName;
+                    addToCart(productId, variationName, quantity);
+                    itemsAdded++;
+                }
+            });
+            if (itemsAdded > 0) {
+                showToast(`${itemsAdded} item(ns) adicionado(s) ao carrinho!`, 'success');
+            } else {
+                showToast('Selecione a quantidade de pelo menos um item.', 'error');
+            }
+        });
+
+        feather.replace();
     }
 
-    function addToCart(productId, variation) {
+    function addToCart(productId, variation, quantity) {
         const product = allApiProducts.find(p => p.id == productId);
         if (!product) return;
         const cartItemId = `${productId}-${variation}`;
         const existingItem = cart.find(item => item.cartId === cartItemId);
-        if (existingItem) existingItem.quantity++;
-        else cart.push({ ...product, quantity: 1, variation: variation, cartId: cartItemId });
+        if (existingItem) {
+            existingItem.quantity += quantity;
+        } else {
+            cart.push({ ...product, quantity: quantity, variation: variation, cartId: cartItemId });
+        }
         updateCartCount();
-        showToast(`${product.nome} (${variation}) adicionado ao carrinho!`, 'success');
     }
 
     function updateCartCount() {
@@ -1271,4 +1380,4 @@
 
     </script>
 </body>
-</html>
+</ht
