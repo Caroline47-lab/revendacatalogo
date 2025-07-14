@@ -145,25 +145,106 @@
         .banner-preview { display: flex; gap: 1rem; background-color: #f1f5f9; border: 2px dashed var(--border-color); padding: 1rem; border-radius: var(--border-radius); min-height: 150px; align-items: center; justify-content: center; }
         .banner-preview img { max-width: 100%; max-height: 120px; object-fit: cover; border-radius: 0.5rem; }
 
-        /* --- Estilos do Catálogo da Revendedora (Visualização) --- */
-        #catalog-preview-view { background-color: #FFF; }
+        /* --- NOVOS ESTILOS DO CATÁLOGO (REESTRUTURADO) --- */
+        #catalog-preview-view { background-color: #f8fafc; }
         .catalog-top-bar { background: linear-gradient(90deg, var(--reseller-primary-color), var(--reseller-secondary-color)); color: white; text-align: center; padding: 0.5rem; font-size: 0.8rem; font-weight: 500; }
         
-        .catalog-header { position: relative; padding: 6rem 1rem 1rem 1rem; background-color: var(--card-bg); }
-        .catalog-header-content { display: flex; justify-content: space-between; align-items: center; max-width: 1200px; margin: 0 auto; }
-        .catalog-header-nav { display: flex; gap: 1.5rem; }
-        .catalog-header-nav a { text-decoration: none; color: var(--text-color); font-weight: 600; }
-        .catalog-header-logo { position: absolute; left: 50%; top: 0; transform: translate(-50%, -50%); z-index: 10; }
-        .catalog-header-logo img { height: 140px; width: 140px; border-radius: 50%; object-fit: cover; border: 4px solid white; box-shadow: 0 5px 15px rgba(0,0,0,0.1); }
-        .catalog-header-actions { display: flex; align-items: center; gap: 1rem; }
-        .catalog-search-bar { width: 200px; }
+        .catalog-hero-section {
+            position: relative;
+            background-color: var(--reseller-secondary-color);
+            padding-bottom: 80px; /* Espaço para a logo e a barra de busca */
+        }
+        .catalog-main-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1rem 1.5rem;
+        }
+        .catalog-main-header button, .catalog-main-header a {
+            color: white;
+            background: none;
+            border: none;
+            cursor: pointer;
+        }
+        .catalog-hero-logo-container {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 10;
+        }
+        .catalog-hero-logo-container img {
+            height: 180px; 
+            width: 180px;  
+            border-radius: 50%;
+            object-fit: cover;
+            border: 5px solid white; 
+            box-shadow: 0 5px 20px rgba(0,0,0,0.2);
+        }
         .catalog-cart-icon { position: relative; }
-        .cart-count { position: absolute; top: -8px; right: -8px; background-color: var(--reseller-secondary-color); color: white; border-radius: 50%; width: 20px; height: 20px; display: flex; align-items: center; justify-content: center; font-size: 0.75rem; font-weight: 700; }
-        .catalog-banner { width: 100%; height: 300px; object-fit: cover; }
-        .catalog-filters-container { padding: 1.5rem 1rem; background-color: var(--card-bg); text-align: center; }
-        .filter-bubbles { display: flex; gap: 0.75rem; justify-content: center; flex-wrap: wrap; }
-        .filter-bubble { padding: 0.5rem 1rem; border: 1px solid var(--border-color); border-radius: 999px; cursor: pointer; font-weight: 500; transition: all 0.2s ease; font-size: 0.9rem; }
-        .filter-bubble.active { background-color: var(--reseller-primary-color); color: white; border-color: var(--reseller-primary-color); }
+        .cart-count { position: absolute; top: -8px; right: -8px; background-color: var(--reseller-primary-color); color: white; border-radius: 50%; width: 20px; height: 20px; display: flex; align-items: center; justify-content: center; font-size: 0.75rem; font-weight: 700; }
+        
+        .catalog-search-container {
+            position: absolute;
+            bottom: -28px;
+            left: 5%;
+            width: 90%;
+            z-index: 5;
+        }
+        .catalog-search-wrapper {
+            max-width: 700px;
+            margin: 0 auto;
+            display: flex;
+            border-radius: 999px;
+            background-color: white;
+            border: 2px solid var(--reseller-primary-color);
+            box-shadow: var(--shadow);
+            overflow: hidden;
+        }
+        #catalog-search-input {
+            flex-grow: 1;
+            border: none;
+            padding: 1rem 1.5rem;
+            outline: none;
+        }
+        #catalog-search-btn {
+            background-color: transparent;
+            color: var(--reseller-primary-color);
+            border: none;
+            padding: 0 1.5rem;
+            cursor: pointer;
+        }
+
+        .catalog-filters-container { padding: 4rem 1rem 1.5rem 1rem; background-color: var(--card-bg); text-align: center; }
+        .catalog-filters-container h3 {
+            color: var(--reseller-primary-color);
+            font-weight: 700;
+            font-size: 1.2rem;
+            margin-bottom: 1.5rem;
+        }
+        .filter-bubbles { display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap; }
+        .filter-bubble { 
+            padding: 0;
+            width: 60px;
+            height: 60px;
+            border: 2px solid var(--reseller-secondary-color);
+            border-radius: 50%; 
+            cursor: pointer; 
+            font-weight: 600; 
+            font-size: 1rem;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background-color: white;
+            color: var(--reseller-secondary-color);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .filter-bubble.active { 
+            background-color: var(--reseller-secondary-color); 
+            color: white; 
+        }
+
         .catalog-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 1.5rem; padding: 2rem 1rem; max-width: 1200px; margin: 0 auto; }
         .catalog-product-card { background-color: var(--card-bg); border-radius: var(--border-radius); box-shadow: var(--shadow); overflow: hidden; display: flex; flex-direction: column; }
         .catalog-product-card img { width: 100%; height: 300px; object-fit: cover; }
@@ -218,17 +299,20 @@
             .product-detail-info h1 { 
                 font-size: 1.8rem; 
             }
-            .catalog-header-content {
-                flex-wrap: wrap;
-                justify-content: center;
-                gap: 1rem;
-            }
-            .catalog-header-logo img {
-                width: 120px;
+            .catalog-hero-logo-container img {
                 height: 120px;
+                width: 120px;
             }
-            .catalog-header {
-                padding-top: 5rem;
+            .catalog-hero-section {
+                padding-bottom: 60px;
+            }
+            .catalog-filters-container {
+                padding-top: 3rem;
+            }
+            .filter-bubble {
+                width: 50px;
+                height: 50px;
+                font-size: 0.9rem;
             }
         }
     </style>
@@ -452,7 +536,7 @@
         if (view) {
             view.classList.add('active');
             if (viewId === 'catalog-preview-view') {
-                document.body.style.backgroundColor = '#FFF';
+                document.body.style.backgroundColor = '#f8fafc';
             } else {
                 document.body.style.backgroundColor = 'var(--bg-color)';
             }
@@ -895,37 +979,42 @@
         if(settings['banner-mobile-main']) document.getElementById('banner-preview-mobile-main').src = settings['banner-mobile-main'];
     }
 
-    // --- LÓGICA DO CATÁLOGO PÚBLICO ---
+    // --- LÓGICA DO CATÁLOGO PÚBLICO (REESTRUTURADA) ---
     function renderCatalogPreview(searchTerm = '', sizeFilter = '') {
         const catalogView = document.getElementById('catalog-preview-view');
         catalogView.innerHTML = `
-            <div class="catalog-top-bar">USE O CUPOM: PRIMEIRACOMPRA</div>
-            <header class="catalog-header">
-                <div class="catalog-header-content">
-                    <div class="catalog-header-nav">
-                        <a href="#" class="back-to-catalog-home">Início</a>
-                        <a href="#" class="back-to-admin-btn">Painel</a>
-                    </div>
-                    <div class="catalog-header-actions">
-                        <input type="text" id="catalog-search-input" class="search-input catalog-search-bar" placeholder="Buscar..." value="${searchTerm}">
-                        <a href="#" id="cart-button" class="catalog-cart-icon"><i data-feather="shopping-cart"></i><span id="cart-count" class="cart-count" style="display: none;">0</span></a>
+            <div class="catalog-top-bar">USE O CUPOM: PRIMEIRACOMPRA &nbsp;&bull;&nbsp; APROVEITE 10% OFF &nbsp;&bull;&nbsp; FRETE GRÁTIS EM COMPRAS ACIMA DE R$599</div>
+            
+            <div class="catalog-hero-section">
+                <header class="catalog-main-header">
+                    <button id="catalog-menu-toggle"><i data-feather="menu"></i></button>
+                    <a href="#" id="cart-button" class="catalog-cart-icon">
+                        <i data-feather="shopping-cart"></i>
+                        <span id="cart-count" class="cart-count" style="display: none;">0</span>
+                    </a>
+                </header>
+                <div class="catalog-hero-logo-container">
+                    <img id="catalog-logo" src="https://placehold.co/180x180/e2e8f0/334155?text=Logo" alt="Logo da loja">
+                </div>
+                <div class="catalog-search-container">
+                    <div class="catalog-search-wrapper">
+                        <input type="text" id="catalog-search-input" placeholder="O que você procura?" value="${searchTerm}">
+                        <button id="catalog-search-btn"><i data-feather="search"></i></button>
                     </div>
                 </div>
-                <div class="catalog-header-logo">
-                    <img id="catalog-logo" src="https://placehold.co/140x140/e2e8f0/94a3b8?text=Logo" alt="Logo da loja">
-                </div>
-            </header>
+            </div>
+
             <main id="catalog-main-container">
                 <div id="catalog-main-content">
-                    <img id="catalog-banner-desktop" class="catalog-banner" style="display: block;" src="https://placehold.co/1200x400/e2e8f0/94a3b8?text=Banner+Desktop" alt="Banner">
-                    <img id="catalog-banner-mobile" class="catalog-banner" style="display: none;" src="https://placehold.co/600x400/e2e8f0/94a3b8?text=Banner+Mobile" alt="Banner">
                     <div class="catalog-filters-container">
+                        <h3>COMPRE POR TAMANHO</h3>
                         <div id="catalog-filters" class="filter-bubbles"></div>
                     </div>
                     <div id="catalog-product-grid" class="catalog-grid"></div>
                 </div>
                 <div id="product-detail-content" style="display: none;"></div>
             </main>
+
             <footer class="catalog-footer">
                 <h2 id="catalog-brand-name-footer" style="font-size: 1.5rem; font-weight: 700; margin-bottom: 0.5rem;">Sua Marca</h2>
                 <p id="catalog-description" style="max-width: 600px; margin: 0 auto 1rem;">Descrição da sua loja aqui.</p>
@@ -939,14 +1028,12 @@
         const settings = resellerSettings;
         document.documentElement.style.setProperty('--reseller-primary-color', settings.primaryColor || '#DB1472');
         document.documentElement.style.setProperty('--reseller-secondary-color', settings.secondaryColor || '#F8B81F');
-        catalogView.querySelector('#catalog-logo').src = settings.logoUrl || 'https://placehold.co/140x140/e2e8f0/94a3b8?text=Logo';
+        catalogView.querySelector('#catalog-logo').src = settings.logoUrl || 'https://placehold.co/180x180/e2e8f0/334155?text=Logo';
         catalogView.querySelector('#catalog-brand-name-footer').textContent = settings.brandName || 'Sua Marca';
         catalogView.querySelector('#catalog-description').textContent = settings.description || 'Bem-vindo(a) ao meu catálogo!';
         catalogView.querySelector('#catalog-instagram-link').href = settings.instagram ? `https://instagram.com/${settings.instagram.replace('@','')}` : '#';
         catalogView.querySelector('#catalog-whatsapp-link').href = settings.contactPhone ? `https://wa.me/55${settings.contactPhone.replace(/\D/g,'')}` : '#';
-        catalogView.querySelector('#catalog-banner-desktop').src = settings['banner-desktop-main'] || 'https://placehold.co/1200x400/e2e8f0/94a3b8?text=Banner+Desktop';
-        catalogView.querySelector('#catalog-banner-mobile').src = settings['banner-mobile-main'] || 'https://placehold.co/600x400/e2e8f0/94a3b8?text=Banner+Mobile';
-
+        
         let activeCatalogProducts = allApiProducts.filter(p => resellerActiveProductIds.includes(p.id));
         
         const filtersContainer = catalogView.querySelector('#catalog-filters');
@@ -979,10 +1066,17 @@
         
         catalogView.querySelectorAll('.view-product-btn').forEach(btn => btn.addEventListener('click', (e) => showProductDetailPage(e.target.dataset.productId)));
         catalogView.querySelectorAll('.filter-bubble').forEach(btn => btn.addEventListener('click', (e) => renderCatalogPreview(searchTerm, e.target.dataset.size)));
-        catalogView.querySelector('.back-to-admin-btn').addEventListener('click', () => switchView('revendedor-view'));
-        catalogView.querySelector('.back-to-catalog-home').addEventListener('click', (e) => { e.preventDefault(); renderCatalogPreview(); });
         catalogView.querySelector('#cart-button').addEventListener('click', (e) => { e.preventDefault(); showCartModal(); });
-        catalogView.querySelector('#catalog-search-input').addEventListener('keyup', (e) => renderCatalogPreview(e.target.value.toLowerCase(), sizeFilter));
+        
+        const searchInput = catalogView.querySelector('#catalog-search-input');
+        const searchBtn = catalogView.querySelector('#catalog-search-btn');
+        const performSearch = () => renderCatalogPreview(searchInput.value.toLowerCase(), sizeFilter);
+        
+        searchBtn.addEventListener('click', performSearch);
+        searchInput.addEventListener('keyup', (e) => {
+            if (e.key === 'Enter') performSearch();
+        });
+        
         updateCartCount();
         feather.replace();
     }
