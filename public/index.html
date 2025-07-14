@@ -352,15 +352,43 @@
     }
     
     // --- LÓGICA DE NEGÓCIO E PROCESSAMENTO DE DADOS ---
+    // CORREÇÃO: Função atualizada para tratar nomes de variação inconsistentes na origem.
     function processVariations(estoqueData) {
         if (!estoqueData) return [];
         if (typeof estoqueData === 'number') return [{ nome: 'Único', quantidade: estoqueData }];
+
+        const parseItems = (items) => {
+            return items.map(item => {
+                let nameValue = item.tamanho || item.variacao || item.nome || 'N/A';
+                
+                // Se o valor da variação for um objeto, tenta extrair a propriedade 'nome' dele.
+                if (typeof nameValue === 'object' && nameValue !== null) {
+                    nameValue = nameValue.nome || nameValue.name || JSON.stringify(nameValue);
+                }
+                
+                let finalName = String(nameValue);
+                // Formata para 'Tamanho: XX' se for uma string parecida com um número.
+                if (!finalName.toLowerCase().startsWith('tamanho:') && !isNaN(parseInt(finalName))) {
+                    finalName = `Tamanho: ${finalName}`;
+                }
+
+                return {
+                    nome: finalName,
+                    quantidade: parseInt(item.estoque || item.quantidade || 0)
+                };
+            });
+        };
+
         if (typeof estoqueData === 'string') {
-            const asNumber = parseInt(estoqueData);
-            if (!isNaN(asNumber)) return [{ nome: 'Único', quantidade: asNumber }];
-            try { return JSON.parse(estoqueData).map(item => ({ nome: item.tamanho || item.variacao || 'N/A', quantidade: parseInt(item.estoque || 0) })); } catch { return []; }
+            try {
+                const parsed = JSON.parse(estoqueData);
+                // Garante que o resultado do parse seja tratado como um array.
+                return parseItems(Array.isArray(parsed) ? parsed : [parsed]);
+            } catch { return []; }
         }
-        if (Array.isArray(estoqueData)) return estoqueData.map(item => ({ nome: item.tamanho || item.variacao || 'N/A', quantidade: parseInt(item.estoque || 0) }));
+        if (Array.isArray(estoqueData)) {
+            return parseItems(estoqueData);
+        }
         return [];
     }
 
@@ -586,7 +614,7 @@
         feather.replace();
     }
 
-    // FUNÇÃO CORRIGIDA
+    // CORREÇÃO: Função de exibição simplificada, pois os dados já estão formatados.
     function showProductDetails(productId) {
         const product = allApiProducts.find(p => p.id === productId);
         if (!product) return;
@@ -601,8 +629,7 @@
                 const nameCell = row.insertCell();
                 const nameSpan = document.createElement('span');
                 nameSpan.className = 'variacao_nome';
-                // CORREÇÃO: Converte o valor para String de forma segura
-                nameSpan.textContent = String(v.nome || 'N/A');
+                nameSpan.textContent = v.nome; // Exibe o nome já formatado
                 nameCell.appendChild(nameSpan);
 
                 const stockCell = row.insertCell();
