@@ -179,12 +179,12 @@
         .stock-badge.out-of-stock { background-color: #fee2e2; color: #dc2626; }
 
         .page-controls { margin-bottom: 1.5rem; }
-        .search-input {
+        .search-input, .form-group select {
             width: 100%; max-width: 400px; padding: 0.75rem 1rem; border: 1px solid var(--border-color);
             border-radius: 0.5rem; font-size: 0.9rem; background-color: var(--card-bg);
             transition: border-color 0.2s, box-shadow 0.2s;
         }
-        .search-input:focus {
+        .search-input:focus, .form-group select:focus {
             outline: none; border-color: var(--primary-color);
             box-shadow: 0 0 0 2px rgba(219, 20, 114, 0.2);
         }
@@ -198,7 +198,7 @@
             box-shadow: var(--shadow); text-align: center; color: var(--text-light);
         }
 
-        /* --- Estilos da Página de Configurações --- */
+        /* --- Estilos da Página de Configurações e Promoções --- */
         .settings-section {
             background-color: var(--card-bg);
             padding: 1.5rem;
@@ -229,6 +229,7 @@
         }
         .form-group input[type="text"],
         .form-group input[type="tel"],
+        .form-group input[type="number"],
         .form-group textarea {
             width: 100%;
             padding: 0.75rem;
@@ -397,10 +398,59 @@
                     </div>
                 </section>
                 <section id="reseller-promotions" class="page">
-                    <div class="page-header"><h1>Promoções</h1></div>
-                     <div class="placeholder-card">
-                        <i data-feather="gift" class="w-16 h-16 mx-auto mb-4 text-gray-300"></i>
-                        <p>Fique de olho nas promoções especiais para impulsionar suas vendas.</p>
+                    <div class="page-header"><h1>Estratégias de Promoção</h1></div>
+                    
+                    <!-- Seção Cupom de Desconto -->
+                    <div class="settings-section">
+                        <h2><i data-feather="scissors" class="mr-2"></i>Cupom de Desconto</h2>
+                        <div class="form-grid">
+                            <div class="form-group"><label for="coupon-code">Código do Cupom</label><input type="text" id="coupon-code" placeholder="EX: PROMO10"></div>
+                            <div class="form-group"><label for="coupon-type">Tipo</label><select id="coupon-type" class="search-input"><option value="percentage">Percentual (%)</option><option value="fixed">Fixo (R$)</option></select></div>
+                            <div class="form-group"><label for="coupon-value">Valor do Desconto</label><input type="number" id="coupon-value" placeholder="10"></div>
+                            <div class="form-group" style="justify-content: flex-end;"><button class="btn btn-success">Criar Cupom</button></div>
+                        </div>
+                    </div>
+
+                    <!-- Seção Leve Mais, Pague Menos -->
+                    <div class="settings-section">
+                        <h2><i data-feather="shopping-bag" class="mr-2"></i>Leve Mais, Pague Menos</h2>
+                        <div class="form-grid">
+                            <div class="form-group"><label for="buy-x">Leve (Quantidade)</label><input type="number" id="buy-x" placeholder="3"></div>
+                            <div class="form-group"><label for="pay-y">Pague (Quantidade)</label><input type="number" id="pay-y" placeholder="2"></div>
+                            <div class="form-group"><label for="buy-pay-product">Aplicar ao Produto</label><select id="buy-pay-product" class="search-input"><option>Selecione um produto...</option></select></div>
+                            <div class="form-group" style="justify-content: flex-end;"><button class="btn btn-success">Criar Oferta</button></div>
+                        </div>
+                    </div>
+
+                    <!-- Seção Oferta Relâmpago -->
+                    <div class="settings-section">
+                        <h2><i data-feather="zap" class="mr-2"></i>Oferta Relâmpago</h2>
+                        <div class="form-grid">
+                            <div class="form-group"><label for="flash-product">Produto em Oferta</label><select id="flash-product" class="search-input"><option>Selecione um produto...</option></select></div>
+                            <div class="form-group"><label for="flash-price">Preço Promocional (R$)</label><input type="number" id="flash-price" placeholder="49.90"></div>
+                            <div class="form-group"><label for="flash-duration">Duração (horas)</label><input type="number" id="flash-duration" placeholder="24"></div>
+                            <div class="form-group" style="justify-content: flex-end;"><button class="btn btn-success">Iniciar Oferta</button></div>
+                        </div>
+                    </div>
+
+                    <!-- Seção Brinde -->
+                    <div class="settings-section">
+                        <h2><i data-feather="gift" class="mr-2"></i>Brinde Especial</h2>
+                        <div class="form-grid">
+                            <div class="form-group"><label for="gift-condition">Condição</label><select id="gift-condition" class="search-input"><option value="value">Por Valor de Compra</option><option value="quantity">Por Quantidade de Itens</option></select></div>
+                            <div class="form-group"><label for="gift-condition-value">Valor Mínimo (R$ ou Qtd)</label><input type="number" id="gift-condition-value" placeholder="150"></div>
+                            <div class="form-group"><label for="gift-description">Descrição do Brinde</label><input type="text" id="gift-description" placeholder="Ex: Uma necessaire exclusiva"></div>
+                            <div class="form-group" style="justify-content: flex-end;"><button class="btn btn-success">Criar Brinde</button></div>
+                        </div>
+                    </div>
+                    
+                    <!-- Seção Frete Grátis (Sugestão) -->
+                    <div class="settings-section">
+                        <h2><i data-feather="truck" class="mr-2"></i>Frete Grátis</h2>
+                        <div class="form-grid">
+                            <div class="form-group"><label for="free-shipping-value">Frete grátis para compras acima de (R$)</label><input type="number" id="free-shipping-value" placeholder="250"></div>
+                            <div class="form-group" style="justify-content: flex-end;"><button class="btn btn-success">Ativar Frete Grátis</button></div>
+                        </div>
                     </div>
                 </section>
                 <section id="reseller-sales" class="page">
@@ -923,7 +973,6 @@
         document.getElementById('apply-mass-margin').addEventListener('click', applyMassMargin);
         document.getElementById('save-settings-btn').addEventListener('click', saveResellerSettings);
         
-        // Listeners para previews de imagem
         document.getElementById('logo-upload').addEventListener('change', (e) => handleImageUpload(e, 'logo-preview', 'logoUrl'));
         document.querySelectorAll('.banner-upload').forEach(input => {
             input.addEventListener('change', (e) => handleImageUpload(e, `banner-preview-${e.target.dataset.bannerId}`, `banner-${e.target.dataset.bannerId}`));
@@ -1042,7 +1091,6 @@
         reader.onload = (e) => {
             const imageUrl = e.target.result;
             document.getElementById(previewElementId).src = imageUrl;
-            // Salva a imagem como base64 no objeto de configurações
             resellerSettings[settingsKey] = imageUrl;
         };
         reader.readAsDataURL(file);
