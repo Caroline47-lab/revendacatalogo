@@ -220,13 +220,11 @@
 
             <section id="products" class="page">
                 <div class="page-header"><h1>Todos os Produtos</h1></div>
-                <!-- NOVO: Barra de busca adicionada -->
                 <div class="page-controls">
                     <input type="text" id="product-search-input" class="search-input" placeholder="Buscar por nome do produto...">
                 </div>
                 <div class="table-container">
                     <table class="product-table">
-                        <!-- MUDANÇA: SKU removido do cabeçalho -->
                         <thead><tr><th>Imagem</th><th>Nome</th><th>Preço</th><th>Status</th><th>Publicar</th><th>Editar</th></tr></thead>
                         <tbody id="products-table-body"></tbody>
                     </table>
@@ -325,7 +323,6 @@
         updateDashboard();
         renderAllTables();
 
-        // NOVO: Event listener para a barra de busca
         document.getElementById('product-search-input').addEventListener('keyup', (e) => {
             renderProductsTable(e.target.value.toLowerCase());
         });
@@ -462,12 +459,13 @@
     }
 
     function renderAllTables() {
-        renderProductsTable();
+        const searchTerm = document.getElementById('product-search-input').value.toLowerCase();
+        renderProductsTable(searchTerm);
         renderCatalogTable();
         renderResellersTable();
     }
 
-    // MUDANÇA: Função atualizada para aceitar um termo de busca
+    // CORREÇÃO: Função reescrita para criar elementos programaticamente
     function renderProductsTable(searchTerm = '') {
         const tbody = document.getElementById('products-table-body');
         tbody.innerHTML = '';
@@ -476,26 +474,63 @@
             p.nome.toLowerCase().includes(searchTerm)
         );
 
-        filteredProducts.forEach(p => {
+        if (filteredProducts.length === 0) {
             const row = tbody.insertRow();
+            const cell = row.insertCell();
+            cell.colSpan = 6; // Ajustado para o número de colunas
+            cell.textContent = 'Nenhum produto encontrado.';
+            cell.style.textAlign = 'center';
+            return;
+        }
+
+        filteredProducts.forEach(p => {
+            const row = document.createElement('tr');
             const isPublished = publishedProductIds.includes(p.id);
-            // MUDANÇA: SKU removido da linha da tabela
-            row.innerHTML = `
-                <td><img src="${proxyImageUrl(p.imagem)}" alt="${p.nome}" class="product-image" onerror="this.src='https://placehold.co/40x40/DB1472/FFFFFF?text=X'"></td>
-                <td>${p.nome}</td>
-                <td>R$ ${p.preco_original.toFixed(2)}</td>
-                <td><span class="status-badge ${p.status}">${p.status.replace('_', ' ')}</span></td>
-                <td>
-                    <label class="toggle-switch">
-                        <input type="checkbox" onchange="togglePublished(${p.id})" ${isPublished ? 'checked' : ''}>
-                        <span class="slider"></span>
-                    </label>
-                </td>
-                <td>
-                    <button class="btn" style="padding: 0.25rem 0.5rem;" onclick="showProductDetails(${p.id})">
-                        <i data-feather="edit-2"></i>
-                    </button>
-                </td>`;
+
+            // Célula de Imagem
+            const imgCell = row.insertCell();
+            const img = document.createElement('img');
+            img.src = proxyImageUrl(p.imagem);
+            img.alt = p.nome;
+            img.className = 'product-image';
+            img.onerror = () => { img.src = 'https://placehold.co/40x40/DB1472/FFFFFF?text=X'; };
+            imgCell.appendChild(img);
+
+            // Células de texto
+            row.insertCell().textContent = p.nome;
+            row.insertCell().textContent = `R$ ${p.preco_original.toFixed(2)}`;
+
+            // Célula de Status
+            const statusCell = row.insertCell();
+            const statusBadge = document.createElement('span');
+            statusBadge.className = `status-badge ${p.status}`;
+            statusBadge.textContent = p.status.replace('_', ' ');
+            statusCell.appendChild(statusBadge);
+
+            // Célula de Publicar (Toggle)
+            const publishCell = row.insertCell();
+            const toggleLabel = document.createElement('label');
+            toggleLabel.className = 'toggle-switch';
+            const toggleInput = document.createElement('input');
+            toggleInput.type = 'checkbox';
+            toggleInput.checked = isPublished;
+            toggleInput.addEventListener('change', () => togglePublished(p.id));
+            const toggleSlider = document.createElement('span');
+            toggleSlider.className = 'slider';
+            toggleLabel.appendChild(toggleInput);
+            toggleLabel.appendChild(toggleSlider);
+            publishCell.appendChild(toggleLabel);
+
+            // Célula de Editar (Botão)
+            const actionsCell = row.insertCell();
+            const viewButton = document.createElement('button');
+            viewButton.className = 'btn';
+            viewButton.style.padding = '0.25rem 0.5rem';
+            viewButton.innerHTML = `<i data-feather="edit-2"></i>`;
+            viewButton.addEventListener('click', () => showProductDetails(p.id));
+            actionsCell.appendChild(viewButton);
+
+            tbody.appendChild(row);
         });
         feather.replace();
     }
@@ -518,21 +553,30 @@
         });
     }
 
+    // CORREÇÃO: Função reescrita para criar elementos programaticamente
     function renderResellersTable() {
         const tbody = document.getElementById('resellers-table-body');
         tbody.innerHTML = '';
         mockResellers.forEach(r => {
             const row = tbody.insertRow();
-            row.innerHTML = `
-                <td>${r.name}</td>
-                <td>${r.doc}</td>
-                <td>${r.phone}</td>
-                <td><span class="status-badge ${r.status}">${r.status.replace('_', ' ')}</span></td>
-                <td>
-                    <button class="btn" style="padding: 0.25rem 0.5rem;" onclick="showResellerReview(${r.id})">
-                        <i data-feather="edit"></i> Analisar
-                    </button>
-                </td>`;
+            
+            row.insertCell().textContent = r.name;
+            row.insertCell().textContent = r.doc;
+            row.insertCell().textContent = r.phone;
+
+            const statusCell = row.insertCell();
+            const statusBadge = document.createElement('span');
+            statusBadge.className = `status-badge ${r.status}`;
+            statusBadge.textContent = r.status.replace('_', ' ');
+            statusCell.appendChild(statusBadge);
+
+            const actionsCell = row.insertCell();
+            const reviewButton = document.createElement('button');
+            reviewButton.className = 'btn';
+            reviewButton.style.padding = '0.25rem 0.5rem';
+            reviewButton.innerHTML = '<i data-feather="edit"></i> Analisar';
+            reviewButton.addEventListener('click', () => showResellerReview(r.id));
+            actionsCell.appendChild(reviewButton);
         });
         feather.replace();
     }
