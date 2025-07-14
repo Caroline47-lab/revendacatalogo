@@ -171,7 +171,6 @@
         .stock-badge.in-stock { background-color: #dcfce7; color: #16a34a; }
         .stock-badge.out-of-stock { background-color: #fee2e2; color: #dc2626; }
 
-        /* NOVO: Estilo para a barra de busca */
         .page-controls {
             margin-bottom: 1.5rem;
         }
@@ -465,7 +464,7 @@
         renderResellersTable();
     }
 
-    // CORREÇÃO: Função reescrita para criar elementos programaticamente
+    // CORREÇÃO APLICADA AQUI
     function renderProductsTable(searchTerm = '') {
         const tbody = document.getElementById('products-table-body');
         tbody.innerHTML = '';
@@ -477,14 +476,14 @@
         if (filteredProducts.length === 0) {
             const row = tbody.insertRow();
             const cell = row.insertCell();
-            cell.colSpan = 6; // Ajustado para o número de colunas
+            cell.colSpan = 6;
             cell.textContent = 'Nenhum produto encontrado.';
             cell.style.textAlign = 'center';
             return;
         }
 
         filteredProducts.forEach(p => {
-            const row = document.createElement('tr');
+            const row = tbody.insertRow();
             const isPublished = publishedProductIds.includes(p.id);
 
             // Célula de Imagem
@@ -526,11 +525,11 @@
             const viewButton = document.createElement('button');
             viewButton.className = 'btn';
             viewButton.style.padding = '0.25rem 0.5rem';
-            viewButton.innerHTML = `<i data-feather="edit-2"></i>`;
+            const viewIcon = document.createElement('i');
+            viewIcon.setAttribute('data-feather', 'edit-2');
+            viewButton.appendChild(viewIcon);
             viewButton.addEventListener('click', () => showProductDetails(p.id));
             actionsCell.appendChild(viewButton);
-
-            tbody.appendChild(row);
         });
         feather.replace();
     }
@@ -553,7 +552,7 @@
         });
     }
 
-    // CORREÇÃO: Função reescrita para criar elementos programaticamente
+    // CORREÇÃO APLICADA AQUI
     function renderResellersTable() {
         const tbody = document.getElementById('resellers-table-body');
         tbody.innerHTML = '';
@@ -574,7 +573,11 @@
             const reviewButton = document.createElement('button');
             reviewButton.className = 'btn';
             reviewButton.style.padding = '0.25rem 0.5rem';
-            reviewButton.innerHTML = '<i data-feather="edit"></i> Analisar';
+            const reviewIcon = document.createElement('i');
+            reviewIcon.setAttribute('data-feather', 'edit');
+            reviewButton.appendChild(reviewIcon);
+            const buttonText = document.createTextNode(' Analisar');
+            reviewButton.appendChild(buttonText);
             reviewButton.addEventListener('click', () => showResellerReview(r.id));
             actionsCell.appendChild(reviewButton);
         });
