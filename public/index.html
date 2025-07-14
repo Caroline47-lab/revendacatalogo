@@ -296,9 +296,27 @@
             <main class="main-content">
                 <section id="reseller-products" class="page active">
                     <div class="page-header"><h1>Meus Produtos</h1></div>
-                    <div class="placeholder-card">
-                        <i data-feather="tag" class="w-16 h-16 mx-auto mb-4 text-gray-300"></i>
-                        <p>Aqui serão listados os produtos disponíveis para você revender.</p>
+                    <div class="page-controls" style="background-color: var(--card-bg); padding: 1rem; border-radius: var(--border-radius); margin-bottom: 1.5rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+                        <h3 class="text-lg font-semibold">Gerenciar Preços</h3>
+                        <div style="display: flex; gap: 0.5rem; align-items: center;">
+                            <input type="number" id="mass-margin-input" class="search-input" placeholder="Margem de Lucro (%)" style="width: 180px;">
+                            <button id="apply-mass-margin" class="btn btn-primary">Aplicar em Massa</button>
+                        </div>
+                    </div>
+                    <div class="table-container">
+                        <table class="product-table">
+                            <thead>
+                                <tr>
+                                    <th>Imagem</th>
+                                    <th>Nome</th>
+                                    <th>Preço Base</th>
+                                    <th>Sua Margem (%)</th>
+                                    <th>Preço Final</th>
+                                    <th>Ações</th>
+                                </tr>
+                            </thead>
+                            <tbody id="reseller-products-table-body"></tbody>
+                        </table>
                     </div>
                 </section>
                 <section id="reseller-promotions" class="page">
@@ -358,6 +376,19 @@
             </div>
         </div>
     </div>
+    <div id="reseller-product-edit-modal" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-header"><h3 id="modal-reseller-product-name">Editar Margem</h3><button class="modal-close-btn" onclick="closeModal('reseller-product-edit-modal')"><i data-feather="x"></i></button></div>
+            <div class="modal-body">
+                <p style="margin-bottom: 1rem; color: var(--text-light);">Defina sua margem de lucro para este produto.</p>
+                <label for="reseller-margin-input" style="font-weight: 600;">Margem de Lucro (%)</label>
+                <input type="number" id="reseller-margin-input" class="search-input" style="width: 100%; margin-top: 0.5rem;" placeholder="Ex: 30">
+            </div>
+            <div class="modal-footer">
+                <button id="save-reseller-margin-btn" class="btn btn-success">Salvar</button>
+            </div>
+        </div>
+    </div>
     <div id="toast"></div>
 
     <script>
@@ -365,11 +396,10 @@
     let mockResellers = [
         { id: 1, name: 'Ana Silva', doc: '123.456.789-00', phone: '(11) 98765-4321', email: 'ana.silva@example.com', status: 'em_analise' },
         { id: 2, name: 'Joana Modas LTDA', doc: '12.345.678/0001-99', phone: '(21) 99999-8888', email: 'contato@joanamodas.com', status: 'aprovado' },
-        { id: 3, name: 'Carlos Pereira', doc: '987.654.321-11', phone: '(31) 91234-5678', email: 'carlos.p@example.com', status: 'em_analise' },
-        { id: 4, name: 'Mariana Costa', doc: '456.123.789-22', phone: '(41) 98877-6655', email: 'mari.costa@example.com', status: 'reprovado' },
     ];
     let allApiProducts = [];
     let publishedProductIds = [];
+    let resellerProductMargins = {}; // { productId: margin, ... }
 
     // --- INICIALIZAÇÃO ---
     document.addEventListener('DOMContentLoaded', () => {
@@ -394,6 +424,7 @@
         document.getElementById('show-revendedor-panel').addEventListener('click', () => {
             landingView.classList.remove('active');
             revendedorView.classList.add('active');
+            renderResellerProductsTable(); // Renderiza a tabela da revendedora ao entrar
             feather.replace();
         });
     }
@@ -445,58 +476,26 @@
         return url.startsWith('http') ? `/facilzap-images?url=${encodeURIComponent(url)}` : `/facilzap-images?url=${encodeURIComponent('https://' + url)}`;
     }
     
-    // Função corrigida para processar variações
     function processVariations(estoqueData) {
         if (!estoqueData) return [];
         
-        // Função para extrair nomes de variações de forma segura
         const extractVariationName = (item) => {
             if (typeof item === 'string') return item;
-            if (typeof item === 'object' && item !== null) {
-                return item.tamanho || item.variacao || item.nome || 'N/A';
-            }
+            if (typeof item === 'object' && item !== null) return item.tamanho || item.variacao || item.nome || 'N/A';
             return String(item);
         };
 
-        // Tratamento para diferentes tipos de estoqueData
-        if (typeof estoqueData === 'number') {
-            return [{ nome: 'Único', quantidade: estoqueData }];
-        }
-
+        if (typeof estoqueData === 'number') return [{ nome: 'Único', quantidade: estoqueData }];
         if (typeof estoqueData === 'string') {
             try {
                 const parsed = JSON.parse(estoqueData);
                 return Array.isArray(parsed) 
-                    ? parsed.map(item => ({
-                        nome: extractVariationName(item),
-                        quantidade: parseInt(item.estoque || item.quantidade || 0)
-                    }))
-                    : [{
-                        nome: extractVariationName(parsed),
-                        quantidade: parseInt(parsed.estoque || parsed.quantidade || 0)
-                    }];
-            } catch (e) {
-                return [{
-                    nome: estoqueData,
-                    quantidade: 0
-                }];
-            }
+                    ? parsed.map(item => ({ nome: extractVariationName(item), quantidade: parseInt(item.estoque || item.quantidade || 0) }))
+                    : [{ nome: extractVariationName(parsed), quantidade: parseInt(parsed.estoque || parsed.quantidade || 0) }];
+            } catch (e) { return [{ nome: estoqueData, quantidade: 0 }]; }
         }
-
-        if (Array.isArray(estoqueData)) {
-            return estoqueData.map(item => ({
-                nome: extractVariationName(item),
-                quantidade: parseInt(item.estoque || item.quantidade || 0)
-            }));
-        }
-
-        if (typeof estoqueData === 'object' && estoqueData !== null) {
-            return [{
-                nome: extractVariationName(estoqueData),
-                quantidade: parseInt(estoqueData.estoque || estoqueData.quantidade || 0)
-            }];
-        }
-
+        if (Array.isArray(estoqueData)) return estoqueData.map(item => ({ nome: extractVariationName(item), quantidade: parseInt(item.estoque || item.quantidade || 0) }));
+        if (typeof estoqueData === 'object' && estoqueData !== null) return [{ nome: extractVariationName(estoqueData), quantidade: parseInt(estoqueData.estoque || estoqueData.quantidade || 0) }];
         return [];
     }
 
@@ -509,6 +508,9 @@
 
         const savedResellers = localStorage.getItem('erpResellers');
         if (savedResellers) mockResellers = JSON.parse(savedResellers);
+
+        const savedMargins = localStorage.getItem('resellerMargins');
+        if (savedMargins) resellerProductMargins = JSON.parse(savedMargins);
         
         const savedTime = localStorage.getItem('erpLastSync');
         if (savedTime) document.getElementById('last-sync-time').textContent = `Última sincronização: ${savedTime}`;
@@ -599,11 +601,7 @@
         const filteredProducts = allApiProducts.filter(p => p.nome.toLowerCase().includes(searchTerm));
 
         if (filteredProducts.length === 0) {
-            const row = tbody.insertRow();
-            const cell = row.insertCell();
-            cell.colSpan = 6;
-            cell.textContent = 'Nenhum produto encontrado.';
-            cell.style.textAlign = 'center';
+            tbody.innerHTML = '<tr><td colspan="6" style="text-align: center;">Nenhum produto encontrado.</td></tr>';
             return;
         }
 
@@ -690,32 +688,20 @@
         if (product.variacoes && product.variacoes.length > 0) {
             product.variacoes.forEach(v => {
                 const row = tbody.insertRow();
-                
                 const nameCell = row.insertCell();
                 const nameSpan = document.createElement('span');
                 nameSpan.className = 'variacao_nome';
-                
-                // Garante que o nome é uma string
-                nameSpan.textContent = typeof v.nome === 'string' 
-                    ? v.nome 
-                    : (v.nome?.toString() || 'N/A');
-                    
+                nameSpan.textContent = typeof v.nome === 'string' ? v.nome : (v.nome?.toString() || 'N/A');
                 nameCell.appendChild(nameSpan);
                 
                 const stockCell = row.insertCell();
                 const badge = document.createElement('span');
                 badge.className = `stock-badge ${v.quantidade > 0 ? 'in-stock' : 'out-of-stock'}`;
-                badge.textContent = v.quantidade > 0 
-                    ? `Disponível (${v.quantidade})` 
-                    : 'Esgotado';
+                badge.textContent = v.quantidade > 0 ? `Disponível (${v.quantidade})` : 'Esgotado';
                 stockCell.appendChild(badge);
             });
         } else {
-            const row = tbody.insertRow();
-            const cell = row.insertCell();
-            cell.colSpan = 2;
-            cell.textContent = 'Nenhuma variação encontrada.';
-            cell.style.textAlign = 'center';
+            tbody.innerHTML = '<tr><td colspan="2" style="text-align:center;">Nenhuma variação encontrada.</td></tr>';
         }
         
         document.getElementById('product-details-modal').classList.add('active');
@@ -782,9 +768,96 @@
             mainContent.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
             mainContent.querySelector(`#${pageId}`).classList.add('active');
             
+            if(pageId === 'reseller-products') {
+                renderResellerProductsTable();
+            }
             feather.replace();
         });
+
+        document.getElementById('apply-mass-margin').addEventListener('click', applyMassMargin);
     }
+
+    function renderResellerProductsTable() {
+        const tbody = document.getElementById('reseller-products-table-body');
+        tbody.innerHTML = '';
+        const resellerProducts = allApiProducts.filter(p => publishedProductIds.includes(p.id));
+
+        if (resellerProducts.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="6" style="text-align: center;">Nenhum produto disponível no momento.</td></tr>';
+            return;
+        }
+
+        resellerProducts.forEach(p => {
+            const margin = resellerProductMargins[p.id] || 30; // Default 30%
+            const finalPrice = p.preco_original * (1 + margin / 100);
+            const row = tbody.insertRow();
+
+            row.insertCell().innerHTML = `<img src="${proxyImageUrl(p.imagem)}" alt="${p.nome}" class="product-image" onerror="this.src='https://placehold.co/40x40/DB1472/FFFFFF?text=X'">`;
+            row.insertCell().textContent = p.nome;
+            row.insertCell().textContent = `R$ ${p.preco_original.toFixed(2)}`;
+            row.insertCell().textContent = `${margin}%`;
+            row.insertCell().textContent = `R$ ${finalPrice.toFixed(2)}`;
+            
+            const actionsCell = row.insertCell();
+            const editButton = document.createElement('button');
+            editButton.className = 'btn';
+            editButton.style.padding = '0.25rem 0.5rem';
+            editButton.innerHTML = `<i data-feather="edit-2"></i>`;
+            editButton.addEventListener('click', () => showResellerProductEditModal(p.id));
+            actionsCell.appendChild(editButton);
+        });
+        feather.replace();
+    }
+
+    function showResellerProductEditModal(productId) {
+        const product = allApiProducts.find(p => p.id === productId);
+        if (!product) return;
+
+        document.getElementById('modal-reseller-product-name').textContent = `Editar Margem: ${product.nome}`;
+        const marginInput = document.getElementById('reseller-margin-input');
+        marginInput.value = resellerProductMargins[productId] || 30;
+
+        document.getElementById('save-reseller-margin-btn').onclick = () => saveResellerMargin(productId);
+
+        document.getElementById('reseller-product-edit-modal').classList.add('active');
+    }
+
+    function saveResellerMargin(productId) {
+        const marginInput = document.getElementById('reseller-margin-input');
+        const newMargin = parseFloat(marginInput.value);
+
+        if (isNaN(newMargin) || newMargin < 0) {
+            showToast('Por favor, insira uma margem válida.', 'error');
+            return;
+        }
+
+        resellerProductMargins[productId] = newMargin;
+        localStorage.setItem('resellerMargins', JSON.stringify(resellerProductMargins));
+        
+        renderResellerProductsTable();
+        closeModal('reseller-product-edit-modal');
+        showToast('Margem do produto atualizada!', 'success');
+    }
+
+    function applyMassMargin() {
+        const marginInput = document.getElementById('mass-margin-input');
+        const newMargin = parseFloat(marginInput.value);
+
+        if (isNaN(newMargin) || newMargin < 0) {
+            showToast('Por favor, insira uma margem válida para aplicar em massa.', 'error');
+            return;
+        }
+
+        const resellerProducts = allApiProducts.filter(p => publishedProductIds.includes(p.id));
+        resellerProducts.forEach(p => {
+            resellerProductMargins[p.id] = newMargin;
+        });
+
+        localStorage.setItem('resellerMargins', JSON.stringify(resellerProductMargins));
+        renderResellerProductsTable();
+        showToast(`Margem de ${newMargin}% aplicada a todos os produtos!`, 'success');
+    }
+
     </script>
 </body>
 </html>
