@@ -139,46 +139,104 @@
         .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1.5rem; }
         .form-group { display: flex; flex-direction: column; }
         .form-group label { font-weight: 600; margin-bottom: 0.5rem; font-size: 0.9rem; }
-        .form-group input[type="text"], .form-group input[type="tel"], .form-group input[type="number"], .form-group textarea { width: 100%; padding: 0.75rem; border: 1px solid var(--border-color); border-radius: 0.5rem; font-size: 0.9rem; }
+        .form-group input[type="text"], .form-group input[type="tel"], .form-group input[type="number"], .form-group textarea, .form-group input[type="color"] { width: 100%; padding: 0.75rem; border: 1px solid var(--border-color); border-radius: 0.5rem; font-size: 0.9rem; }
+        .form-group input[type="color"] { padding: 0.25rem; height: 48px; }
         .form-group textarea { min-height: 100px; resize: vertical; }
         .logo-preview { width: 100px; height: 100px; border-radius: 50%; object-fit: cover; border: 2px solid var(--border-color); margin-top: 1rem; }
         .banner-preview { display: flex; gap: 1rem; background-color: #f1f5f9; border: 2px dashed var(--border-color); padding: 1rem; border-radius: var(--border-radius); min-height: 150px; align-items: center; justify-content: center; }
         .banner-preview img { max-width: 100%; max-height: 120px; object-fit: cover; border-radius: 0.5rem; }
 
-        /* --- NOVOS ESTILOS DO CATÁLOGO (REESTRUTURADO) --- */
+        /* --- ESTILOS DO CATÁLOGO ATUALIZADOS --- */
         #catalog-preview-view { background-color: #f8fafc; }
-        .catalog-top-bar { background: linear-gradient(90deg, var(--reseller-primary-color), var(--reseller-secondary-color)); color: white; text-align: center; padding: 0.5rem; font-size: 0.8rem; font-weight: 500; }
-        
-        .catalog-header-container {
-            position: relative;
+        .catalog-top-bar { 
+            background: linear-gradient(90deg, var(--reseller-primary-color), var(--reseller-secondary-color)); 
+            color: white; 
+            padding: 0.5rem 0; 
+            font-size: 0.8rem; 
+            font-weight: 500;
+            overflow: hidden;
+            white-space: nowrap;
         }
+        
+        .top-bar-content {
+            display: inline-block;
+            animation: marquee 25s linear infinite;
+        }
+
+        .top-bar-content span {
+            display: inline-block;
+            padding: 0 2rem;
+        }
+
+        @keyframes marquee {
+            from { transform: translateX(0%); }
+            to { transform: translateX(-50%); }
+        }
+        
+        .catalog-header-container { position: relative; }
 
         .catalog-gradient-bar {
             background: linear-gradient(90deg, var(--reseller-primary-color), var(--reseller-secondary-color));
-            height: 60px;
+            height: 80px;
             display: flex;
             justify-content: space-between;
             align-items: center;
             padding: 0 1.5rem;
+            gap: 1.5rem;
         }
         
-        .catalog-gradient-bar button, .catalog-gradient-bar a {
+        .catalog-gradient-bar button, .catalog-gradient-bar a { color: white; background: none; border: none; cursor: pointer; }
+        
+        .header-search-wrapper {
+            flex-grow: 1;
+            position: relative;
+            max-width: 600px;
+        }
+        .header-search-wrapper input {
+            width: 100%;
+            height: 44px;
+            border-radius: 999px;
+            border: 1px solid transparent;
+            padding: 0 45px 0 1.5rem;
+            font-size: 1rem;
+        }
+        .header-search-wrapper input::placeholder { color: #94a3b8; }
+        .header-search-wrapper input:focus { outline: none; border-color: var(--reseller-secondary-color); }
+        .header-search-wrapper button {
+            position: absolute;
+            right: 5px;
+            top: 50%;
+            transform: translateY(-50%);
+            background-color: var(--reseller-primary-color);
             color: white;
-            background: none;
             border: none;
+            width: 34px;
+            height: 34px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
             cursor: pointer;
         }
 
         .catalog-banner-area {
-            background-color: var(--reseller-secondary-color);
-            height: 190px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: rgba(0,0,0,0.5);
+            background-color: #e2e8f0;
+            height: 400px; /* Altura ajustada para desktop */
+            background-size: cover;
+            background-position: center;
         }
 
         .catalog-logo-container {
             position: absolute;
-            top: 60px; /* Altura da barra de gradiente */
+            top: 480px; /* Posição corrigida: 80px (gradiente) + 400px (banner) */
             left: 50%;
-            transform: translate(-50%, -50%); /* Centraliza na borda */
+            transform: translate(-50%, -50%);
             z-index: 10;
         }
         .catalog-logo-container img {
@@ -188,42 +246,18 @@
             object-fit: cover;
             border: 5px solid white; 
             box-shadow: 0 5px 20px rgba(0,0,0,0.2);
+            background-color: #e2e8f0;
         }
         .catalog-cart-icon { position: relative; }
         .cart-count { position: absolute; top: -8px; right: -8px; background-color: white; color: var(--reseller-primary-color); border-radius: 50%; width: 20px; height: 20px; display: flex; align-items: center; justify-content: center; font-size: 0.75rem; font-weight: 700; }
         
         .catalog-content-body {
             background-color: var(--card-bg);
-            margin-top: -100px; /* Puxa para cima para sobrepor o banner */
+            margin-top: 0; /* Removido margin-top negativo */
             position: relative;
             z-index: 5;
             border-radius: 1.5rem 1.5rem 0 0;
-            padding-top: 80px; /* Espaço para a logo */
-        }
-
-        .catalog-search-wrapper {
-            max-width: 700px;
-            margin: 0 auto;
-            display: flex;
-            border-radius: 999px;
-            background-color: white;
-            border: 2px solid var(--reseller-primary-color);
-            box-shadow: var(--shadow);
-            overflow: hidden;
-            transform: translateY(-50%);
-        }
-        #catalog-search-input {
-            flex-grow: 1;
-            border: none;
-            padding: 1rem 1.5rem;
-            outline: none;
-        }
-        #catalog-search-btn {
-            background-color: transparent;
-            color: var(--reseller-primary-color);
-            border: none;
-            padding: 0 1.5rem;
-            cursor: pointer;
+            padding-top: 80px; /* Espaço para a metade superior da logo (160px / 2) */
         }
 
         .catalog-filters-container { padding: 2rem 1rem 1.5rem 1rem; background-color: var(--card-bg); text-align: center; }
@@ -310,21 +344,32 @@
             .product-detail-info h1 { 
                 font-size: 1.8rem; 
             }
-            .catalog-logo-container img {
+            
+            .catalog-banner-area {
+                height: 250px; /* Altura do banner para mobile */
+            }
+            .catalog-logo-container {
+                top: 330px; /* Posição da logo no mobile: 80px + 250px */
+            }
+             .catalog-logo-container img {
                 height: 120px;
                 width: 120px;
             }
-            .catalog-banner-area {
-                height: 140px;
-            }
             .catalog-content-body {
-                margin-top: -80px;
-                padding-top: 60px;
+                padding-top: 60px; /* Espaço para logo mobile (120px / 2) */
             }
             .filter-bubble {
                 width: 50px;
                 height: 50px;
                 font-size: 0.9rem;
+            }
+            .catalog-gradient-bar {
+                gap: 1rem;
+                padding: 0 1rem;
+            }
+            .header-search-wrapper input {
+                font-size: 0.9rem;
+                padding: 0 40px 0 1rem;
             }
         }
     </style>
@@ -370,7 +415,6 @@
                     <h1>Visão Geral</h1>
                 </div>
                 <section id="dashboard" class="page active">
-                    <!-- Conteúdo movido para dentro da section para melhor estrutura -->
                     <div class="stats-grid">
                         <div class="stat-card"><p class="stat-card-title">Total de Produtos</p><p class="stat-card-value" id="stat-total-products">0</p></div>
                         <div class="stat-card"><p class="stat-card-title">Produtos Ativos</p><p class="stat-card-value" id="stat-active-products">0</p></div>
@@ -472,7 +516,8 @@
                 <section id="reseller-settings" class="page">
                     <div class="settings-section"><h2>Identidade Visual</h2><div class="form-grid"><div class="form-group"><label for="logo-upload">Logo da Marca</label><input type="file" id="logo-upload" accept="image/*"><img id="logo-preview" class="logo-preview" src="https://placehold.co/100x100/e2e8f0/94a3b8?text=Logo" alt="Prévia da logo"></div><div class="form-group"><label for="brand-name-input">Nome da Marca</label><input type="text" id="brand-name-input" placeholder="Ex: Maria Modas"></div><div class="form-group"><label for="primary-color-input">Cor Primária</label><input type="color" id="primary-color-input" value="#DB1472"></div><div class="form-group"><label for="secondary-color-input">Cor de Destaque</label><input type="color" id="secondary-color-input" value="#F8B81F"></div></div></div>
                     <div class="settings-section"><h2>Informações do Catálogo</h2><div class="form-grid"><div class="form-group"><label for="contact-phone-input">Contato (WhatsApp)</label><input type="tel" id="contact-phone-input" placeholder="(XX) 9XXXX-XXXX"></div><div class="form-group"><label for="instagram-input">Instagram</label><input type="text" id="instagram-input" placeholder="@seunome"></div></div><div class="form-group" style="margin-top: 1.5rem;"><label for="description-textarea">Descrição Curta</label><textarea id="description-textarea" placeholder="Fale um pouco sobre sua loja..."></textarea></div></div>
-                    <div class="settings-section"><h2>Banners do Catálogo</h2><p style="color: var(--text-light); margin-bottom: 1rem;">Envie imagens para os banners que aparecerão no topo do seu catálogo.</p><div class="banner-option"><h3 style="font-weight: 600; margin-bottom: 0.5rem;">Banner Principal (Desktop e Mobile)</h3><div class="form-grid"><div class="form-group"><label>Imagem para Desktop (1200x400px)</label><input type="file" class="banner-upload" data-banner-id="desktop-main" accept="image/*"><div class="banner-preview mt-2"><img id="banner-preview-desktop-main" src="https://placehold.co/600x200/e2e8f0/94a3b8?text=Banner+Desktop" alt="Prévia Banner Desktop"></div></div><div class="form-group"><label>Imagem para Mobile (600x400px)</label><input type="file" class="banner-upload" data-banner-id="mobile-main" accept="image/*"><div class="banner-preview mt-2"><img id="banner-preview-mobile-main" src="https://placehold.co/300x200/e2e8f0/94a3b8?text=Banner+Mobile" alt="Prévia Banner Mobile"></div></div></div></div></div>
+                    <div class="settings-section"><h2>Banners do Catálogo</h2><p style="color: var(--text-light); margin-bottom: 1rem;">Envie imagens para os banners que aparecerão no topo do seu catálogo.</p><div class="banner-option"><h3 style="font-weight: 600; margin-bottom: 0.5rem;">Banner Principal (Desktop e Mobile)</h3><div class="form-grid"><div class="form-group"><label>Imagem para Desktop (1900x400px)</label><input type="file" class="banner-upload" data-banner-id="desktop-main" accept="image/*"><div class="banner-preview mt-2"><img id="banner-preview-desktop-main" src="https://placehold.co/600x200/e2e8f0/94a3b8?text=Banner+Desktop" alt="Prévia Banner Desktop"></div></div><div class="form-group"><label>Imagem para Mobile (700x800px)</label><input type="file" class="banner-upload" data-banner-id="mobile-main" accept="image/*"><div class="banner-preview mt-2"><img id="banner-preview-mobile-main" src="https://placehold.co/300x200/e2e8f0/94a3b8?text=Banner+Mobile" alt="Prévia Banner Mobile"></div></div></div></div></div>
+                    <div class="settings-section"><h2>Mensagens da Barra Superior</h2><div class="form-grid"><div class="form-group"><label for="top-bar-msg-1">Mensagem 1</label><input type="text" id="top-bar-msg-1"></div><div class="form-group"><label for="top-bar-msg-2">Mensagem 2</label><input type="text" id="top-bar-msg-2"></div><div class="form-group"><label for="top-bar-msg-3">Mensagem 3</label><input type="text" id="top-bar-msg-3"></div></div></div>
                     <div class="modal-footer" style="justify-content: flex-start;"><button id="save-settings-btn" class="btn btn-success"><i data-feather="save"></i> Salvar Configurações</button></div>
                 </section>
             </main>
@@ -531,15 +576,8 @@
         document.getElementById('show-revendedor-panel').addEventListener('click', () => { switchView('revendedor-view'); renderResellerProductsTable(); });
         document.getElementById('view-catalog-btn').addEventListener('click', (e) => { e.preventDefault(); renderCatalogPreview(); switchView('catalog-preview-view'); });
         
-        // Adiciona listeners para os novos botões "Voltar"
-        document.getElementById('back-to-landing-empresa').addEventListener('click', (e) => {
-            e.preventDefault();
-            switchView('landing-view');
-        });
-        document.getElementById('back-to-landing-revendedor').addEventListener('click', (e) => {
-            e.preventDefault();
-            switchView('landing-view');
-        });
+        document.getElementById('back-to-landing-empresa').addEventListener('click', (e) => { e.preventDefault(); switchView('landing-view'); });
+        document.getElementById('back-to-landing-revendedor').addEventListener('click', (e) => { e.preventDefault(); switchView('landing-view'); });
     }
 
     function switchView(viewId) {
@@ -566,12 +604,11 @@
         const sidebarRevendedor = document.querySelector('#revendedor-view .sidebar');
         toggleRevendedor.addEventListener('click', () => sidebarRevendedor.classList.toggle('open'));
         
-        // Fechar menu ao clicar fora
         document.body.addEventListener('click', (e) => {
-            if(sidebarEmpresa.classList.contains('open') && !sidebarEmpresa.contains(e.target) && e.target !== toggleEmpresa) {
+            if(sidebarEmpresa.classList.contains('open') && !sidebarEmpresa.contains(e.target) && e.target !== toggleEmpresa && !e.target.closest('#menu-toggle-empresa')) {
                 sidebarEmpresa.classList.remove('open');
             }
-            if(sidebarRevendedor.classList.contains('open') && !sidebarRevendedor.contains(e.target) && e.target !== toggleRevendedor) {
+            if(sidebarRevendedor.classList.contains('open') && !sidebarRevendedor.contains(e.target) && e.target !== toggleRevendedor && !e.target.closest('#menu-toggle-revendedor')) {
                 sidebarRevendedor.classList.remove('open');
             }
         });
@@ -588,13 +625,13 @@
 
     function setupEmpresaNavigation() {
         const navContainer = document.getElementById('empresa-nav');
-        const pageTitle = document.querySelector('#empresa-view .page-header h1');
         navContainer.addEventListener('click', (e) => {
             const link = e.target.closest('.nav-link');
             if (!link) return;
             e.preventDefault();
             const pageId = link.dataset.page;
-            pageTitle.textContent = link.textContent; // Atualiza o título da página
+            const pageTitle = document.querySelector(`#empresa-view .page-header h1`);
+            pageTitle.textContent = link.textContent.trim();
             navContainer.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
             link.classList.add('active');
             const mainContent = document.querySelector('#empresa-view .main-content');
@@ -602,7 +639,6 @@
             const page = mainContent.querySelector(`#${pageId}`);
             if (page) {
                 page.classList.add('active');
-                // Move o cabeçalho para dentro da página correta
                 page.prepend(mainContent.querySelector('.page-header'));
             }
             feather.replace();
@@ -618,7 +654,7 @@
     }
 
     function proxyImageUrl(url) {
-        if (!url || typeof url !== 'string' || url.trim() === '') return 'https://placehold.co/300x300/DB1472/FFFFFF?text=Sem+Imagem';
+        if (!url || typeof url !== 'string' || url.trim() === '') return 'https://placehold.co/300x300/e2e8f0/94a3b8?text=Sem+Imagem';
         return url.startsWith('http') ? `/facilzap-images?url=${encodeURIComponent(url)}` : `/facilzap-images?url=${encodeURIComponent('https://' + url)}`;
     }
     
@@ -854,12 +890,12 @@
     // --- LÓGICA DO PAINEL DA REVENDEDORA ---
     function setupRevendedorPanel() {
         const navContainer = document.getElementById('revendedor-nav');
-        const pageTitle = document.getElementById('revendedor-page-title');
         navContainer.addEventListener('click', (e) => {
             const link = e.target.closest('.nav-link');
             if (!link || link.id === 'view-catalog-btn') return;
             e.preventDefault();
             const pageId = link.dataset.page;
+            const pageTitle = document.getElementById('revendedor-page-title');
             pageTitle.textContent = link.textContent.trim();
             navContainer.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
             link.classList.add('active');
@@ -974,6 +1010,9 @@
         resellerSettings.contactPhone = document.getElementById('contact-phone-input').value;
         resellerSettings.instagram = document.getElementById('instagram-input').value;
         resellerSettings.description = document.getElementById('description-textarea').value;
+        resellerSettings.topBarMsg1 = document.getElementById('top-bar-msg-1').value;
+        resellerSettings.topBarMsg2 = document.getElementById('top-bar-msg-2').value;
+        resellerSettings.topBarMsg3 = document.getElementById('top-bar-msg-3').value;
         localStorage.setItem('resellerSettings', JSON.stringify(resellerSettings));
         showToast('Configurações salvas com sucesso!', 'success');
     }
@@ -986,6 +1025,9 @@
         document.getElementById('contact-phone-input').value = settings.contactPhone || '';
         document.getElementById('instagram-input').value = settings.instagram || '';
         document.getElementById('description-textarea').value = settings.description || '';
+        document.getElementById('top-bar-msg-1').value = settings.topBarMsg1 || '';
+        document.getElementById('top-bar-msg-2').value = settings.topBarMsg2 || '';
+        document.getElementById('top-bar-msg-3').value = settings.topBarMsg3 || '';
         if(settings.logoUrl) document.getElementById('logo-preview').src = settings.logoUrl;
         if(settings['banner-desktop-main']) document.getElementById('banner-preview-desktop-main').src = settings['banner-desktop-main'];
         if(settings['banner-mobile-main']) document.getElementById('banner-preview-mobile-main').src = settings['banner-mobile-main'];
@@ -995,30 +1037,32 @@
     function renderCatalogPreview(searchTerm = '', sizeFilter = '') {
         const catalogView = document.getElementById('catalog-preview-view');
         catalogView.innerHTML = `
-            <div class="catalog-top-bar">USE O CUPOM: PRIMEIRACOMPRA &nbsp;&bull;&nbsp; APROVEITE 10% OFF &nbsp;&bull;&nbsp; FRETE GRÁTIS EM COMPRAS ACIMA DE R$599</div>
+            <div class="catalog-top-bar" id="catalog-top-bar-container">
+                <!-- Conteúdo dinâmico aqui -->
+            </div>
             
             <div class="catalog-header-container">
                 <div class="catalog-gradient-bar">
                     <button id="catalog-menu-toggle"><i data-feather="menu"></i></button>
+                    <div class="header-search-wrapper">
+                        <input type="text" id="catalog-search-input" placeholder="o que você procura?..." value="${searchTerm}">
+                        <button id="catalog-search-btn"><i data-feather="search" style="width: 20px; height: 20px;"></i></button>
+                    </div>
                     <a href="#" id="cart-button" class="catalog-cart-icon">
                         <i data-feather="shopping-cart"></i>
                         <span id="cart-count" class="cart-count" style="display: none;">0</span>
                     </a>
                 </div>
-                <div class="catalog-banner-area">
-                    <!-- Esta área pode conter uma imagem de banner no futuro, por enquanto é o fundo colorido -->
+                <div class="catalog-banner-area" id="catalog-banner">
+                    BANNER AQUI
                 </div>
                 <div class="catalog-logo-container">
-                    <img id="catalog-logo" src="https://placehold.co/180x180/e2e8f0/334155?text=Logo" alt="Logo da loja">
+                    <img id="catalog-logo" src="https://placehold.co/180x180/e2e8f0/cccccc?text=" alt="Logo da loja">
                 </div>
             </div>
 
             <main id="catalog-main-container">
                 <div class="catalog-content-body">
-                    <div class="catalog-search-wrapper">
-                        <input type="text" id="catalog-search-input" placeholder="O que você procura?" value="${searchTerm}">
-                        <button id="catalog-search-btn"><i data-feather="search"></i></button>
-                    </div>
                     <div id="catalog-main-content">
                         <div class="catalog-filters-container">
                             <h3>COMPRE POR TAMANHO</h3>
@@ -1043,7 +1087,31 @@
         const settings = resellerSettings;
         document.documentElement.style.setProperty('--reseller-primary-color', settings.primaryColor || '#DB1472');
         document.documentElement.style.setProperty('--reseller-secondary-color', settings.secondaryColor || '#F8B81F');
-        catalogView.querySelector('#catalog-logo').src = settings.logoUrl || 'https://placehold.co/180x180/e2e8f0/334155?text=Logo';
+        
+        // Render Top Bar
+        const topBarContainer = catalogView.querySelector('#catalog-top-bar-container');
+        const messages = [
+            settings.topBarMsg1 || 'USE O CUPOM:PRIMEIRACOMPRA',
+            settings.topBarMsg2 || 'APROVEITE 10% OFF',
+            settings.topBarMsg3 || 'FRETE GRÁTIS ACIMA DE R$599'
+        ].filter(Boolean);
+
+        if (messages.length > 0) {
+            const contentHTML = messages.map(msg => `<span>${msg}</span>`).join('');
+            topBarContainer.innerHTML = `<div class="top-bar-content">${contentHTML}${contentHTML}</div>`;
+        } else {
+            topBarContainer.innerHTML = '';
+        }
+
+        // Render Banners
+        const bannerArea = catalogView.querySelector('#catalog-banner');
+        const bannerUrl = window.innerWidth > 768 ? settings['banner-desktop-main'] : settings['banner-mobile-main'];
+        if (bannerUrl) {
+            bannerArea.style.backgroundImage = `url(${bannerUrl})`;
+            bannerArea.textContent = ''; // Remove "BANNER AQUI" text
+        }
+
+        catalogView.querySelector('#catalog-logo').src = settings.logoUrl || 'https://placehold.co/180x180/e2e8f0/cccccc?text=';
         catalogView.querySelector('#catalog-brand-name-footer').textContent = settings.brandName || 'Sua Marca';
         catalogView.querySelector('#catalog-description').textContent = settings.description || 'Bem-vindo(a) ao meu catálogo!';
         catalogView.querySelector('#catalog-instagram-link').href = settings.instagram ? `https://instagram.com/${settings.instagram.replace('@','')}` : '#';
@@ -1058,7 +1126,7 @@
             .map(nome => nome.replace('Tamanho: ', '').trim());
         const allVariations = [...new Set(allVariationNames)];
         
-        filtersContainer.innerHTML = ``; // Limpa os filtros antes de adicionar
+        filtersContainer.innerHTML = ``;
         allVariations.sort((a,b) => a - b).forEach(size => {
             const filterButton = document.createElement('button');
             filterButton.className = `filter-bubble ${sizeFilter === size ? 'active' : ''}`;
@@ -1084,7 +1152,11 @@
         });
         
         catalogView.querySelectorAll('.view-product-btn').forEach(btn => btn.addEventListener('click', (e) => showProductDetailPage(e.target.dataset.productId)));
-        catalogView.querySelectorAll('.filter-bubble').forEach(btn => btn.addEventListener('click', (e) => renderCatalogPreview(searchTerm, e.target.dataset.size)));
+        catalogView.querySelectorAll('.filter-bubble').forEach(btn => btn.addEventListener('click', (e) => {
+            const currentFilter = e.target.dataset.size;
+            const isActive = e.target.classList.contains('active');
+            renderCatalogPreview(searchTerm, isActive ? '' : currentFilter);
+        }));
         catalogView.querySelector('#cart-button').addEventListener('click', (e) => { e.preventDefault(); showCartModal(); });
         
         const searchInput = catalogView.querySelector('#catalog-search-input');
@@ -1092,9 +1164,7 @@
         const performSearch = () => renderCatalogPreview(searchInput.value.toLowerCase(), sizeFilter);
         
         searchBtn.addEventListener('click', performSearch);
-        searchInput.addEventListener('keyup', (e) => {
-            if (e.key === 'Enter') performSearch();
-        });
+        searchInput.addEventListener('keyup', (e) => { if (e.key === 'Enter') performSearch(); });
         
         updateCartCount();
         feather.replace();
