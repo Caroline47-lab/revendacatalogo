@@ -146,8 +146,9 @@
             padding: 1rem; background-color: var(--card-bg); box-shadow: var(--shadow);
             border-bottom: 4px solid var(--reseller-primary-color);
         }
-        .catalog-header-logo { justify-self: center; }
+        .catalog-header-logo { justify-self: center; text-align: center; }
         .catalog-header-logo img { height: 60px; width: 60px; border-radius: 50%; object-fit: cover; box-shadow: var(--shadow); }
+        .catalog-header-brand { font-size: 1rem; font-weight: 600; color: var(--text-color); margin-top: 0.5rem; }
         .catalog-header-nav { justify-self: start; }
         .catalog-header-actions { justify-self: end; display: flex; align-items: center; gap: 1rem; }
         .catalog-search-bar { width: 200px; }
@@ -331,7 +332,10 @@
     <div id="catalog-preview-view" class="view">
         <header class="catalog-header">
             <div class="catalog-header-nav"><button id="back-to-admin-btn" class="btn"><i data-feather="arrow-left"></i> Voltar ao Painel</button></div>
-            <div class="catalog-header-logo"><img id="catalog-logo" src="https://placehold.co/150x50/e2e8f0/94a3b8?text=Sua+Logo" alt="Logo da loja"></div>
+            <div class="catalog-header-logo">
+                <img id="catalog-logo" src="https://placehold.co/100x100/e2e8f0/94a3b8?text=Sua+Logo" alt="Logo da loja">
+                <h1 id="catalog-brand-name" class="catalog-header-brand">Sua Marca</h1>
+            </div>
             <div class="catalog-header-actions">
                 <input type="text" id="catalog-search-input" class="search-input catalog-search-bar" placeholder="Buscar...">
                 <a href="#" id="cart-button" class="catalog-cart-icon"><i data-feather="shopping-cart"></i><span id="cart-count" class="cart-count" style="display: none;">0</span></a>
@@ -860,7 +864,10 @@
         detailView.innerHTML = `
             <header class="catalog-header">
                 <div class="catalog-header-nav"><button id="back-to-catalog-btn" class="btn"><i data-feather="arrow-left"></i> Voltar</button></div>
-                <div class="catalog-header-logo"><img src="${resellerSettings.logoUrl || 'https://placehold.co/100x100/e2e8f0/94a3b8?text=Logo'}" alt="Logo"></div>
+                <div class="catalog-header-logo">
+                    <img src="${resellerSettings.logoUrl || 'https://placehold.co/100x100/e2e8f0/94a3b8?text=Logo'}" alt="Logo">
+                    <h1 class="catalog-header-brand">${resellerSettings.brandName || 'Sua Marca'}</h1>
+                </div>
                 <div class="catalog-header-actions"><a href="#" id="cart-button-detail" class="catalog-cart-icon"><i data-feather="shopping-cart"></i><span id="cart-count-detail" class="cart-count" style="display: none;">0</span></a></div>
             </header>
             <div class="product-detail-grid">
@@ -885,7 +892,7 @@
         `;
 
         switchView('product-detail-view');
-        updateCartCount(); // Atualiza o contador no header da página de detalhe
+        updateCartCount();
         
         document.getElementById('back-to-catalog-btn').addEventListener('click', () => switchView('catalog-preview-view'));
         document.getElementById('cart-button-detail').addEventListener('click', (e) => { e.preventDefault(); showCartModal(); });
