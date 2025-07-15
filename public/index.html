@@ -409,6 +409,24 @@
                 padding: 0 40px 0 1rem;
             }
         }
+        
+        /* NOVOS ESTILOS PARA O MODAL DE CATEGORIAS */
+        .category-list-container {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+        .category-list-container a {
+            text-decoration: none;
+            color: var(--text-color);
+            padding: 0.75rem 1rem;
+            border-radius: 0.5rem;
+            font-weight: 500;
+            transition: background-color 0.2s;
+        }
+        .category-list-container a:hover {
+            background-color: #f1f5f9;
+        }
     </style>
 </head>
 <body>
@@ -433,6 +451,7 @@
                 <ul class="nav-menu" id="empresa-nav">
                     <li class="nav-item"><a href="#" class="nav-link active" data-page="dashboard"><i data-feather="home"></i> Visão Geral</a></li>
                     <li class="nav-item"><a href="#" class="nav-link" data-page="products"><i data-feather="package"></i> Produtos</a></li>
+                    <li class="nav-item"><a href="#" class="nav-link" data-page="categories"><i data-feather="grid"></i> Categorias</a></li>
                     <li class="nav-item"><a href="#" class="nav-link" data-page="catalog"><i data-feather="book-open"></i> Catálogo Revenda</a></li>
                     <li class="nav-item"><a href="#" class="nav-link" data-page="resellers"><i data-feather="users"></i> Gerenciar Revendedoras</a></li>
                     <li class="nav-item"><a href="#" class="nav-link" data-page="sync"><i data-feather="refresh-cw"></i> Sincronização</a></li>
@@ -466,6 +485,15 @@
                         <table class="product-table">
                             <thead><tr><th>Imagem</th><th>Nome</th><th>Preço</th><th>Status</th><th>Publicar</th><th>Editar</th></tr></thead>
                             <tbody id="products-table-body"></tbody>
+                        </table>
+                    </div>
+                </section>
+                 <section id="categories" class="page">
+                    <div class="page-header"><h1>Gerenciar Categorias</h1></div>
+                    <div class="table-container">
+                        <table class="product-table">
+                            <thead><tr><th>Nome da Categoria</th><th>Publicar no Catálogo</th></tr></thead>
+                            <tbody id="categories-table-body"></tbody>
                         </table>
                     </div>
                 </section>
@@ -596,13 +624,26 @@
             </div>
         </div>
     </div>
+    <div id="category-modal" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Categorias</h3>
+                <button class="modal-close-btn" onclick="closeModal('category-modal')"><i data-feather="x"></i></button>
+            </div>
+            <div id="category-list" class="category-list-container">
+                <!-- Links de categoria serão injetados aqui -->
+            </div>
+        </div>
+    </div>
     <div id="toast"></div>
 
     <script>
     // --- DADOS MOCKADOS E VARIÁVEIS GLOBAIS ---
     let mockResellers = [ { id: 1, name: 'Ana Silva', doc: '123.456.789-00', phone: '(11) 98765-4321', email: 'ana.silva@example.com', status: 'em_analise' }, { id: 2, name: 'Joana Modas LTDA', doc: '12.345.678/0001-99', phone: '(21) 99999-8888', email: 'contato@joanamodas.com', status: 'aprovado' }, ];
     let allApiProducts = [];
+    let allCategories = [];
     let publishedProductIds = [];
+    let publishedCategoryIds = [];
     let resellerProductMargins = {};
     let resellerProductTags = {};
     let resellerActiveProductIds = [];
@@ -749,8 +790,16 @@
     function loadLocalData() {
         const savedProducts = localStorage.getItem('erpProducts');
         if (savedProducts) allApiProducts = JSON.parse(savedProducts);
+
+        const savedCategories = localStorage.getItem('erpCategories');
+        if (savedCategories) allCategories = JSON.parse(savedCategories);
+
         const savedPublished = localStorage.getItem('erpPublished');
         if (savedPublished) publishedProductIds = JSON.parse(savedPublished);
+
+        const savedPublishedCategories = localStorage.getItem('erpPublishedCategories');
+        if (savedPublishedCategories) publishedCategoryIds = JSON.parse(savedPublishedCategories);
+
         const savedResellers = localStorage.getItem('erpResellers');
         if (savedResellers) mockResellers = JSON.parse(savedResellers);
         const savedMargins = localStorage.getItem('resellerMargins');
@@ -785,15 +834,21 @@
                     const variacoes = processVariations(p.estoque);
                     const estoqueTotal = variacoes.reduce((total, v) => total + v.quantidade, 0);
                     const imagens = typeof p.imagem === 'string' ? p.imagem.split(',').map(url => url.trim()) : [];
-                    return { id: p.id, nome: p.nome || 'Nome não informado', sku: p.sku || 'N/A', preco_original: parseFloat(p.preco || 0), imagem: imagens[0] || null, imagens_adicionais: imagens, estoque_total: estoqueTotal, variacoes: variacoes, status: estoqueTotal > 0 ? 'ativo' : 'sem_estoque' };
+                    return { id: p.id, nome: p.nome || 'Nome não informado', sku: p.sku || 'N/A', preco_original: parseFloat(p.preco || 0), imagem: imagens[0] || null, imagens_adicionais: imagens, estoque_total: estoqueTotal, variacoes: variacoes, status: estoqueTotal > 0 ? 'ativo' : 'sem_estoque', categoria_nome: p.categoria_nome || 'Sem Categoria' };
                 });
                 allApiProducts.push(...processedProducts);
                 currentPage++;
             }
             allApiProducts.sort((a, b) => (a.status === 'ativo' ? -1 : 1));
             localStorage.setItem('erpProducts', JSON.stringify(allApiProducts));
+
+            // Extrair e salvar categorias únicas
+            const categoryNames = [...new Set(allApiProducts.map(p => p.categoria_nome))];
+            allCategories = categoryNames.sort();
+            localStorage.setItem('erpCategories', JSON.stringify(allCategories));
+
             updateLastSyncTime();
-            showToast(`Sincronização completa! ${allApiProducts.length} produtos carregados.`, 'success');
+            showToast(`Sincronização completa! ${allApiProducts.length} produtos e ${allCategories.length} categorias carregadas.`, 'success');
             renderAllTables();
             updateDashboard();
         } catch (error) {
@@ -831,6 +886,7 @@
         renderProductsTable(searchTerm);
         renderCatalogTable();
         renderResellersTable();
+        renderCategoriesTable();
     }
 
     function renderProductsTable(searchTerm = '') {
@@ -897,6 +953,41 @@
         feather.replace();
     }
 
+    function renderCategoriesTable() {
+        const tbody = document.getElementById('categories-table-body');
+        tbody.innerHTML = '';
+        if (allCategories.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="2" style="text-align: center;">Nenhuma categoria encontrada. Sincronize os produtos.</td></tr>';
+            return;
+        }
+        allCategories.forEach(categoryName => {
+            const row = tbody.insertRow();
+            row.insertCell().textContent = categoryName;
+            const isPublished = publishedCategoryIds.includes(categoryName);
+            const publishCell = row.insertCell();
+            const toggleLabel = document.createElement('label');
+            toggleLabel.className = 'toggle-switch';
+            const toggleInput = document.createElement('input');
+            toggleInput.type = 'checkbox';
+            toggleInput.checked = isPublished;
+            toggleInput.addEventListener('change', () => toggleCategoryPublished(categoryName));
+            toggleLabel.appendChild(toggleInput);
+            toggleLabel.appendChild(document.createElement('span')).className = 'slider';
+            publishCell.appendChild(toggleLabel);
+        });
+    }
+
+    function toggleCategoryPublished(categoryName) {
+        const index = publishedCategoryIds.indexOf(categoryName);
+        if (index > -1) {
+            publishedCategoryIds.splice(index, 1);
+        } else {
+            publishedCategoryIds.push(categoryName);
+        }
+        localStorage.setItem('erpPublishedCategories', JSON.stringify(publishedCategoryIds));
+        showToast('Visibilidade da categoria atualizada!', 'success');
+    }
+
     function showProductDetails(productId) {
         const product = allApiProducts.find(p => p.id === productId);
         if (!product) return;
@@ -961,7 +1052,7 @@
         }
         localStorage.setItem('erpPublished', JSON.stringify(publishedProductIds));
         updateDashboard();
-        renderAllTables(); // CORREÇÃO: Re-renderiza as tabelas para garantir a atualização visual
+        renderAllTables();
     }
 
     // --- LÓGICA DO PAINEL DA REVENDEDORA ---
@@ -1153,7 +1244,7 @@
     }
 
     // --- LÓGICA DO CATÁLOGO PÚBLICO (REESTRUTURADA) ---
-    function renderCatalogPreview(searchTerm = '', sizeFilter = '') {
+    function renderCatalogPreview(searchTerm = '', categoryFilter = '') {
         const catalogView = document.getElementById('catalog-preview-view');
         catalogView.innerHTML = `
             <div id="catalog-wrapper">
@@ -1178,10 +1269,6 @@
                 <main id="catalog-main-container">
                     <div class="catalog-content-body">
                         <div id="catalog-main-content">
-                            <div class="catalog-filters-container">
-                                <h3>COMPRE POR TAMANHO</h3>
-                                <div id="catalog-filters" class="filter-bubbles"></div>
-                            </div>
                             <div id="catalog-product-grid" class="catalog-grid"></div>
                         </div>
                     </div>
@@ -1226,21 +1313,8 @@
         
         let activeCatalogProducts = allApiProducts.filter(p => resellerActiveProductIds.includes(p.id));
         
-        const filtersContainer = catalogView.querySelector('#catalog-filters');
-        const allVariationNames = activeCatalogProducts.flatMap(p => p.variacoes.map(v => v.nome)).filter(nome => typeof nome === 'string' && nome.trim() !== '' && nome.trim() !== 'N/A').map(nome => nome.replace('Tamanho: ', '').trim());
-        const allVariations = [...new Set(allVariationNames)];
-        
-        filtersContainer.innerHTML = ``;
-        allVariations.sort((a,b) => a - b).forEach(size => {
-            const filterButton = document.createElement('button');
-            filterButton.className = `filter-bubble ${sizeFilter === size ? 'active' : ''}`;
-            filterButton.dataset.size = size;
-            filterButton.textContent = size;
-            filtersContainer.appendChild(filterButton);
-        });
-        
         if (searchTerm) activeCatalogProducts = activeCatalogProducts.filter(p => p.nome.toLowerCase().includes(searchTerm));
-        if (sizeFilter) activeCatalogProducts = activeCatalogProducts.filter(p => p.variacoes.some(v => typeof v.nome === 'string' && v.nome.includes(sizeFilter)));
+        if (categoryFilter) activeCatalogProducts = activeCatalogProducts.filter(p => p.categoria_nome === categoryFilter);
 
         const grid = catalogView.querySelector('#catalog-product-grid');
         grid.innerHTML = '';
@@ -1256,16 +1330,36 @@
         });
         
         catalogView.querySelectorAll('.view-product-btn').forEach(btn => btn.addEventListener('click', (e) => showProductDetailPage(e.target.dataset.productId)));
-        catalogView.querySelectorAll('.filter-bubble').forEach(btn => btn.addEventListener('click', (e) => {
-            const currentFilter = e.target.dataset.size;
-            const isActive = e.target.classList.contains('active');
-            renderCatalogPreview(searchTerm, isActive ? '' : currentFilter);
-        }));
+        
+        const categoryList = document.getElementById('category-list');
+        categoryList.innerHTML = '<a href="#" class="category-link" data-category="">Ver Todas as Categorias</a>';
+        publishedCategoryIds.forEach(catName => {
+            const link = document.createElement('a');
+            link.href = '#';
+            link.className = 'category-link';
+            link.dataset.category = catName;
+            link.textContent = catName;
+            categoryList.appendChild(link);
+        });
+
+        document.querySelectorAll('.category-link').forEach(link => {
+            link.addEventListener('click', e => {
+                e.preventDefault();
+                const category = e.target.dataset.category;
+                renderCatalogPreview(searchTerm, category);
+                closeModal('category-modal');
+            });
+        });
+        
+        catalogView.querySelector('#catalog-menu-toggle').addEventListener('click', () => {
+            document.getElementById('category-modal').classList.add('active');
+        });
+
         catalogView.querySelector('#cart-button').addEventListener('click', (e) => { e.preventDefault(); showCartModal(); });
         
         const searchInput = catalogView.querySelector('#catalog-search-input');
         const searchBtn = catalogView.querySelector('#catalog-search-btn');
-        const performSearch = () => renderCatalogPreview(searchInput.value.toLowerCase(), sizeFilter);
+        const performSearch = () => renderCatalogPreview(searchInput.value.toLowerCase(), categoryFilter);
         
         searchBtn.addEventListener('click', performSearch);
         searchInput.addEventListener('keyup', (e) => { if (e.key === 'Enter') performSearch(); });
