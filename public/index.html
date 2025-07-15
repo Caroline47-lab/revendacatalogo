@@ -734,10 +734,10 @@
         // Caso 2: É um objeto com chaves como nome da variação (ex: { "34": 10, "35": 8 })
         if (typeof data === 'object' && data !== null) {
             return Object.entries(data).map(([name, qty]) => {
-                // Adiciona "Tamanho: " se a chave for um número, para padronizar
-                const variationName = /^\d+$/.test(name) ? `Tamanho: ${name}` : name;
+                // ALTERAÇÃO: Não adiciona mais o prefixo "Tamanho: ".
+                // Usa diretamente a chave (que agora é "34", "35", etc.) como o nome.
                 return {
-                    nome: variationName,
+                    nome: name,
                     quantidade: parseInt(qty) || 0
                 };
             });
