@@ -711,7 +711,6 @@
     function processVariations(stockData) {
         if (!stockData) return [];
 
-        // Tenta analisar se for uma string JSON
         let data = stockData;
         if (typeof data === 'string') {
             try {
@@ -721,16 +720,16 @@
             }
         }
 
-        // Caso 1: É um array de objetos (formato ideal com "nome")
+        // Caso 1: É um array de objetos (formato dos seus dados)
         if (Array.isArray(data)) {
             return data.map(item => ({
-                // CORREÇÃO: Garante que o nome seja extraído de várias propriedades possíveis
-                nome: item.nome || item.tamanho || item.variacao || 'N/A',
-                quantidade: parseInt(item.estoque || item.quantidade || 0)
+                // CORREÇÃO: Acessa o objeto aninhado 'variacao' para pegar o nome
+                nome: item.variacao?.nome || 'N/A', 
+                quantidade: parseInt(item.quantidade || 0)
             }));
         }
 
-        // Caso 2: É um objeto com chaves como nome da variação
+        // Caso 2: É um objeto com chaves como nome da variação (fallback)
         if (typeof data === 'object' && data !== null) {
             return Object.entries(data).map(([name, qty]) => ({
                 nome: name,
@@ -781,15 +780,6 @@
                 const data = await response.json();
                 const productsFromPage = data.data || [];
                 
-                // --- DIAGNÓSTICO TEMPORÁRIO ---
-                if (currentPage === 1 && productsFromPage.length > 0) {
-                    console.log("--- DADOS BRUTOS DA API (DIAGNÓSTICO) ---");
-                    console.log("Por favor, copie o conteúdo abaixo e cole no chat.");
-                    console.log(JSON.stringify(productsFromPage.slice(0, 5), null, 2)); // Mostra os 5 primeiros produtos
-                    console.log("-----------------------------------------");
-                }
-                // --- FIM DO DIAGNÓSTICO ---
-
                 if (productsFromPage.length === 0) break;
                 const processedProducts = productsFromPage.map(p => {
                     const variacoes = processVariations(p.estoque);
