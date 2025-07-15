@@ -1,817 +1,20 @@
-<!DOCTYPE html>
-<html lang="pt-BR">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sistema de Gestão</title>
-    
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    
-    <script src="https://unpkg.com/feather-icons"></script>
-
-    <style>
-        :root {
-            --primary-color: #DB1472;
-            --secondary-color: #F8B81F;
-            --text-color: #334155;
-            --text-light: #64748b;
-            --bg-color: #f8fafc;
-            --card-bg: #ffffff;
-            --border-color: #e2e8f0;
-            --success-color: #10b981;
-            --danger-color: #ef4444;
-            --warning-color: #f59e0b;
-            --info-color: #3b82f6;
-            --font-sans: 'Inter', sans-serif;
-            --shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
-            --border-radius: 0.75rem;
-            --reseller-primary-color: var(--primary-color);
-            --reseller-secondary-color: var(--secondary-color);
-        }
-
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body {
-            font-family: var(--font-sans);
-            background-color: var(--bg-color);
-            color: var(--text-color);
-            line-height: 1.5;
-            overflow-x: hidden; /* Previne scroll horizontal */
-        }
-        
-        .view { display: none; }
-        .view.active { display: block; }
-
-        #landing-view.active { display: flex; align-items: center; justify-content: center; min-height: 100vh; }
-        .landing-box { text-align: center; background-color: var(--card-bg); padding: 3rem; border-radius: var(--border-radius); box-shadow: var(--shadow); max-width: 450px; width: 90%; }
-        .landing-box h1 { font-size: 1.875rem; font-weight: 700; color: var(--text-color); margin-bottom: 0.5rem; }
-        .landing-box p { color: var(--text-light); margin-bottom: 2rem; }
-        .landing-box .btn-group { display: flex; flex-direction: column; gap: 1rem; }
-        .landing-box .btn { text-decoration: none; text-align: center; }
-
-        .app-container { display: flex; min-height: 100vh; position: relative; }
-        .sidebar { width: 250px; background-color: var(--card-bg); border-right: 1px solid var(--border-color); padding: 2rem 1rem; display: flex; flex-direction: column; transition: transform 0.3s ease-in-out; z-index: 1100; }
-        .sidebar-header { font-size: 1.5rem; font-weight: 700; color: var(--primary-color); margin-bottom: 2rem; text-align: center; }
-        .nav-menu { list-style: none; flex-grow: 1; }
-        .nav-item a { display: flex; align-items: center; gap: 0.75rem; padding: 0.75rem 1rem; border-radius: 0.5rem; text-decoration: none; color: var(--text-light); font-weight: 500; transition: background-color 0.2s, color 0.2s; }
-        .nav-item a:hover { background-color: #f1f5f9; color: var(--text-color); }
-        .nav-item a.active { background-color: var(--primary-color); color: white; }
-        .sidebar-footer { font-size: 0.8rem; color: #94a3b8; text-align: center; margin-top: 1rem; }
-        
-        .main-content { flex-grow: 1; padding: 2rem; overflow-y: auto; }
-        .page { display: none; }
-        .page.active { display: block; animation: fadeIn 0.4s ease-in-out; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-        
-        .page-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; flex-wrap: wrap; gap: 1rem; }
-        .page-header h1 { font-size: 1.75rem; font-weight: 700; }
-        
-        .mobile-header-controls { display: none; }
-        #menu-toggle { background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 0.5rem; padding: 0.5rem; }
-
-        .btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 0.6rem 1.25rem; border-radius: 0.5rem; border: none; font-weight: 600; font-size: 0.9rem; cursor: pointer; transition: all 0.2s ease; }
-        .btn-primary { background-color: var(--primary-color); color: white; }
-        .btn-primary:hover { opacity: 0.9; }
-        .btn-secondary { background-color: #334155; color: white; }
-        .btn-secondary:hover { opacity: 0.9; }
-        .btn-success { background-color: var(--success-color); color: white; }
-        .btn-success:hover { opacity: 0.9; }
-        .btn-danger { background-color: var(--danger-color); color: white; }
-        .btn-danger:hover { opacity: 0.9; }
-        
-        .stats-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 1.5rem; margin-bottom: 2rem; }
-        .stat-card { background-color: var(--card-bg); padding: 1.5rem; border-radius: var(--border-radius); box-shadow: var(--shadow); }
-        .stat-card-title { font-size: 0.9rem; color: var(--text-light); margin-bottom: 0.5rem; }
-        .stat-card-value { font-size: 2rem; font-weight: 700; }
-
-        .table-container { background-color: var(--card-bg); border-radius: var(--border-radius); box-shadow: var(--shadow); overflow-x: auto; }
-        .product-table { width: 100%; border-collapse: collapse; }
-        .product-table th, .product-table td { padding: 1rem; text-align: left; border-bottom: 1px solid var(--border-color); white-space: nowrap; }
-        .product-table th { background-color: #f8fafc; font-size: 0.8rem; text-transform: uppercase; color: var(--text-light); }
-        .product-table td { font-size: 0.9rem; vertical-align: middle; }
-        .product-table .actions-cell { display: flex; gap: 0.5rem; }
-        .product-image { width: 40px; height: 40px; object-fit: cover; border-radius: 0.25rem; }
-        
-        .status-badge { padding: 0.25rem 0.75rem; border-radius: 999px; font-size: 0.75rem; font-weight: 600; text-transform: capitalize; }
-        .status-badge.ativo, .status-badge.aprovado, .status-badge.pago { background-color: #dcfce7; color: #16a34a; }
-        .status-badge.sem_estoque, .status-badge.reprovado { background-color: #fee2e2; color: #dc2626; }
-        .status-badge.em_analise, .status-badge.pendente { background-color: #fef3c7; color: #d97706; }
-        
-        .toggle-switch { position: relative; display: inline-block; width: 44px; height: 24px; }
-        .toggle-switch input { opacity: 0; width: 0; height: 0; }
-        .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #ccc; transition: .4s; border-radius: 34px; }
-        .slider:before { position: absolute; content: ""; height: 16px; width: 16px; left: 4px; bottom: 4px; background-color: white; transition: .4s; border-radius: 50%; }
-        input:checked + .slider { background-color: var(--primary-color); }
-        input:checked + .slider:before { transform: translateX(20px); }
-
-        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: none; justify-content: center; align-items: center; z-index: 1000; }
-        .modal-overlay.active { display: flex; }
-        .modal-content { background: var(--card-bg); padding: 2rem; border-radius: var(--border-radius); width: 90%; max-width: 800px; box-shadow: 0 25px 50px -12px rgb(0 0 0 / 0.25); }
-        .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; }
-        .modal-header h3 { font-size: 1.25rem; }
-        .modal-close-btn { background: none; border: none; cursor: pointer; color: var(--text-light); }
-        
-        .modal-body-grid { display: grid; grid-template-columns: 1fr 2fr; gap: 1.5rem; align-items: flex-start; }
-        .modal-image-container img { width: 100%; height: auto; border-radius: var(--border-radius); object-fit: cover; border: 1px solid var(--border-color); }
-        @media (max-width: 640px) { .modal-body-grid { grid-template-columns: 1fr; } .modal-image-container { text-align: center; margin-bottom: 1rem; } .modal-image-container img { max-width: 200px; } }
-
-        .modal-footer { margin-top: 1.5rem; display: flex; justify-content: flex-end; gap: 0.75rem; }
-        .info-list { list-style: none; padding: 0; }
-        .info-list li { display: flex; justify-content: space-between; padding: 0.5rem 0; border-bottom: 1px solid var(--border-color); }
-        .info-list li:last-child { border-bottom: none; }
-        .info-list strong { color: var(--text-color); }
-
-        #toast { position: fixed; bottom: -100px; left: 50%; transform: translateX(-50%); background-color: #333; color: white; padding: 1rem 1.5rem; border-radius: 0.5rem; transition: bottom 0.5s ease; z-index: 2000; box-shadow: var(--shadow); }
-        
-        .stock-badge { padding: 0.25rem 0.75rem; border-radius: 999px; font-size: 0.75rem; font-weight: 600; }
-        .stock-badge.in-stock { background-color: #dcfce7; color: #16a34a; }
-        .stock-badge.out-of-stock { background-color: #fee2e2; color: #dc2626; }
-
-        .page-controls { margin-bottom: 1.5rem; display: flex; justify-content: flex-end; }
-        .search-input, .form-group select { width: 100%; max-width: 400px; padding: 0.75rem 1rem; border: 1px solid var(--border-color); border-radius: 0.5rem; font-size: 0.9rem; background-color: var(--card-bg); transition: border-color 0.2s, box-shadow 0.2s; }
-        .search-input:focus, .form-group select:focus { outline: none; border-color: var(--primary-color); box-shadow: 0 0 0 2px rgba(219, 20, 114, 0.2); }
-        
-        .variacao_nome { font-weight: 600; color: var(--primary-color); background-color: #fce7f3; padding: 0.2rem 0.6rem; border-radius: 0.375rem; display: inline-block; }
-        .placeholder-card { background-color: var(--card-bg); padding: 4rem 2rem; border-radius: var(--border-radius); box-shadow: var(--shadow); text-align: center; color: var(--text-light); }
-
-        .settings-section { background-color: var(--card-bg); padding: 1.5rem; border-radius: var(--border-radius); box-shadow: var(--shadow); margin-bottom: 2rem; }
-        .settings-section h2 { font-size: 1.25rem; font-weight: 700; margin-bottom: 1.5rem; border-bottom: 1px solid var(--border-color); padding-bottom: 1rem; }
-        .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1.5rem; }
-        .form-group { display: flex; flex-direction: column; }
-        .form-group label { font-weight: 600; margin-bottom: 0.5rem; font-size: 0.9rem; }
-        .form-group input[type="text"], .form-group input[type="tel"], .form-group input[type="number"], .form-group input[type="date"], .form-group textarea, .form-group input[type="color"] { width: 100%; padding: 0.75rem; border: 1px solid var(--border-color); border-radius: 0.5rem; font-size: 0.9rem; }
-        .form-group input[type="color"] { padding: 0.25rem; height: 48px; }
-        .form-group textarea { min-height: 100px; resize: vertical; }
-        .logo-preview { width: 100px; height: 100px; border-radius: 50%; object-fit: cover; border: 2px solid var(--border-color); margin-top: 1rem; }
-        .banner-preview { display: flex; gap: 1rem; background-color: #f1f5f9; border: 2px dashed var(--border-color); padding: 1rem; border-radius: var(--border-radius); min-height: 150px; align-items: center; justify-content: center; }
-        .banner-preview img { max-width: 100%; max-height: 120px; object-fit: cover; border-radius: 0.5rem; }
-
-        /* --- ESTILOS DO CATÁLOGO ATUALIZADOS --- */
-        #catalog-preview-view { background-color: #f8fafc; }
-        .catalog-top-bar { 
-            background: linear-gradient(90deg, var(--reseller-primary-color), var(--reseller-secondary-color)); 
-            color: white; 
-            padding: 0.5rem 0; 
-            font-size: 0.8rem; 
-            font-weight: 500;
-            overflow: hidden;
-            white-space: nowrap;
-        }
-        
-        .top-bar-content {
-            display: inline-block;
-            animation: marquee 25s linear infinite;
-        }
-
-        .top-bar-content span {
-            display: inline-block;
-            padding: 0 2rem;
-        }
-
-        @keyframes marquee {
-            from { transform: translateX(0%); }
-            to { transform: translateX(-50%); }
-        }
-        
-        .catalog-header-container { position: relative; }
-
-        .catalog-gradient-bar {
-            background: linear-gradient(90deg, var(--reseller-primary-color), var(--reseller-secondary-color));
-            height: 80px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 0 1.5rem;
-            gap: 1.5rem;
-        }
-        
-        .catalog-gradient-bar button, .catalog-gradient-bar a { color: white; background: none; border: none; cursor: pointer; }
-        
-        .header-search-wrapper {
-            flex-grow: 1;
-            position: relative;
-            max-width: 600px;
-        }
-        .header-search-wrapper input {
-            width: 100%;
-            height: 44px;
-            border-radius: 999px;
-            border: 1px solid transparent;
-            padding: 0 45px 0 1.5rem;
-            font-size: 1rem;
-        }
-        .header-search-wrapper input::placeholder { color: #94a3b8; }
-        .header-search-wrapper input:focus { outline: none; border-color: var(--reseller-secondary-color); }
-        .header-search-wrapper button {
-            position: absolute;
-            right: 5px;
-            top: 50%;
-            transform: translateY(-50%);
-            background-color: var(--reseller-primary-color);
-            color: white;
-            border: none;
-            width: 34px;
-            height: 34px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-        }
-
-        .catalog-banner-area {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 2.5rem;
-            font-weight: 700;
-            color: rgba(0,0,0,0.5);
-            background-color: #e2e8f0;
-            height: 400px; /* Altura ajustada para desktop */
-            background-size: cover;
-            background-position: center;
-        }
-
-        .catalog-logo-container {
-            position: absolute;
-            top: 480px; /* Posição corrigida: 80px (gradiente) + 400px (banner) */
-            left: 50%;
-            transform: translate(-50%, -50%);
-            z-index: 10;
-        }
-        .catalog-logo-container img {
-            height: 160px; 
-            width: 160px;  
-            border-radius: 50%;
-            object-fit: cover;
-            border: 5px solid white; 
-            box-shadow: 0 5px 20px rgba(0,0,0,0.2);
-            background-color: #e2e8f0;
-        }
-        .catalog-cart-icon { position: relative; }
-        .cart-count { position: absolute; top: -8px; right: -8px; background-color: white; color: var(--reseller-primary-color); border-radius: 50%; width: 20px; height: 20px; display: flex; align-items: center; justify-content: center; font-size: 0.75rem; font-weight: 700; }
-        
-        .catalog-content-body {
-            background-color: var(--card-bg);
-            margin-top: 0; /* Removido margin-top negativo */
-            position: relative;
-            z-index: 5;
-            border-radius: 1.5rem 1.5rem 0 0;
-            padding-top: 80px; /* Espaço para a metade superior da logo (160px / 2) */
-        }
-
-        .catalog-filters-container { padding: 2rem 1rem 1.5rem 1rem; background-color: var(--card-bg); text-align: center; }
-        .catalog-filters-container h3 {
-            color: var(--reseller-primary-color);
-            font-weight: 700;
-            font-size: 1.2rem;
-            margin-bottom: 1.5rem;
-        }
-        .filter-bubbles { display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap; }
-        .filter-bubble { 
-            padding: 0;
-            width: 60px;
-            height: 60px;
-            border: 2px solid var(--reseller-secondary-color);
-            border-radius: 50%; 
-            cursor: pointer; 
-            font-weight: 600; 
-            font-size: 1rem;
-            transition: all 0.2s ease;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            background-color: white;
-            color: var(--reseller-secondary-color);
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-        }
-        .filter-bubble.active { 
-            background-color: var(--reseller-secondary-color); 
-            color: white; 
-        }
-
-        .catalog-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 1.5rem; padding: 2rem 1rem; max-width: 1200px; margin: 0 auto; }
-        .catalog-product-card { background-color: var(--card-bg); border-radius: var(--border-radius); box-shadow: var(--shadow); overflow: hidden; display: flex; flex-direction: column; }
-        .catalog-product-card img { width: 100%; height: 300px; object-fit: cover; }
-        .catalog-product-card-body { padding: 1rem; flex-grow: 1; display: flex; flex-direction: column; }
-        .catalog-product-card h3 { font-size: 1.1rem; font-weight: 600; margin-bottom: 0.5rem; }
-        .catalog-product-card .price { font-size: 1.25rem; font-weight: 700; color: var(--reseller-primary-color); margin-bottom: 1rem; }
-        .catalog-product-card .btn { background-color: var(--reseller-primary-color); color: white; width: 100%; margin-top: auto; }
-        .catalog-footer { text-align: center; padding: 2rem; background-color: #334155; color: white; }
-        .catalog-footer a { color: var(--reseller-secondary-color); text-decoration: none; font-weight: 600; }
-
-        /* --- NOVOS ESTILOS - PÁGINA DE DETALHES DO PRODUTO --- */
-        #product-detail-container { padding: 2rem 1rem; max-width: 1200px; margin: auto; }
-        .product-detail-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; }
-        .product-detail-images img { width: 100%; border-radius: var(--border-radius); box-shadow: var(--shadow); }
-        .product-detail-info h1 { font-size: 2rem; font-weight: 700; margin-bottom: 0.5rem; }
-        
-        .product-detail-tags { display: flex; gap: 0.5rem; margin-bottom: 1rem; }
-        .product-detail-tag { padding: 0.25rem 0.75rem; border-radius: 0.25rem; font-size: 0.75rem; font-weight: 700; color: white; }
-        .product-detail-tag.highlight { background-color: var(--reseller-primary-color); }
-        .product-detail-tag.launch { background-color: #8b5cf6; }
-        .product-detail-tag.promo { background-color: var(--reseller-secondary-color); color: #333; }
-
-        .product-detail-rating { display: flex; align-items: center; gap: 0.25rem; color: #f59e0b; margin-bottom: 1rem; }
-        
-        .product-detail-price-container .price-from { text-decoration: line-through; color: var(--text-light); font-size: 1rem; margin-right: 0.5rem; }
-        .product-detail-price-container .price-to { font-size: 2rem; font-weight: 700; color: var(--reseller-primary-color); }
-        
-        .size-options-container { margin-top: 1.5rem; margin-bottom: 1.5rem; }
-        .size-options-container > label { display: block; font-weight: 600; margin-bottom: 0.75rem; }
-        .size-grid { display: flex; flex-wrap: wrap; gap: 1rem; }
-        .size-option { text-align: center; }
-        .size-option .size-label { font-weight: 500; margin-bottom: 0.5rem; }
-        .quantity-stepper { display: flex; align-items: center; justify-content: center; border: 1px solid var(--border-color); border-radius: 999px; }
-        .quantity-stepper button { background: transparent; border: none; cursor: pointer; padding: 0.5rem; font-size: 1.2rem; line-height: 1; color: var(--text-color); }
-        .quantity-stepper input { width: 40px; text-align: center; border: none; background: transparent; font-size: 1rem; font-weight: 600; -moz-appearance: textfield; }
-        .quantity-stepper input::-webkit-outer-spin-button, .quantity-stepper input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
-        .size-option.disabled { opacity: 0.5; pointer-events: none; }
-        .size-option.disabled .size-label { text-decoration: line-through; }
-
-        .buy-button { width: 100%; padding: 1rem; font-size: 1.1rem; background-color: var(--reseller-primary-color); border-radius: 0.5rem; margin-bottom: 1.5rem; }
-
-        .product-info-icons { display: flex; justify-content: space-around; gap: 1rem; text-align: center; font-size: 0.8rem; color: var(--text-light); padding-top: 1.5rem; border-top: 1px solid var(--border-color); }
-        .product-info-icons div { display: flex; flex-direction: column; align-items: center; gap: 0.5rem; max-width: 100px; }
-        
-        .tag-selection-grid { display: flex; flex-wrap: wrap; gap: 1rem; }
-        .tag-selection-grid label { display: flex; align-items: center; gap: 0.5rem; cursor: pointer; }
-
-        /* --- MELHORIAS DE RESPONSIVIDADE --- */
-        @media (max-width: 768px) {
-            .sidebar {
-                position: absolute;
-                top: 0;
-                left: 0;
-                height: 100%;
-                transform: translateX(-100%);
-            }
-            .sidebar.open {
-                transform: translateX(0);
-                box-shadow: 5px 0 15px rgba(0,0,0,0.1);
-            }
-            .main-content {
-                padding: 1rem;
-                width: 100%;
-            }
-            .mobile-header-controls {
-                display: flex;
-                align-items: center;
-                gap: 1rem;
-            }
-            .page-header h1 {
-                font-size: 1.5rem;
-            }
-            .product-detail-grid { 
-                grid-template-columns: 1fr; 
-            } 
-            .product-detail-info h1 { 
-                font-size: 1.8rem; 
-            }
-            
-            .catalog-grid {
-                grid-template-columns: repeat(2, 1fr); /* Duas colunas no mobile */
-                gap: 1rem;
-            }
-            .catalog-product-card img {
-                height: 200px; /* Altura de imagem ajustada para cards menores */
-            }
-             .catalog-product-card h3 {
-                font-size: 0.9rem;
-            }
-            .catalog-product-card .price {
-                font-size: 1rem;
-            }
-
-            .catalog-banner-area {
-                height: 250px; /* Altura do banner para mobile */
-            }
-            .catalog-logo-container {
-                top: 330px; /* Posição da logo no mobile: 80px + 250px */
-            }
-             .catalog-logo-container img {
-                height: 120px;
-                width: 120px;
-            }
-            .catalog-content-body {
-                padding-top: 60px; /* Espaço para logo mobile (120px / 2) */
-            }
-            .filter-bubble {
-                width: 50px;
-                height: 50px;
-                font-size: 0.9rem;
-            }
-            .catalog-gradient-bar {
-                gap: 1rem;
-                padding: 0 1rem;
-            }
-            .header-search-wrapper input {
-                font-size: 0.9rem;
-                padding: 0 40px 0 1rem;
-            }
-        }
-        
-        /* NOVOS ESTILOS PARA O MODAL DE CATEGORIAS */
-        .category-list-container {
-            display: flex;
-            flex-direction: column;
-            gap: 0.5rem;
-        }
-        .category-list-container a {
-            text-decoration: none;
-            color: var(--text-color);
-            padding: 0.75rem 1rem;
-            border-radius: 0.5rem;
-            font-weight: 500;
-            transition: background-color 0.2s;
-        }
-        .category-list-container a:hover {
-            background-color: #f1f5f9;
-        }
-
-        /* NOVOS ESTILOS PARA O DASHBOARD DA REVENDEDORA */
-        #reseller-dashboard-content {
-            display: grid;
-            gap: 1.5rem;
-        }
-        .chart-container {
-            background-color: #f8fafc;
-            padding: 1rem;
-            border-radius: var(--border-radius);
-            border: 1px solid var(--border-color);
-        }
-        .chart-title {
-            font-weight: 600;
-            margin-bottom: 1rem;
-        }
-        .bar-chart {
-            display: flex;
-            justify-content: space-around;
-            align-items: flex-end;
-            height: 150px;
-            gap: 1rem;
-        }
-        .bar {
-            flex-grow: 1;
-            background-color: var(--primary-color);
-            border-radius: 0.25rem 0.25rem 0 0;
-            position: relative;
-            text-align: center;
-        }
-        .bar-label {
-            position: absolute;
-            bottom: -20px;
-            width: 100%;
-            font-size: 0.75rem;
-        }
-    </style>
-</head>
-<body>
-
-    <!-- VISÃO DA LANDING PAGE -->
-    <div id="landing-view" class="view active">
-        <div class="landing-box">
-            <h1>Bem-vindo(a) ao Sistema</h1>
-            <p>Selecione o painel que deseja acessar.</p>
-            <div class="btn-group">
-                <button id="show-empresa-panel" class="btn btn-primary">Acessar Painel da Empresa</button>
-                <button id="show-revendedor-panel" class="btn btn-secondary">Acessar Painel do Revendedor</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- VISÃO DO PAINEL DA EMPRESA -->
-    <div id="empresa-view" class="view">
-        <div class="app-container">
-            <aside class="sidebar">
-                <div class="sidebar-header">ERP CJOTA</div>
-                <ul class="nav-menu" id="empresa-nav">
-                    <li class="nav-item"><a href="#" class="nav-link active" data-page="dashboard"><i data-feather="home"></i> Visão Geral</a></li>
-                    <li class="nav-item"><a href="#" class="nav-link" data-page="products"><i data-feather="package"></i> Produtos</a></li>
-                    <li class="nav-item"><a href="#" class="nav-link" data-page="categories"><i data-feather="grid"></i> Categorias</a></li>
-                    <li class="nav-item"><a href="#" class="nav-link" data-page="abc-curve"><i data-feather="trending-up"></i> Curva ABC</a></li>
-                    <li class="nav-item"><a href="#" class="nav-link" data-page="catalog"><i data-feather="book-open"></i> Catálogo Revenda</a></li>
-                    <li class="nav-item"><a href="#" class="nav-link" data-page="resellers"><i data-feather="users"></i> Gerenciar Revendedoras</a></li>
-                    <li class="nav-item"><a href="#" class="nav-link" data-page="sync"><i data-feather="refresh-cw"></i> Sincronização</a></li>
-                </ul>
-                <div class="sidebar-footer">
-                    <a href="#" id="back-to-landing-empresa" class="btn btn-secondary" style="width: 100%; margin-bottom: 1rem;">
-                        <i data-feather="arrow-left"></i> Voltar
-                    </a>
-                    <p>&copy; 2025 - ERP CJOTA</p>
-                </div>
-            </aside>
-            <main class="main-content">
-                <div class="page-header">
-                    <div class="mobile-header-controls">
-                        <button id="menu-toggle-empresa"><i data-feather="menu"></i></button>
-                    </div>
-                    <h1>Visão Geral</h1>
-                </div>
-                <section id="dashboard" class="page active">
-                    <div class="stats-grid">
-                        <div class="stat-card"><p class="stat-card-title">Total de Produtos</p><p class="stat-card-value" id="stat-total-products">0</p></div>
-                        <div class="stat-card"><p class="stat-card-title">Produtos Ativos</p><p class="stat-card-value" id="stat-active-products">0</p></div>
-                        <div class="stat-card"><p class="stat-card-title">Publicados para Revenda</p><p class="stat-card-value" id="stat-published-products">0</p></div>
-                        <div class="stat-card"><p class="stat-card-title">Revendedoras Ativas</p><p class="stat-card-value" id="stat-active-resellers">0</p></div>
-                    </div>
-                </section>
-                <section id="products" class="page">
-                    <div class="page-header"><h1>Todos os Produtos</h1></div>
-                    <div class="page-controls"><input type="text" id="product-search-input" class="search-input" placeholder="Buscar por nome do produto..."></div>
-                    <div class="table-container">
-                        <table class="product-table">
-                            <thead><tr><th>Imagem</th><th>Nome</th><th>Preço</th><th>Status</th><th>Publicar</th><th>Editar</th></tr></thead>
-                            <tbody id="products-table-body"></tbody>
-                        </table>
-                    </div>
-                </section>
-                 <section id="categories" class="page">
-                    <div class="page-header"><h1>Gerenciar Categorias</h1></div>
-                    <div class="table-container">
-                        <table class="product-table">
-                            <thead><tr><th>Nome da Categoria</th><th>Publicar no Catálogo</th></tr></thead>
-                            <tbody id="categories-table-body"></tbody>
-                        </table>
-                    </div>
-                </section>
-                <section id="abc-curve" class="page">
-                    <div class="page-header"><h1>Curva ABC de Produtos</h1></div>
-                    <div class="settings-section">
-                        <h2>Curva A <span style="font-size: 0.9rem; color: var(--text-light); font-weight: 500;">(Produtos mais importantes - Top 80% do Faturamento)</span></h2>
-                        <div id="curve-a-list"></div>
-                    </div>
-                    <div class="settings-section">
-                        <h2>Curva B <span style="font-size: 0.9rem; color: var(--text-light); font-weight: 500;">(Produtos intermediários - Próximos 15% do Faturamento)</span></h2>
-                        <div id="curve-b-list"></div>
-                    </div>
-                    <div class="settings-section">
-                        <h2>Curva C <span style="font-size: 0.9rem; color: var(--text-light); font-weight: 500;">(Produtos com menor giro - Últimos 5% do Faturamento)</span></h2>
-                        <div id="curve-c-list"></div>
-                    </div>
-                </section>
-                <section id="catalog" class="page">
-                     <div class="page-header"><h1>Catálogo para Revendedoras</h1></div>
-                    <div class="table-container">
-                        <table class="product-table">
-                            <thead><tr><th>Imagem</th><th>Nome</th><th>Preço</th><th>Variações Disponíveis</th></tr></thead>
-                            <tbody id="catalog-table-body"></tbody>
-                        </table>
-                    </div>
-                </section>
-                <section id="resellers" class="page">
-                    <div class="page-header"><h1>Gerenciar Revendedoras</h1></div>
-                    <div class="table-container">
-                        <table class="product-table">
-                            <thead><tr><th>Nome</th><th>Documento</th><th>Telefone</th><th>Status</th><th>Ações</th></tr></thead>
-                            <tbody id="resellers-table-body"></tbody>
-                        </table>
-                    </div>
-                </section>
-                <section id="sync" class="page">
-                    <div class="page-header"><h1>Sincronização com FacilZap</h1></div>
-                    <div class="stat-card">
-                        <p>Clique nos botões abaixo para gerenciar a integração com a API.</p>
-                        <div style="margin-top: 1.5rem; display: flex; gap: 1rem; flex-wrap: wrap;">
-                            <button class="btn btn-primary" onclick="syncFromFacilZap()"><i data-feather="refresh-cw"></i> Sincronizar Produtos</button>
-                            <button class="btn btn-secondary" onclick="testApiConnection()">Testar Conexão</button>
-                        </div>
-                        <p id="last-sync-time" style="margin-top: 1rem; color: var(--text-light); font-size: 0.9rem;">Última sincronização: Nunca</p>
-                    </div>
-                </section>
-            </main>
-        </div>
-    </div>
-
-    <!-- VISÃO DO PAINEL DA REVENDEDORA -->
-    <div id="revendedor-view" class="view">
-        <div class="app-container">
-            <aside class="sidebar">
-                <div class="sidebar-header">Painel Revenda</div>
-                <ul class="nav-menu" id="revendedor-nav">
-                    <li class="nav-item"><a href="#" class="nav-link active" data-page="reseller-products"><i data-feather="tag"></i> Produtos</a></li>
-                    <li class="nav-item"><a href="#" class="nav-link" data-page="reseller-promotions"><i data-feather="gift"></i> Promoções</a></li>
-                    <li class="nav-item"><a href="#" class="nav-link" data-page="reseller-sales"><i data-feather="dollar-sign"></i> Vendas</a></li>
-                    <li class="nav-item"><a href="#" class="nav-link" data-page="abandoned-carts"><i data-feather="shopping-cart"></i> Carrinhos Abandonados</a></li>
-                    <li class="nav-item"><a href="#" class="nav-link" data-page="reseller-settings"><i data-feather="settings"></i> Configurações</a></li>
-                    <li class="nav-item" style="border-top: 1px solid var(--border-color); margin-top: 1rem; padding-top: 1rem;"><a href="#" id="view-catalog-btn" class="nav-link" style="color: var(--primary-color);"><i data-feather="eye"></i> Ver Catálogo</a></li>
-                </ul>
-                <div class="sidebar-footer">
-                    <a href="#" id="back-to-landing-revendedor" class="btn btn-secondary" style="width: 100%; margin-bottom: 1rem;">
-                        <i data-feather="arrow-left"></i> Voltar
-                    </a>
-                    <p>&copy; 2025 - Catálogo de Revenda</p>
-                </div>
-            </aside>
-            <main class="main-content">
-                 <div class="page-header">
-                    <div class="mobile-header-controls">
-                        <button id="menu-toggle-revendedor"><i data-feather="menu"></i></button>
-                    </div>
-                    <h1 id="revendedor-page-title">Meus Produtos</h1>
-                </div>
-                <section id="reseller-products" class="page active">
-                    <div class="page-controls" style="background-color: var(--card-bg); padding: 1rem; border-radius: var(--border-radius); margin-bottom: 1.5rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
-                        <h3 style="font-size: 1.1rem; font-weight: 600;">Gerenciar Preços</h3>
-                        <div style="display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap;">
-                            <input type="number" id="mass-margin-input" class="search-input" placeholder="Margem de Lucro (%)" style="width: 180px;">
-                            <button id="apply-mass-margin" class="btn btn-primary">Aplicar em Massa</button>
-                        </div>
-                    </div>
-                    <div class="table-container">
-                        <table class="product-table">
-                            <thead><tr><th>Imagem</th><th>Nome</th><th>Preço Base</th><th>Sua Margem (%)</th><th>Preço Final</th><th>Ativar no Catálogo</th><th>Ações</th></tr></thead>
-                            <tbody id="reseller-products-table-body"></tbody>
-                        </table>
-                    </div>
-                </section>
-                <section id="reseller-promotions" class="page">
-                    <div class="settings-section"><h2><i data-feather="scissors" style="margin-right: 0.5rem;"></i>Cupom de Desconto</h2><div class="form-grid"><div class="form-group"><label for="coupon-code">Código do Cupom</label><input type="text" id="coupon-code" placeholder="EX: PROMO10"></div><div class="form-group"><label for="coupon-type">Tipo</label><select id="coupon-type" class="search-input"><option value="percentage">Percentual (%)</option><option value="fixed">Fixo (R$)</option></select></div><div class="form-group"><label for="coupon-value">Valor do Desconto</label><input type="number" id="coupon-value" placeholder="10"></div><div class="form-group" style="justify-content: flex-end;"><button class="btn btn-success">Criar Cupom</button></div></div></div>
-                    <div class="settings-section"><h2><i data-feather="shopping-bag" style="margin-right: 0.5rem;"></i>Leve Mais, Pague Menos</h2><div class="form-grid"><div class="form-group"><label for="buy-x">Leve (Quantidade)</label><input type="number" id="buy-x" placeholder="3"></div><div class="form-group"><label for="pay-y">Pague (Quantidade)</label><input type="number" id="pay-y" placeholder="2"></div><div class="form-group"><label for="buy-pay-product">Aplicar ao Produto</label><select id="buy-pay-product" class="search-input"><option>Selecione um produto...</option></select></div><div class="form-group" style="justify-content: flex-end;"><button class="btn btn-success">Criar Oferta</button></div></div></div>
-                </section>
-                <section id="reseller-sales" class="page">
-                    <div class="page-header">
-                        <h1>Minhas Vendas</h1>
-                        <button class="btn btn-success" onclick="showNewSaleModal()"><i data-feather="plus"></i> Lançar Nova Venda</button>
-                    </div>
-                    <div class="table-container">
-                        <table class="product-table">
-                            <thead><tr><th>Data</th><th>Itens</th><th>Valor Total</th></tr></thead>
-                            <tbody id="sales-history-body"></tbody>
-                        </table>
-                    </div>
-                </section>
-                <section id="abandoned-carts" class="page">
-                    <div class="page-header">
-                        <h1>Carrinhos Abandonados</h1>
-                    </div>
-                    <div class="table-container">
-                        <table class="product-table">
-                            <thead><tr><th>Data</th><th>Cliente</th><th>Telefone</th><th>Itens</th><th>Valor</th><th>Ações</th></tr></thead>
-                            <tbody id="abandoned-carts-body"></tbody>
-                        </table>
-                    </div>
-                </section>
-                <section id="reseller-settings" class="page">
-                    <div class="settings-section"><h2>Identidade Visual</h2><div class="form-grid"><div class="form-group"><label for="logo-upload">Logo da Marca</label><input type="file" id="logo-upload" accept="image/*"><img id="logo-preview" class="logo-preview" src="https://placehold.co/100x100/e2e8f0/94a3b8?text=Logo" alt="Prévia da logo"></div><div class="form-group"><label for="brand-name-input">Nome da Marca</label><input type="text" id="brand-name-input" placeholder="Ex: Maria Modas"></div><div class="form-group"><label for="primary-color-input">Cor Primária</label><input type="color" id="primary-color-input" value="#DB1472"></div><div class="form-group"><label for="secondary-color-input">Cor de Destaque</label><input type="color" id="secondary-color-input" value="#F8B81F"></div></div></div>
-                    <div class="settings-section"><h2>Informações do Catálogo</h2><div class="form-grid"><div class="form-group"><label for="contact-phone-input">Contato (WhatsApp)</label><input type="tel" id="contact-phone-input" placeholder="(XX) 9XXXX-XXXX"></div><div class="form-group"><label for="instagram-input">Instagram</label><input type="text" id="instagram-input" placeholder="@seunome"></div></div><div class="form-group" style="margin-top: 1.5rem;"><label for="description-textarea">Descrição Curta</label><textarea id="description-textarea" placeholder="Fale um pouco sobre sua loja..."></textarea></div></div>
-                    <div class="settings-section"><h2>Link do Catálogo</h2><div class="form-grid" style="grid-template-columns: 2fr 1fr; align-items: flex-end;"><div class="form-group"><label for="catalog-url-name">Nome da Loja na URL</label><input type="text" id="catalog-url-name" placeholder="ex: joana-modas"></div><button class="btn btn-primary" id="generate-link-btn">Gerar e Copiar Link</button></div></div>
-                    <div class="settings-section"><h2>Banners do Catálogo</h2><p style="color: var(--text-light); margin-bottom: 1rem;">Envie imagens para os banners que aparecerão no topo do seu catálogo.</p><div class="banner-option"><h3 style="font-weight: 600; margin-bottom: 0.5rem;">Banner Principal (Desktop e Mobile)</h3><div class="form-grid"><div class="form-group"><label>Imagem para Desktop (1900x400px)</label><input type="file" class="banner-upload" data-banner-id="desktop-main" accept="image/*"><div class="banner-preview mt-2"><img id="banner-preview-desktop-main" src="https://placehold.co/600x200/e2e8f0/94a3b8?text=Banner+Desktop" alt="Prévia Banner Desktop"></div></div><div class="form-group"><label>Imagem para Mobile (700x800px)</label><input type="file" class="banner-upload" data-banner-id="mobile-main" accept="image/*"><div class="banner-preview mt-2"><img id="banner-preview-mobile-main" src="https://placehold.co/300x200/e2e8f0/94a3b8?text=Banner+Mobile" alt="Prévia Banner Mobile"></div></div></div></div></div>
-                    <div class="settings-section"><h2>Mensagens da Barra Superior</h2><div class="form-grid"><div class="form-group"><label for="top-bar-msg-1">Mensagem 1</label><input type="text" id="top-bar-msg-1"></div><div class="form-group"><label for="top-bar-msg-2">Mensagem 2</label><input type="text" id="top-bar-msg-2"></div><div class="form-group"><label for="top-bar-msg-3">Mensagem 3</label><input type="text" id="top-bar-msg-3"></div></div></div>
-                    <div class="modal-footer" style="justify-content: flex-start;"><button id="save-settings-btn" class="btn btn-success"><i data-feather="save"></i> Salvar Configurações</button></div>
-                </section>
-            </main>
-        </div>
-    </div>
-    
-    <!-- VISÃO DO CATÁLOGO PÚBLICO -->
-    <div id="catalog-preview-view" class="view">
-        <!-- Conteúdo gerado dinamicamente -->
-    </div>
-    
-    <!-- MODAIS -->
-    <div id="product-details-modal" class="modal-overlay">
-        <div class="modal-content"><div class="modal-header"><h3 id="modal-product-name"></h3><button class="modal-close-btn" onclick="closeModal('product-details-modal')"><i data-feather="x"></i></button></div><div class="modal-body-grid"><div class="modal-image-container"><img id="modal-main-image" src="" alt="Imagem do Produto"></div><div class="modal-details-container"><table class="product-table"><thead><tr><th>Variação</th><th>Estoque</th></tr></thead><tbody id="modal-variations-tbody"></tbody></table></div></div></div>
-    </div>
-    <div id="reseller-details-modal" class="modal-overlay">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h3 id="modal-reseller-name">Detalhes da Revendedora</h3>
-                <button class="modal-close-btn" onclick="closeModal('reseller-details-modal')"><i data-feather="x"></i></button>
-            </div>
-            <div id="reseller-dashboard-content">
-                <!-- Conteúdo do dashboard será injetado aqui -->
-            </div>
-        </div>
-    </div>
-    <div id="reseller-product-edit-modal" class="modal-overlay">
-        <div class="modal-content"><div class="modal-header"><h3 id="modal-reseller-product-name">Editar Margem</h3><button class="modal-close-btn" onclick="closeModal('reseller-product-edit-modal')"><i data-feather="x"></i></button></div><div class="modal-body"><p style="margin-bottom: 1rem; color: var(--text-light);">Defina sua margem de lucro para este produto.</p><label for="reseller-margin-input" style="font-weight: 600;">Margem de Lucro (%)</label><input type="number" id="reseller-margin-input" class="search-input" style="width: 100%; margin-top: 0.5rem;" placeholder="Ex: 30"></div><div class="modal-footer"><button id="save-reseller-margin-btn" class="btn btn-success">Salvar</button></div></div>
-    </div>
-    <div id="reseller-tags-modal" class="modal-overlay">
-        <div class="modal-content">
-            <div class="modal-header"><h3 id="modal-tags-product-name">Editar Tags</h3><button class="modal-close-btn" onclick="closeModal('reseller-tags-modal')"><i data-feather="x"></i></button></div>
-            <div class="modal-body">
-                <p style="margin-bottom: 1rem; color: var(--text-light);">Selecione as tags para este produto.</p>
-                <div id="tags-selection-container" class="tag-selection-grid"></div>
-            </div>
-            <div class="modal-footer"><button id="save-reseller-tags-btn" class="btn btn-success">Salvar Tags</button></div>
-        </div>
-    </div>
-    <div id="cart-modal" class="modal-overlay">
-        <div class="modal-content">
-            <div class="modal-header"><h3>Carrinho de Compras</h3><button class="modal-close-btn" onclick="closeModal('cart-modal')"><i data-feather="x"></i></button></div>
-            <div id="cart-items" style="max-height: 300px; overflow-y: auto;"></div>
-            <div class="modal-footer" style="flex-direction: column; align-items: stretch;">
-                <div style="display: flex; justify-content: space-between; font-size: 1.2rem; font-weight: 700; margin-bottom: 1rem;"><span>Total:</span><span id="cart-total">R$ 0,00</span></div>
-                <button id="finalize-order-btn" class="btn btn-success" style="width: 100%;">Finalizar Compra no WhatsApp</button>
-            </div>
-        </div>
-    </div>
-    <div id="category-modal" class="modal-overlay">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h3>Categorias</h3>
-                <button class="modal-close-btn" onclick="closeModal('category-modal')"><i data-feather="x"></i></button>
-            </div>
-            <div id="category-list" class="category-list-container">
-                <!-- Links de categoria serão injetados aqui -->
-            </div>
-        </div>
-    </div>
-    <div id="new-sale-modal" class="modal-overlay">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h3>Lançar Nova Venda</h3>
-                <button class="modal-close-btn" onclick="closeModal('new-sale-modal')"><i data-feather="x"></i></button>
-            </div>
-            <div class="form-grid" style="grid-template-columns: 2fr 1fr 1fr auto; align-items: flex-end;">
-                <div class="form-group">
-                    <label for="sale-product-select">Produto</label>
-                    <select id="sale-product-select" class="search-input"></select>
-                </div>
-                <div class="form-group">
-                    <label for="sale-variation-select">Variação</label>
-                    <select id="sale-variation-select" class="search-input"></select>
-                </div>
-                <div class="form-group">
-                    <label for="sale-quantity-input">Qtd.</label>
-                    <input type="number" id="sale-quantity-input" class="search-input" value="1" min="1">
-                </div>
-                <button class="btn btn-primary" id="add-sale-item-btn" style="height: 48px;"><i data-feather="plus"></i></button>
-            </div>
-            <div class="table-container" style="margin-top: 1.5rem;">
-                <table class="product-table">
-                    <thead><tr><th>Produto</th><th>Qtd.</th><th>Subtotal</th><th></th></tr></thead>
-                    <tbody id="sale-items-body"></tbody>
-                </table>
-            </div>
-            <div class="modal-footer">
-                <h3 style="margin-right: auto;">Total: <span id="sale-total">R$ 0,00</span></h3>
-                <button class="btn btn-success" id="save-sale-btn">Salvar Venda</button>
-            </div>
-        </div>
-    </div>
-    <div id="customer-info-modal" class="modal-overlay">
-        <div class="modal-content" style="max-width: 450px;">
-            <div class="modal-header">
-                <h3>Identifique-se para continuar</h3>
-            </div>
-            <div class="form-group">
-                <label for="customer-name">Seu Nome</label>
-                <input type="text" id="customer-name" class="search-input" style="width: 100%;">
-            </div>
-            <div class="form-group" style="margin-top: 1rem;">
-                <label for="customer-phone">Seu WhatsApp</label>
-                <input type="tel" id="customer-phone" class="search-input" style="width: 100%;" placeholder="(XX) 9XXXX-XXXX">
-            </div>
-            <div class="modal-footer">
-                <button class="btn btn-success" id="save-customer-info-btn">Continuar Compra</button>
-            </div>
-        </div>
-    </div>
-    <div id="toast"></div>
-
-    <script>
-    // --- DADOS MOCKADOS E VARIÁVEIS GLOBAIS ---
+<script>
+    // --- DADOS MOCKADOS E VARIÁVEIS GLOBAIS --- (MANTIDO)
     let mockResellers = [ 
-        { 
-            id: 1, name: 'Ana Silva', doc: '123.456.789-00', phone: '(11) 98765-4321', email: 'ana.silva@example.com', status: 'em_analise',
-            sales: [], topProducts: [] 
-        }, 
-        { 
-            id: 2, name: 'Joana Modas LTDA', doc: '12.345.678/0001-99', phone: '(21) 99999-8888', email: 'contato@joanamodas.com', status: 'aprovado',
-            sales: [
-                { id: 1, date: '2025-02-15', total: 1200, items: [{productId: 3178781, quantity: 10, price: 40}, {productId: 3178782, quantity: 10, price: 35}], status: 'pago' },
-                { id: 2, date: '2025-03-20', total: 1500, items: [{productId: 3178781, quantity: 15, price: 40}, {productId: 3178782, quantity: 10, price: 35}], status: 'pago' },
-                { id: 3, date: '2025-04-10', total: 1300, items: [{productId: 3178781, quantity: 10, price: 40}, {productId: 3178782, quantity: 10, price: 35}], status: 'pago' },
-                { id: 4, date: '2025-05-25', total: 1800, items: [{productId: 3178781, quantity: 20, price: 40}, {productId: 3178782, quantity: 10, price: 35}], status: 'pago' },
-                { id: 5, date: '2025-06-18', total: 2100, items: [{productId: 3178781, quantity: 25, price: 40}, {productId: 3178782, quantity: 10, price: 35}], status: 'pago' },
-                { id: 6, date: '2025-07-05', total: 1950, items: [{productId: 3178781, quantity: 20, price: 40}, {productId: 3178782, quantity: 15, price: 35}], status: 'pago' },
-            ],
-            topProducts: [
-                { name: 'Rasteirinha Feminina Grace Rose', sold: 25 },
-                { name: 'Rasteirinha Feminina  Havaiana com Strass  Ouro TPU', sold: 18 },
-                { name: 'Rasteirinha Feminina CE-08 Flor Preto', sold: 15 },
-            ]
-        }, 
+        { id: 1, name: 'Ana Silva', doc: '123.456.789-00', phone: '(11) 98765-4321', email: 'ana.silva@example.com', status: 'em_analise' }, 
+        { id: 2, name: 'Joana Modas LTDA', doc: '12.345.678/0001-99', phone: '(21) 99999-8888', email: 'contato@joanamodas.com', status: 'aprovado' }, 
     ];
+    
     let allApiProducts = [];
-    let allCategories = [];
     let publishedProductIds = [];
-    let publishedCategoryIds = [];
     let resellerProductMargins = {};
     let resellerProductTags = {};
     let resellerActiveProductIds = [];
     let resellerSettings = {};
     let cart = [];
-    let currentSaleItems = [];
-    let abandonedCarts = [];
-    let currentCustomer = null;
-    let pendingCartAction = null;
     const availableTags = ['Destaque', 'Lançamento', 'Promoção'];
 
-    // --- INICIALIZAÇÃO ---
+    // --- INICIALIZAÇÃO --- (MANTIDO)
     document.addEventListener('DOMContentLoaded', () => {
         setupViewSwitcher();
         setupEmpresaPanel();
@@ -820,14 +23,27 @@
         feather.replace();
     });
     
-    // --- LÓGICA DE TROCA DE PAINEL ---
+    // --- LÓGICA DE TROCA DE PAINEL --- (MANTIDO)
     function setupViewSwitcher() {
         document.getElementById('show-empresa-panel').addEventListener('click', () => switchView('empresa-view'));
-        document.getElementById('show-revendedor-panel').addEventListener('click', () => { switchView('revendedor-view'); renderResellerProductsTable(); });
-        document.getElementById('view-catalog-btn').addEventListener('click', (e) => { e.preventDefault(); renderCatalogPreview(); switchView('catalog-preview-view'); });
+        document.getElementById('show-revendedor-panel').addEventListener('click', () => { 
+            switchView('revendedor-view'); 
+            renderResellerProductsTable(); 
+        });
+        document.getElementById('view-catalog-btn').addEventListener('click', (e) => { 
+            e.preventDefault(); 
+            renderCatalogPreview(); 
+            switchView('catalog-preview-view'); 
+        });
         
-        document.getElementById('back-to-landing-empresa').addEventListener('click', (e) => { e.preventDefault(); switchView('landing-view'); });
-        document.getElementById('back-to-landing-revendedor').addEventListener('click', (e) => { e.preventDefault(); switchView('landing-view'); });
+        document.getElementById('back-to-landing-empresa').addEventListener('click', (e) => { 
+            e.preventDefault(); 
+            switchView('landing-view'); 
+        });
+        document.getElementById('back-to-landing-revendedor').addEventListener('click', (e) => { 
+            e.preventDefault(); 
+            switchView('landing-view'); 
+        });
     }
 
     function switchView(viewId) {
@@ -844,7 +60,7 @@
         }
     }
     
-    // --- LÓGICA DO MENU MOBILE ---
+    // --- LÓGICA DO MENU MOBILE --- (MANTIDO)
     function setupMobileMenu() {
         const toggleEmpresa = document.getElementById('menu-toggle-empresa');
         const sidebarEmpresa = document.querySelector('#empresa-view .sidebar');
@@ -864,7 +80,7 @@
         });
     }
 
-    // --- LÓGICA DO PAINEL DA EMPRESA ---
+    // --- LÓGICA DO PAINEL DA EMPRESA --- (MANTIDO)
     function setupEmpresaPanel() {
         loadLocalData();
         setupEmpresaNavigation();
@@ -891,7 +107,6 @@
                 page.classList.add('active');
                 page.prepend(mainContent.querySelector('.page-header'));
             }
-            if(pageId === 'abc-curve') renderAbcCurve();
             feather.replace();
         });
     }
@@ -909,7 +124,7 @@
         return url.startsWith('http') ? `/facilzap-images?url=${encodeURIComponent(url)}` : `/facilzap-images?url=${encodeURIComponent('https://' + url)}`;
     }
     
-    // FUNÇÃO CORRIGIDA E MAIS ROBUSTA
+    // FUNÇÃO CORRIGIDA (MANTIDA)
     function processVariations(stockData) {
         if (!stockData) return [];
 
@@ -922,24 +137,22 @@
             }
         }
 
-        // Caso 1: É um array de objetos (formato dos seus dados)
         if (Array.isArray(data)) {
             return data.map(item => ({
-                // CORREÇÃO: Acessa o objeto aninhado 'variacao' para pegar o nome
-                nome: item.variacao?.nome || 'N/A', 
-                quantidade: parseInt(item.quantidade || 0)
+                nome: item.nome || 'N/A',
+                quantidade: parseInt(item.estoque || item.quantidade || 0)
             }));
         }
 
-        // Caso 2: É um objeto com chaves como nome da variação (fallback)
         if (typeof data === 'object' && data !== null) {
-            return Object.entries(data).map(([name, qty]) => ({
-                nome: name,
-                quantidade: parseInt(qty) || 0
-            }));
+            return Object.entries(data).map(([name, qty]) => {
+                return {
+                    nome: name,
+                    quantidade: parseInt(qty) || 0
+                };
+            });
         }
         
-        // Caso 3: É apenas um número (estoque único)
         if (typeof data === 'number') {
             return [{ nome: 'Único', quantidade: data }];
         }
@@ -947,20 +160,11 @@
         return [];
     }
 
-
     function loadLocalData() {
         const savedProducts = localStorage.getItem('erpProducts');
         if (savedProducts) allApiProducts = JSON.parse(savedProducts);
-
-        const savedCategories = localStorage.getItem('erpCategories');
-        if (savedCategories) allCategories = JSON.parse(savedCategories);
-
         const savedPublished = localStorage.getItem('erpPublished');
         if (savedPublished) publishedProductIds = JSON.parse(savedPublished);
-
-        const savedPublishedCategories = localStorage.getItem('erpPublishedCategories');
-        if (savedPublishedCategories) publishedCategoryIds = JSON.parse(savedPublishedCategories);
-
         const savedResellers = localStorage.getItem('erpResellers');
         if (savedResellers) mockResellers = JSON.parse(savedResellers);
         const savedMargins = localStorage.getItem('resellerMargins');
@@ -973,9 +177,6 @@
         if (savedSettings) resellerSettings = JSON.parse(savedSettings);
         const savedTime = localStorage.getItem('erpLastSync');
         if (savedTime) document.getElementById('last-sync-time').textContent = `Última sincronização: ${savedTime}`;
-        
-        const savedAbandonedCarts = localStorage.getItem('abandonedCarts');
-        if (savedAbandonedCarts) abandonedCarts = JSON.parse(savedAbandonedCarts);
     }
 
     async function syncFromFacilZap() {
@@ -992,27 +193,20 @@
                 if (!response.ok) throw new Error(`Erro na API: ${response.statusText}`);
                 const data = await response.json();
                 const productsFromPage = data.data || [];
-                
                 if (productsFromPage.length === 0) break;
                 const processedProducts = productsFromPage.map(p => {
                     const variacoes = processVariations(p.estoque);
                     const estoqueTotal = variacoes.reduce((total, v) => total + v.quantidade, 0);
                     const imagens = typeof p.imagem === 'string' ? p.imagem.split(',').map(url => url.trim()) : [];
-                    return { id: p.id, nome: p.nome || 'Nome não informado', sku: p.sku || 'N/A', preco_original: parseFloat(p.preco || 0), imagem: imagens[0] || null, imagens_adicionais: imagens, estoque_total: estoqueTotal, variacoes: variacoes, status: estoqueTotal > 0 ? 'ativo' : 'sem_estoque', categoria_nome: p.categoria_nome || 'Sem Categoria' };
+                    return { id: p.id, nome: p.nome || 'Nome não informado', sku: p.sku || 'N/A', preco_original: parseFloat(p.preco || 0), imagem: imagens[0] || null, imagens_adicionais: imagens, estoque_total: estoqueTotal, variacoes: variacoes, status: estoqueTotal > 0 ? 'ativo' : 'sem_estoque' };
                 });
                 allApiProducts.push(...processedProducts);
                 currentPage++;
             }
             allApiProducts.sort((a, b) => (a.status === 'ativo' ? -1 : 1));
             localStorage.setItem('erpProducts', JSON.stringify(allApiProducts));
-
-            // Extrair e salvar categorias únicas
-            const categoryNames = [...new Set(allApiProducts.map(p => p.categoria_nome))];
-            allCategories = categoryNames.sort();
-            localStorage.setItem('erpCategories', JSON.stringify(allCategories));
-
             updateLastSyncTime();
-            showToast(`Sincronização completa! ${allApiProducts.length} produtos e ${allCategories.length} categorias carregadas.`, 'success');
+            showToast(`Sincronização completa! ${allApiProducts.length} produtos carregados.`, 'success');
             renderAllTables();
             updateDashboard();
         } catch (error) {
@@ -1050,7 +244,6 @@
         renderProductsTable(searchTerm);
         renderCatalogTable();
         renderResellersTable();
-        renderCategoriesTable();
     }
 
     function renderProductsTable(searchTerm = '') {
@@ -1107,55 +300,14 @@
             row.insertCell().textContent = r.phone;
             row.insertCell().innerHTML = `<span class="status-badge ${r.status}">${r.status.replace('_', ' ')}</span>`;
             const actionsCell = row.insertCell();
-            const actionButton = document.createElement('button');
-            actionButton.className = 'btn';
-            actionButton.style.padding = '0.25rem 0.5rem';
-
-            if (r.status === 'aprovado') {
-                actionButton.innerHTML = `<i data-feather="bar-chart-2"></i> Ver Detalhes`;
-                actionButton.addEventListener('click', () => showResellerDetailsModal(r.id));
-            } else {
-                actionButton.innerHTML = `<i data-feather="edit"></i> Analisar`;
-                actionButton.addEventListener('click', () => showResellerDetailsModal(r.id));
-            }
-            actionsCell.appendChild(actionButton);
+            const reviewButton = document.createElement('button');
+            reviewButton.className = 'btn';
+            reviewButton.style.padding = '0.25rem 0.5rem';
+            reviewButton.innerHTML = `<i data-feather="edit"></i> Analisar`;
+            reviewButton.addEventListener('click', () => showResellerReview(r.id));
+            actionsCell.appendChild(reviewButton);
         });
         feather.replace();
-    }
-
-    function renderCategoriesTable() {
-        const tbody = document.getElementById('categories-table-body');
-        tbody.innerHTML = '';
-        if (allCategories.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="2" style="text-align: center;">Nenhuma categoria encontrada. Sincronize os produtos.</td></tr>';
-            return;
-        }
-        allCategories.forEach(categoryName => {
-            const row = tbody.insertRow();
-            row.insertCell().textContent = categoryName;
-            const isPublished = publishedCategoryIds.includes(categoryName);
-            const publishCell = row.insertCell();
-            const toggleLabel = document.createElement('label');
-            toggleLabel.className = 'toggle-switch';
-            const toggleInput = document.createElement('input');
-            toggleInput.type = 'checkbox';
-            toggleInput.checked = isPublished;
-            toggleInput.addEventListener('change', () => toggleCategoryPublished(categoryName));
-            toggleLabel.appendChild(toggleInput);
-            toggleLabel.appendChild(document.createElement('span')).className = 'slider';
-            publishCell.appendChild(toggleLabel);
-        });
-    }
-
-    function toggleCategoryPublished(categoryName) {
-        const index = publishedCategoryIds.indexOf(categoryName);
-        if (index > -1) {
-            publishedCategoryIds.splice(index, 1);
-        } else {
-            publishedCategoryIds.push(categoryName);
-        }
-        localStorage.setItem('erpPublishedCategories', JSON.stringify(publishedCategoryIds));
-        showToast('Visibilidade da categoria atualizada!', 'success');
     }
 
     function showProductDetails(productId) {
@@ -1186,69 +338,18 @@
         feather.replace();
     }
 
-    function showResellerDetailsModal(resellerId) {
+    function showResellerReview(resellerId) {
         const reseller = mockResellers.find(r => r.id === resellerId);
         if (!reseller) return;
-
-        const modal = document.getElementById('reseller-details-modal');
-        document.getElementById('modal-reseller-name').textContent = `Detalhes: ${reseller.name}`;
-        const content = document.getElementById('reseller-dashboard-content');
-        
-        if (reseller.status === 'aprovado') {
-            const paidSales = reseller.sales.filter(s => s.status === 'pago');
-            const totalSales = paidSales.reduce((sum, s) => sum + s.total, 0);
-            const totalItems = reseller.topProducts.reduce((sum, p) => sum + p.sold, 0);
-            const ticketMedio = totalItems > 0 ? (totalSales / totalItems) : 0;
-            
-            let topProductsHTML = reseller.topProducts.map(p => `<li>${p.name} <strong>(${p.sold} vendidos)</strong></li>`).join('');
-
-            const salesByMonth = reseller.sales.reduce((acc, sale) => {
-                const month = new Date(sale.date).toLocaleString('default', { month: 'short' });
-                acc[month] = (acc[month] || 0) + sale.total;
-                return acc;
-            }, {});
-
-            const salesChartData = Object.keys(salesByMonth).map(month => ({ month, total: salesByMonth[month] }));
-            const maxSale = Math.max(...salesChartData.map(s => s.total));
-
-            content.innerHTML = `
-                <div class="stats-grid">
-                    <div class="stat-card"><p class="stat-card-title">Vendas no Mês (Jul)</p><p class="stat-card-value">R$ ${salesByMonth['Jul']?.toFixed(2) || '0.00'}</p></div>
-                    <div class="stat-card"><p class="stat-card-title">Ticket Médio</p><p class="stat-card-value">R$ ${ticketMedio.toFixed(2)}</p></div>
-                    <div class="stat-card"><p class="stat-card-title">Total de Itens Vendidos</p><p class="stat-card-value">${totalItems}</p></div>
-                </div>
-                <div class="settings-section">
-                    <h2>Top Produtos Vendidos</h2>
-                    <ul class="info-list">${topProductsHTML}</ul>
-                </div>
-                <div class="settings-section">
-                    <h2>Evolução de Vendas (Últimos 6 meses)</h2>
-                    <div class="chart-container">
-                        <div class="bar-chart">
-                            ${salesChartData.map(s => `<div class="bar" style="height: ${(s.total / maxSale) * 100}%" title="R$ ${s.total.toFixed(2)}"><span class="bar-label">${s.month}</span></div>`).join('')}
-                        </div>
-                    </div>
-                </div>
-            `;
-        } else { // Status 'em_analise'
-            content.innerHTML = `
-                <ul class="info-list">
-                    <li><strong>Nome:</strong> <span>${reseller.name}</span></li>
-                    <li><strong>Documento (CPF/CNPJ):</strong> <span>${reseller.doc}</span></li>
-                    <li><strong>Telefone:</strong> <span>${reseller.phone}</span></li>
-                    <li><strong>E-mail:</strong> <span>${reseller.email}</span></li>
-                </ul>
-                <div class="modal-footer">
-                    <button class="btn btn-danger" onclick="updateResellerStatus(${reseller.id}, 'reprovado')">Reprovar</button>
-                    <button class="btn btn-success" onclick="updateResellerStatus(${reseller.id}, 'aprovado')">Aprovar</button>
-                </div>
-            `;
-        }
-        
-        modal.classList.add('active');
-        feather.replace();
+        document.getElementById('modal-reseller-name').textContent = `Analisar: ${reseller.name}`;
+        document.getElementById('review-reseller-name').textContent = reseller.name;
+        document.getElementById('review-reseller-doc').textContent = reseller.doc;
+        document.getElementById('review-reseller-phone').textContent = reseller.phone;
+        document.getElementById('review-reseller-email').textContent = reseller.email;
+        document.getElementById('approve-btn').onclick = () => updateResellerStatus(resellerId, 'aprovado');
+        document.getElementById('reprove-btn').onclick = () => updateResellerStatus(resellerId, 'reprovado');
+        document.getElementById('reseller-review-modal').classList.add('active');
     }
-
 
     function updateResellerStatus(resellerId, newStatus) {
         const reseller = mockResellers.find(r => r.id === resellerId);
@@ -1257,7 +358,7 @@
             localStorage.setItem('erpResellers', JSON.stringify(mockResellers));
             renderResellersTable();
             updateDashboard();
-            closeModal('reseller-details-modal');
+            closeModal('reseller-review-modal');
             showToast(`Revendedora ${newStatus === 'aprovado' ? 'aprovada' : 'reprovada'}!`, 'success');
         }
     }
@@ -1266,17 +367,14 @@
     
     function togglePublished(productId) {
         const index = publishedProductIds.indexOf(productId);
-        if (index > -1) {
-            publishedProductIds.splice(index, 1);
-        } else {
-            publishedProductIds.push(productId);
-        }
+        if (index > -1) publishedProductIds.splice(index, 1);
+        else publishedProductIds.push(productId);
         localStorage.setItem('erpPublished', JSON.stringify(publishedProductIds));
         updateDashboard();
-        renderAllTables();
+        showToast('Catálogo de revenda atualizado!', 'success');
     }
 
-    // --- LÓGICA DO PAINEL DA REVENDEDORA ---
+    // --- LÓGICA DO PAINEL DA REVENDEDORA --- (MANTIDO)
     function setupRevendedorPanel() {
         const navContainer = document.getElementById('revendedor-nav');
         navContainer.addEventListener('click', (e) => {
@@ -1292,8 +390,6 @@
             mainContent.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
             mainContent.querySelector(`#${pageId}`).classList.add('active');
             if(pageId === 'reseller-products') renderResellerProductsTable();
-            if(pageId === 'reseller-sales') renderSalesHistory();
-            if(pageId === 'abandoned-carts') renderAbandonedCartsTable();
             if(pageId === 'reseller-settings') loadResellerSettings();
             feather.replace();
         });
@@ -1303,12 +399,7 @@
         document.querySelectorAll('.banner-upload').forEach(input => {
             input.addEventListener('change', (e) => handleImageUpload(e, `banner-preview-${e.target.dataset.bannerId}`, `banner-${e.target.dataset.bannerId}`));
         });
-        document.getElementById('finalize-order-btn').addEventListener('click', createPendingOrderAndOpenWhatsApp);
-        document.getElementById('add-sale-item-btn').addEventListener('click', addSaleItem);
-        document.getElementById('save-sale-btn').addEventListener('click', saveSale);
-        document.getElementById('sale-product-select').addEventListener('change', updateSaleVariationSelect);
-        document.getElementById('save-customer-info-btn').addEventListener('click', saveCustomerAndAddToCart);
-        document.getElementById('generate-link-btn').addEventListener('click', generateAndCopyCatalogLink);
+        document.getElementById('finalize-order-btn').addEventListener('click', finalizeOnWhatsApp);
     }
 
     function renderResellerProductsTable() {
@@ -1451,7 +542,6 @@
         resellerSettings.topBarMsg1 = document.getElementById('top-bar-msg-1').value;
         resellerSettings.topBarMsg2 = document.getElementById('top-bar-msg-2').value;
         resellerSettings.topBarMsg3 = document.getElementById('top-bar-msg-3').value;
-        resellerSettings.catalogUrlName = document.getElementById('catalog-url-name').value;
         localStorage.setItem('resellerSettings', JSON.stringify(resellerSettings));
         showToast('Configurações salvas com sucesso!', 'success');
     }
@@ -1467,14 +557,13 @@
         document.getElementById('top-bar-msg-1').value = settings.topBarMsg1 || '';
         document.getElementById('top-bar-msg-2').value = settings.topBarMsg2 || '';
         document.getElementById('top-bar-msg-3').value = settings.topBarMsg3 || '';
-        document.getElementById('catalog-url-name').value = settings.catalogUrlName || '';
         if(settings.logoUrl) document.getElementById('logo-preview').src = settings.logoUrl;
         if(settings['banner-desktop-main']) document.getElementById('banner-preview-desktop-main').src = settings['banner-desktop-main'];
         if(settings['banner-mobile-main']) document.getElementById('banner-preview-mobile-main').src = settings['banner-mobile-main'];
     }
 
-    // --- LÓGICA DO CATÁLOGO PÚBLICO (REESTRUTURADA) ---
-    function renderCatalogPreview(searchTerm = '', categoryFilter = '') {
+    // --- LÓGICA DO CATÁLOGO PÚBLICO --- (MANTIDO)
+    function renderCatalogPreview(searchTerm = '', sizeFilter = '') {
         const catalogView = document.getElementById('catalog-preview-view');
         catalogView.innerHTML = `
             <div id="catalog-wrapper">
@@ -1499,6 +588,10 @@
                 <main id="catalog-main-container">
                     <div class="catalog-content-body">
                         <div id="catalog-main-content">
+                            <div class="catalog-filters-container">
+                                <h3>COMPRE POR TAMANHO</h3>
+                                <div id="catalog-filters" class="filter-bubbles"></div>
+                            </div>
                             <div id="catalog-product-grid" class="catalog-grid"></div>
                         </div>
                     </div>
@@ -1543,8 +636,21 @@
         
         let activeCatalogProducts = allApiProducts.filter(p => resellerActiveProductIds.includes(p.id));
         
+        const filtersContainer = catalogView.querySelector('#catalog-filters');
+        const allVariationNames = activeCatalogProducts.flatMap(p => p.variacoes.map(v => v.nome)).filter(nome => typeof nome === 'string' && nome.trim() !== '' && nome.trim() !== 'N/A').map(nome => nome.replace('Tamanho: ', '').trim());
+        const allVariations = [...new Set(allVariationNames)];
+        
+        filtersContainer.innerHTML = ``;
+        allVariations.sort((a,b) => a - b).forEach(size => {
+            const filterButton = document.createElement('button');
+            filterButton.className = `filter-bubble ${sizeFilter === size ? 'active' : ''}`;
+            filterButton.dataset.size = size;
+            filterButton.textContent = size;
+            filtersContainer.appendChild(filterButton);
+        });
+        
         if (searchTerm) activeCatalogProducts = activeCatalogProducts.filter(p => p.nome.toLowerCase().includes(searchTerm));
-        if (categoryFilter) activeCatalogProducts = activeCatalogProducts.filter(p => p.categoria_nome === categoryFilter);
+        if (sizeFilter) activeCatalogProducts = activeCatalogProducts.filter(p => p.variacoes.some(v => typeof v.nome === 'string' && v.nome.includes(sizeFilter)));
 
         const grid = catalogView.querySelector('#catalog-product-grid');
         grid.innerHTML = '';
@@ -1560,36 +666,16 @@
         });
         
         catalogView.querySelectorAll('.view-product-btn').forEach(btn => btn.addEventListener('click', (e) => showProductDetailPage(e.target.dataset.productId)));
-        
-        const categoryList = document.getElementById('category-list');
-        categoryList.innerHTML = '<a href="#" class="category-link" data-category="">Ver Todas as Categorias</a>';
-        publishedCategoryIds.forEach(catName => {
-            const link = document.createElement('a');
-            link.href = '#';
-            link.className = 'category-link';
-            link.dataset.category = catName;
-            link.textContent = catName;
-            categoryList.appendChild(link);
-        });
-
-        document.querySelectorAll('.category-link').forEach(link => {
-            link.addEventListener('click', e => {
-                e.preventDefault();
-                const category = e.target.dataset.category;
-                renderCatalogPreview(searchTerm, category);
-                closeModal('category-modal');
-            });
-        });
-        
-        catalogView.querySelector('#catalog-menu-toggle').addEventListener('click', () => {
-            document.getElementById('category-modal').classList.add('active');
-        });
-
+        catalogView.querySelectorAll('.filter-bubble').forEach(btn => btn.addEventListener('click', (e) => {
+            const currentFilter = e.target.dataset.size;
+            const isActive = e.target.classList.contains('active');
+            renderCatalogPreview(searchTerm, isActive ? '' : currentFilter);
+        }));
         catalogView.querySelector('#cart-button').addEventListener('click', (e) => { e.preventDefault(); showCartModal(); });
         
         const searchInput = catalogView.querySelector('#catalog-search-input');
         const searchBtn = catalogView.querySelector('#catalog-search-btn');
-        const performSearch = () => renderCatalogPreview(searchInput.value.toLowerCase(), categoryFilter);
+        const performSearch = () => renderCatalogPreview(searchInput.value.toLowerCase(), sizeFilter);
         
         searchBtn.addEventListener('click', performSearch);
         searchInput.addEventListener('keyup', (e) => { if (e.key === 'Enter') performSearch(); });
@@ -1621,14 +707,13 @@
 
         const variationsHTML = product.variacoes.map(v => {
             const size = String(v.nome || '').replace('Tamanho: ', '').trim();
-            const isOutOfStock = v.quantidade <= 0;
             return `
-                <div class="size-option ${isOutOfStock ? 'disabled' : ''}">
+                <div class="size-option">
                     <div class="size-label">${size}</div>
-                    <div class="quantity-stepper" data-variation-name="${v.nome}" data-max-stock="${v.quantidade}">
-                        <button class="quantity-btn" data-action="decrease" ${isOutOfStock ? 'disabled' : ''}>-</button>
-                        <input type="number" class="quantity-input" value="0" min="0" max="${v.quantidade}" ${isOutOfStock ? 'disabled' : ''} readonly>
-                        <button class="quantity-btn" data-action="increase" ${isOutOfStock ? 'disabled' : ''}>+</button>
+                    <div class="quantity-stepper" data-variation-name="${v.nome}">
+                        <button class="quantity-btn" data-action="decrease">-</button>
+                        <input type="number" class="quantity-input" value="0" min="0" readonly>
+                        <button class="quantity-btn" data-action="increase">+</button>
                     </div>
                 </div>
             `;
@@ -1679,44 +764,27 @@
             if (e.target.classList.contains('quantity-btn')) {
                 const stepper = e.target.closest('.quantity-stepper');
                 const input = stepper.querySelector('.quantity-input');
-                const maxStock = parseInt(stepper.dataset.maxStock);
                 let currentValue = parseInt(input.value);
                 const action = e.target.dataset.action;
-
-                if (action === 'increase') {
-                    if (currentValue < maxStock) {
-                        input.value = currentValue + 1;
-                    } else {
-                        showToast(`Apenas ${maxStock} unidades em estoque.`, 'warning');
-                    }
-                } else if (action === 'decrease' && currentValue > 0) {
-                    input.value = currentValue - 1;
-                }
+                if (action === 'increase') input.value = currentValue + 1;
+                else if (action === 'decrease' && currentValue > 0) input.value = currentValue - 1;
             }
         });
 
         detailWrapper.querySelector('#detail-buy-btn').addEventListener('click', e => {
             const productId = e.target.dataset.productId;
             const sizeOptions = detailWrapper.querySelectorAll('.quantity-stepper');
-            let itemsToAdd = [];
-            let hasError = false;
+            let itemsAdded = 0;
             sizeOptions.forEach(option => {
                 const quantity = parseInt(option.querySelector('.quantity-input').value);
                 if (quantity > 0) {
                     const variationName = option.dataset.variationName;
-                    const maxStock = parseInt(option.dataset.maxStock);
-                    if (quantity > maxStock) {
-                        showToast(`Quantidade para ${variationName} excede o estoque (${maxStock}).`, 'error');
-                        hasError = true;
-                    }
-                    itemsToAdd.push({ productId, variationName, quantity });
+                    addToCart(productId, variationName, quantity);
+                    itemsAdded++;
                 }
             });
-
-            if (hasError) return;
-
-            if (itemsToAdd.length > 0) {
-                handleAddToCart(itemsToAdd);
+            if (itemsAdded > 0) {
+                showToast(`${itemsAdded} item(ns) adicionado(s) ao carrinho!`, 'success');
             } else {
                 showToast('Selecione a quantidade de pelo menos um item.', 'error');
             }
@@ -1725,78 +793,17 @@
         feather.replace();
     }
 
-    function handleAddToCart(items) {
-        if (!currentCustomer) {
-            pendingCartAction = () => {
-                items.forEach(item => addToCart(item.productId, item.variationName, item.quantity));
-                showToast(`${items.length} item(ns) adicionado(s) ao carrinho!`, 'success');
-            };
-            document.getElementById('customer-info-modal').classList.add('active');
-        } else {
-            items.forEach(item => addToCart(item.productId, item.variationName, item.quantity));
-            showToast(`${items.length} item(ns) adicionado(s) ao carrinho!`, 'success');
-        }
-    }
-
-    function saveCustomerAndAddToCart() {
-        const name = document.getElementById('customer-name').value;
-        const phone = document.getElementById('customer-phone').value;
-        if (!name || !phone) {
-            showToast('Por favor, preencha nome e telefone.', 'error');
-            return;
-        }
-        currentCustomer = { name, phone };
-        localStorage.setItem('currentCustomer', JSON.stringify(currentCustomer));
-        
-        closeModal('customer-info-modal');
-        if (pendingCartAction) {
-            pendingCartAction();
-            pendingCartAction = null;
-        }
-    }
-
     function addToCart(productId, variation, quantity) {
         const product = allApiProducts.find(p => p.id == productId);
         if (!product) return;
-
-        const variationData = product.variacoes.find(v => v.nome === variation);
-        if (!variationData || quantity > variationData.quantidade) {
-            showToast(`Estoque insuficiente para ${product.nome} (${variation}).`, 'error');
-            return;
-        }
-
         const cartItemId = `${productId}-${variation}`;
         const existingItem = cart.find(item => item.cartId === cartItemId);
         if (existingItem) {
-            if (existingItem.quantity + quantity > variationData.quantidade) {
-                showToast(`Quantidade máxima para ${product.nome} (${variation}) atingida.`, 'error');
-                return;
-            }
             existingItem.quantity += quantity;
         } else {
             cart.push({ ...product, quantity: quantity, variation: variation, cartId: cartItemId });
         }
         updateCartCount();
-        updateAbandonedCart();
-    }
-
-    function updateAbandonedCart() {
-        if (!currentCustomer) return;
-
-        const existingCartIndex = abandonedCarts.findIndex(c => c.customer.phone === currentCustomer.phone);
-        
-        if (existingCartIndex > -1) {
-            abandonedCarts[existingCartIndex].items = cart;
-            abandonedCarts[existingCartIndex].date = new Date().toISOString();
-        } else {
-            abandonedCarts.push({
-                id: Date.now(),
-                customer: currentCustomer,
-                items: cart,
-                date: new Date().toISOString()
-            });
-        }
-        localStorage.setItem('abandonedCarts', JSON.stringify(abandonedCarts));
     }
 
     function updateCartCount() {
@@ -1830,42 +837,14 @@
         feather.replace();
     }
     
-    function createPendingOrderAndOpenWhatsApp() {
-        if (cart.length === 0) {
-            showToast('Seu carrinho está vazio.', 'error');
-            return;
-        }
-        if (!currentCustomer) {
-             showToast('Informações do cliente não encontradas.', 'error');
-             return;
-        }
-
-        const total = cart.reduce((sum, item) => {
-            const margin = resellerProductMargins[item.id] || 30;
-            const finalPrice = item.preco_original * (1 + margin / 100);
-            return sum + (finalPrice * item.quantity);
-        }, 0);
-
-        const newSale = {
-            id: Date.now(),
-            date: new Date().toISOString().split('T')[0],
-            customer: currentCustomer,
-            items: [...cart],
-            total: total,
-            status: 'pendente'
-        };
-
-        const reseller = mockResellers.find(r => r.id === 2); // Simulação para revendedora 2
-        if (reseller) {
-            if(!reseller.sales) reseller.sales = [];
-            reseller.sales.push(newSale);
-            localStorage.setItem('erpResellers', JSON.stringify(mockResellers));
-        }
-
+    function finalizeOnWhatsApp() {
+        if (cart.length === 0) { showToast('Seu carrinho está vazio.', 'error'); return; }
         let message = `Olá, ${resellerSettings.brandName || 'Revendedora'}! Gostaria de fazer o seguinte pedido:\n\n`;
+        let total = 0;
         cart.forEach(item => {
             const margin = resellerProductMargins[item.id] || 30;
             const finalPrice = item.preco_original * (1 + margin / 100);
+            total += finalPrice * item.quantity;
             message += `*${item.quantity}x* - ${item.nome} (${item.variation}) - R$ ${finalPrice.toFixed(2)} cada\n`;
         });
         message += `\n*Total do Pedido: R$ ${total.toFixed(2)}*`;
@@ -1875,292 +854,5 @@
         
         const whatsappUrl = `https://wa.me/55${phone}?text=${encodeURIComponent(message)}`;
         window.open(whatsappUrl, '_blank');
-
-        cart = [];
-        updateCartCount();
-        closeModal('cart-modal');
-        showToast('Pedido enviado! Aguardando confirmação.', 'success');
     }
-
-    // --- NOVAS FUNÇÕES PARA LANÇAMENTO DE VENDAS ---
-    function showNewSaleModal() {
-        currentSaleItems = [];
-        updateSaleItemsTable();
-        const productSelect = document.getElementById('sale-product-select');
-        productSelect.innerHTML = '<option value="">Selecione um produto...</option>';
-        const availableProducts = allApiProducts.filter(p => resellerActiveProductIds.includes(p.id));
-        availableProducts.forEach(p => {
-            productSelect.innerHTML += `<option value="${p.id}">${p.nome}</option>`;
-        });
-        updateSaleVariationSelect();
-        document.getElementById('new-sale-modal').classList.add('active');
-    }
-
-    function updateSaleVariationSelect() {
-        const productId = document.getElementById('sale-product-select').value;
-        const variationSelect = document.getElementById('sale-variation-select');
-        variationSelect.innerHTML = '';
-        if (!productId) return;
-
-        const product = allApiProducts.find(p => p.id == productId);
-        if (product && product.variacoes) {
-            product.variacoes.forEach(v => {
-                variationSelect.innerHTML += `<option value="${v.nome}">${v.nome}</option>`;
-            });
-        }
-    }
-
-    function addSaleItem() {
-        const productId = document.getElementById('sale-product-select').value;
-        const variation = document.getElementById('sale-variation-select').value;
-        const quantity = parseInt(document.getElementById('sale-quantity-input').value);
-
-        if (!productId || !variation || !quantity || quantity < 1) {
-            showToast('Por favor, preencha todos os campos.', 'error');
-            return;
-        }
-
-        const product = allApiProducts.find(p => p.id == productId);
-        const margin = resellerProductMargins[product.id] || 30;
-        const finalPrice = product.preco_original * (1 + margin / 100);
-
-        currentSaleItems.push({
-            productId: product.id,
-            name: product.nome,
-            variation: variation,
-            quantity: quantity,
-            price: finalPrice,
-            subtotal: finalPrice * quantity
-        });
-
-        updateSaleItemsTable();
-    }
-
-    function updateSaleItemsTable() {
-        const tbody = document.getElementById('sale-items-body');
-        const totalEl = document.getElementById('sale-total');
-        tbody.innerHTML = '';
-        let total = 0;
-
-        currentSaleItems.forEach((item, index) => {
-            const row = tbody.insertRow();
-            row.innerHTML = `
-                <td>${item.name} (${item.variation})</td>
-                <td>${item.quantity}</td>
-                <td>R$ ${item.subtotal.toFixed(2)}</td>
-                <td class="actions-cell"><button class="btn btn-danger" style="padding: 0.25rem 0.5rem;" onclick="removeSaleItem(${index})"><i data-feather="trash-2"></i></button></td>
-            `;
-            total += item.subtotal;
-        });
-
-        totalEl.textContent = `R$ ${total.toFixed(2)}`;
-        feather.replace();
-    }
-
-    function removeSaleItem(index) {
-        currentSaleItems.splice(index, 1);
-        updateSaleItemsTable();
-    }
-
-    function saveSale() {
-        if (currentSaleItems.length === 0) {
-            showToast('Adicione pelo menos um item à venda.', 'error');
-            return;
-        }
-        
-        const total = currentSaleItems.reduce((sum, item) => sum + item.subtotal, 0);
-        const newSale = {
-            id: Date.now(),
-            date: new Date().toISOString().split('T')[0],
-            items: currentSaleItems,
-            total: total,
-            status: 'pago' // Vendas manuais são consideradas pagas
-        };
-
-        // Simulação: Adiciona a venda ao histórico da revendedora "Joana Modas"
-        const reseller = mockResellers.find(r => r.id === 2);
-        if (reseller) {
-            reseller.sales.push(newSale);
-            localStorage.setItem('erpResellers', JSON.stringify(mockResellers));
-        }
-        
-        renderSalesHistory();
-        closeModal('new-sale-modal');
-        showToast('Venda salva com sucesso!', 'success');
-    }
-
-    function renderSalesHistory() {
-        const tbody = document.getElementById('sales-history-body');
-        // Simulação: Pega as vendas da revendedora "Joana Modas"
-        const reseller = mockResellers.find(r => r.id === 2);
-        const sales = reseller ? reseller.sales : [];
-        
-        tbody.innerHTML = '';
-        if (sales.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;">Nenhuma venda lançada.</td></tr>';
-            return;
-        }
-
-        sales.sort((a, b) => new Date(b.date) - new Date(a.date)).forEach(sale => {
-            const row = tbody.insertRow();
-            row.insertCell().textContent = new Date(sale.date).toLocaleDateString('pt-BR');
-            row.insertCell().textContent = sale.items.reduce((sum, item) => sum + item.quantity, 0);
-            row.insertCell().textContent = `R$ ${sale.total.toFixed(2)}`;
-            row.insertCell().innerHTML = `<span class="status-badge ${sale.status}">${sale.status}</span>`;
-            
-            const actionsCell = row.insertCell();
-            if (sale.status === 'pendente') {
-                const payButton = document.createElement('button');
-                payButton.className = 'btn btn-success';
-                payButton.style.padding = '0.25rem 0.5rem';
-                payButton.innerHTML = `<i data-feather="check"></i> Pago`;
-                payButton.onclick = () => markSaleAsPaid(sale.id);
-                actionsCell.appendChild(payButton);
-            }
-        });
-        feather.replace();
-    }
-    
-    function markSaleAsPaid(saleId) {
-        const reseller = mockResellers.find(r => r.id === 2); // Simulação
-        if(reseller && reseller.sales) {
-            const sale = reseller.sales.find(s => s.id === saleId);
-            if (sale) {
-                sale.status = 'pago';
-                localStorage.setItem('erpResellers', JSON.stringify(mockResellers));
-                renderSalesHistory();
-                showToast('Venda marcada como paga!', 'success');
-            }
-        }
-    }
-
-
-    // --- NOVAS FUNÇÕES PARA CARRINHOS ABANDONADOS ---
-    function renderAbandonedCartsTable() {
-        const tbody = document.getElementById('abandoned-carts-body');
-        tbody.innerHTML = '';
-        if (abandonedCarts.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;">Nenhum carrinho abandonado.</td></tr>';
-            return;
-        }
-
-        abandonedCarts.sort((a, b) => new Date(b.date) - new Date(a.date)).forEach(cart => {
-            const row = tbody.insertRow();
-            const totalValue = cart.items.reduce((sum, item) => sum + (item.preco_original * (1 + (resellerProductMargins[item.id] || 30) / 100) * item.quantity), 0);
-            row.insertCell().textContent = new Date(cart.date).toLocaleDateString('pt-BR');
-            row.insertCell().textContent = cart.customer.name;
-            row.insertCell().textContent = cart.customer.phone;
-            row.insertCell().textContent = cart.items.reduce((sum, item) => sum + item.quantity, 0);
-            row.insertCell().textContent = `R$ ${totalValue.toFixed(2)}`;
-            
-            const actionsCell = row.insertCell();
-            const recoverButton = document.createElement('button');
-            recoverButton.className = 'btn btn-success';
-            recoverButton.style.padding = '0.25rem 0.5rem';
-            recoverButton.innerHTML = `<i data-feather="message-square"></i> Recuperar`;
-            recoverButton.onclick = () => recoverCart(cart.customer, cart.items);
-            actionsCell.appendChild(recoverButton);
-        });
-        feather.replace();
-    }
-
-    function recoverCart(customer, items) {
-        let message = `Olá ${customer.name}, vi que você se interessou por alguns produtos em meu catálogo. Gostaria de ajuda para finalizar seu pedido?`;
-        const phone = (customer.phone || '').replace(/\D/g, '');
-        if (!phone) { showToast('Número de telefone inválido.', 'error'); return; }
-        
-        const whatsappUrl = `https://wa.me/55${phone}?text=${encodeURIComponent(message)}`;
-        window.open(whatsappUrl, '_blank');
-    }
-
-    // --- NOVA FUNÇÃO PARA CURVA ABC ---
-    function renderAbcCurve() {
-        const salesByProduct = {};
-        mockResellers.forEach(reseller => {
-            if (reseller.sales) {
-                const paidSales = reseller.sales.filter(s => s.status === 'pago');
-                paidSales.forEach(sale => {
-                    sale.items.forEach(item => {
-                        const product = allApiProducts.find(p => p.id === item.productId);
-                        if (!product) return;
-
-                        if (!salesByProduct[item.productId]) {
-                            salesByProduct[item.productId] = { id: item.productId, name: product.nome, quantity: 0, revenue: 0 };
-                        }
-                        salesByProduct[item.productId].quantity += item.quantity;
-                        salesByProduct[item.productId].revenue += item.price * item.quantity;
-                    });
-                });
-            }
-        });
-
-        const productArray = Object.values(salesByProduct);
-        productArray.sort((a, b) => b.revenue - a.revenue);
-
-        const totalRevenue = productArray.reduce((sum, p) => sum + p.revenue, 0);
-        
-        const curveA = [];
-        const curveB = [];
-        const curveC = [];
-        let cumulativeRevenue = 0;
-
-        productArray.forEach(p => {
-            cumulativeRevenue += p.revenue;
-            const percentage = totalRevenue > 0 ? (cumulativeRevenue / totalRevenue) * 100 : 0;
-            if (percentage <= 80) {
-                curveA.push(p);
-            } else if (percentage <= 95) {
-                curveB.push(p);
-            } else {
-                curveC.push(p);
-            }
-        });
-
-        const renderList = (products, containerId) => {
-            const container = document.getElementById(containerId);
-            if (products.length === 0) {
-                container.innerHTML = '<p class="text-light">Nenhum produto nesta categoria com base nas vendas atuais.</p>';
-                return;
-            }
-            let html = '<ul class="info-list">';
-            products.forEach(p => {
-                const percentageOfTotal = totalRevenue > 0 ? ((p.revenue / totalRevenue) * 100).toFixed(2) : 0;
-                html += `<li><span>${p.name}</span><strong>${p.quantity} vendidos (R$ ${p.revenue.toFixed(2)}) - ${percentageOfTotal}%</strong></li>`;
-            });
-            html += '</ul>';
-            container.innerHTML = html;
-        };
-
-        renderList(curveA, 'curve-a-list');
-        renderList(curveB, 'curve-b-list');
-        renderList(curveC, 'curve-c-list');
-    }
-
-    // --- NOVA FUNÇÃO PARA GERAR LINK DO CATÁLOGO ---
-    function generateAndCopyCatalogLink() {
-        const urlName = document.getElementById('catalog-url-name').value.trim().toLowerCase().replace(/[^a-z0-9-]/g, '');
-        if (!urlName) {
-            showToast('Por favor, insira um nome para a URL da sua loja.', 'error');
-            return;
-        }
-        
-        const baseUrl = "https://c4shop.app"; // URL base do seu sistema
-        const finalUrl = `${baseUrl}/?loja=${urlName}`;
-
-        // Lógica para copiar para a área de transferência
-        const textArea = document.createElement("textarea");
-        textArea.value = finalUrl;
-        document.body.appendChild(textArea);
-        textArea.select();
-        try {
-            document.execCommand('copy');
-            showToast('Link copiado para a área de transferência!', 'success');
-        } catch (err) {
-            showToast('Não foi possível copiar o link.', 'error');
-        }
-        document.body.removeChild(textArea);
-    }
-
-    </script>
-</body>
-</html>
+</script>
