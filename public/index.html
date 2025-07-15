@@ -107,7 +107,7 @@
 
         .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: none; justify-content: center; align-items: center; z-index: 1000; }
         .modal-overlay.active { display: flex; }
-        .modal-content { background: var(--card-bg); padding: 2rem; border-radius: var(--border-radius); width: 90%; max-width: 600px; box-shadow: 0 25px 50px -12px rgb(0 0 0 / 0.25); }
+        .modal-content { background: var(--card-bg); padding: 2rem; border-radius: var(--border-radius); width: 90%; max-width: 800px; box-shadow: 0 25px 50px -12px rgb(0 0 0 / 0.25); }
         .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; }
         .modal-header h3 { font-size: 1.25rem; }
         .modal-close-btn { background: none; border: none; cursor: pointer; color: var(--text-light); }
@@ -128,7 +128,7 @@
         .stock-badge.in-stock { background-color: #dcfce7; color: #16a34a; }
         .stock-badge.out-of-stock { background-color: #fee2e2; color: #dc2626; }
 
-        .page-controls { margin-bottom: 1.5rem; }
+        .page-controls { margin-bottom: 1.5rem; display: flex; justify-content: flex-end; }
         .search-input, .form-group select { width: 100%; max-width: 400px; padding: 0.75rem 1rem; border: 1px solid var(--border-color); border-radius: 0.5rem; font-size: 0.9rem; background-color: var(--card-bg); transition: border-color 0.2s, box-shadow 0.2s; }
         .search-input:focus, .form-group select:focus { outline: none; border-color: var(--primary-color); box-shadow: 0 0 0 2px rgba(219, 20, 114, 0.2); }
         
@@ -427,6 +427,42 @@
         .category-list-container a:hover {
             background-color: #f1f5f9;
         }
+
+        /* NOVOS ESTILOS PARA O DASHBOARD DA REVENDEDORA */
+        #reseller-dashboard-content {
+            display: grid;
+            gap: 1.5rem;
+        }
+        .chart-container {
+            background-color: #f8fafc;
+            padding: 1rem;
+            border-radius: var(--border-radius);
+            border: 1px solid var(--border-color);
+        }
+        .chart-title {
+            font-weight: 600;
+            margin-bottom: 1rem;
+        }
+        .bar-chart {
+            display: flex;
+            justify-content: space-around;
+            align-items: flex-end;
+            height: 150px;
+            gap: 1rem;
+        }
+        .bar {
+            flex-grow: 1;
+            background-color: var(--primary-color);
+            border-radius: 0.25rem 0.25rem 0 0;
+            position: relative;
+            text-align: center;
+        }
+        .bar-label {
+            position: absolute;
+            bottom: -20px;
+            width: 100%;
+            font-size: 0.75rem;
+        }
     </style>
 </head>
 <body>
@@ -447,7 +483,7 @@
     <div id="empresa-view" class="view">
         <div class="app-container">
             <aside class="sidebar">
-                <div class="sidebar-header">Meu ERP</div>
+                <div class="sidebar-header">ERP CJOTA</div>
                 <ul class="nav-menu" id="empresa-nav">
                     <li class="nav-item"><a href="#" class="nav-link active" data-page="dashboard"><i data-feather="home"></i> Visão Geral</a></li>
                     <li class="nav-item"><a href="#" class="nav-link" data-page="products"><i data-feather="package"></i> Produtos</a></li>
@@ -460,7 +496,7 @@
                     <a href="#" id="back-to-landing-empresa" class="btn btn-secondary" style="width: 100%; margin-bottom: 1rem;">
                         <i data-feather="arrow-left"></i> Voltar
                     </a>
-                    <p>&copy; 2025 - Painel de Gestão</p>
+                    <p>&copy; 2025 - ERP CJOTA</p>
                 </div>
             </aside>
             <main class="main-content">
@@ -539,6 +575,7 @@
                     <li class="nav-item"><a href="#" class="nav-link active" data-page="reseller-products"><i data-feather="tag"></i> Produtos</a></li>
                     <li class="nav-item"><a href="#" class="nav-link" data-page="reseller-promotions"><i data-feather="gift"></i> Promoções</a></li>
                     <li class="nav-item"><a href="#" class="nav-link" data-page="reseller-sales"><i data-feather="dollar-sign"></i> Vendas</a></li>
+                    <li class="nav-item"><a href="#" class="nav-link" data-page="abandoned-carts"><i data-feather="shopping-cart"></i> Carrinhos Abandonados</a></li>
                     <li class="nav-item"><a href="#" class="nav-link" data-page="reseller-settings"><i data-feather="settings"></i> Configurações</a></li>
                     <li class="nav-item" style="border-top: 1px solid var(--border-color); margin-top: 1rem; padding-top: 1rem;"><a href="#" id="view-catalog-btn" class="nav-link" style="color: var(--primary-color);"><i data-feather="eye"></i> Ver Catálogo</a></li>
                 </ul>
@@ -576,7 +613,27 @@
                     <div class="settings-section"><h2><i data-feather="shopping-bag" style="margin-right: 0.5rem;"></i>Leve Mais, Pague Menos</h2><div class="form-grid"><div class="form-group"><label for="buy-x">Leve (Quantidade)</label><input type="number" id="buy-x" placeholder="3"></div><div class="form-group"><label for="pay-y">Pague (Quantidade)</label><input type="number" id="pay-y" placeholder="2"></div><div class="form-group"><label for="buy-pay-product">Aplicar ao Produto</label><select id="buy-pay-product" class="search-input"><option>Selecione um produto...</option></select></div><div class="form-group" style="justify-content: flex-end;"><button class="btn btn-success">Criar Oferta</button></div></div></div>
                 </section>
                 <section id="reseller-sales" class="page">
-                     <div class="placeholder-card"><i data-feather="dollar-sign" style="width: 4rem; height: 4rem; margin: 0 auto 1rem; color: #cbd5e1;"></i><p>Acompanhe o histórico e o desempenho de suas vendas.</p></div>
+                    <div class="page-header">
+                        <h1>Minhas Vendas</h1>
+                        <button class="btn btn-success" onclick="showNewSaleModal()"><i data-feather="plus"></i> Lançar Nova Venda</button>
+                    </div>
+                    <div class="table-container">
+                        <table class="product-table">
+                            <thead><tr><th>Data</th><th>Itens</th><th>Valor Total</th></tr></thead>
+                            <tbody id="sales-history-body"></tbody>
+                        </table>
+                    </div>
+                </section>
+                <section id="abandoned-carts" class="page">
+                    <div class="page-header">
+                        <h1>Carrinhos Abandonados</h1>
+                    </div>
+                    <div class="table-container">
+                        <table class="product-table">
+                            <thead><tr><th>Data</th><th>Cliente</th><th>Telefone</th><th>Itens</th><th>Valor</th><th>Ações</th></tr></thead>
+                            <tbody id="abandoned-carts-body"></tbody>
+                        </table>
+                    </div>
                 </section>
                 <section id="reseller-settings" class="page">
                     <div class="settings-section"><h2>Identidade Visual</h2><div class="form-grid"><div class="form-group"><label for="logo-upload">Logo da Marca</label><input type="file" id="logo-upload" accept="image/*"><img id="logo-preview" class="logo-preview" src="https://placehold.co/100x100/e2e8f0/94a3b8?text=Logo" alt="Prévia da logo"></div><div class="form-group"><label for="brand-name-input">Nome da Marca</label><input type="text" id="brand-name-input" placeholder="Ex: Maria Modas"></div><div class="form-group"><label for="primary-color-input">Cor Primária</label><input type="color" id="primary-color-input" value="#DB1472"></div><div class="form-group"><label for="secondary-color-input">Cor de Destaque</label><input type="color" id="secondary-color-input" value="#F8B81F"></div></div></div>
@@ -598,8 +655,16 @@
     <div id="product-details-modal" class="modal-overlay">
         <div class="modal-content"><div class="modal-header"><h3 id="modal-product-name"></h3><button class="modal-close-btn" onclick="closeModal('product-details-modal')"><i data-feather="x"></i></button></div><div class="modal-body-grid"><div class="modal-image-container"><img id="modal-main-image" src="" alt="Imagem do Produto"></div><div class="modal-details-container"><table class="product-table"><thead><tr><th>Variação</th><th>Estoque</th></tr></thead><tbody id="modal-variations-tbody"></tbody></table></div></div></div>
     </div>
-    <div id="reseller-review-modal" class="modal-overlay">
-        <div class="modal-content"><div class="modal-header"><h3 id="modal-reseller-name">Analisar Cadastro</h3><button class="modal-close-btn" onclick="closeModal('reseller-review-modal')"><i data-feather="x"></i></button></div><div class="modal-body"><ul class="info-list"><li><strong>Nome:</strong> <span id="review-reseller-name"></span></li><li><strong>Documento (CPF/CNPJ):</strong> <span id="review-reseller-doc"></span></li><li><strong>Telefone:</strong> <span id="review-reseller-phone"></span></li><li><strong>E-mail:</strong> <span id="review-reseller-email"></span></li></ul></div><div class="modal-footer"><button id="reprove-btn" class="btn btn-danger">Reprovar</button><button id="approve-btn" class="btn btn-success">Aprovar</button></div></div>
+    <div id="reseller-details-modal" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="modal-reseller-name">Detalhes da Revendedora</h3>
+                <button class="modal-close-btn" onclick="closeModal('reseller-details-modal')"><i data-feather="x"></i></button>
+            </div>
+            <div id="reseller-dashboard-content">
+                <!-- Conteúdo do dashboard será injetado aqui -->
+            </div>
+        </div>
     </div>
     <div id="reseller-product-edit-modal" class="modal-overlay">
         <div class="modal-content"><div class="modal-header"><h3 id="modal-reseller-product-name">Editar Margem</h3><button class="modal-close-btn" onclick="closeModal('reseller-product-edit-modal')"><i data-feather="x"></i></button></div><div class="modal-body"><p style="margin-bottom: 1rem; color: var(--text-light);">Defina sua margem de lucro para este produto.</p><label for="reseller-margin-input" style="font-weight: 600;">Margem de Lucro (%)</label><input type="number" id="reseller-margin-input" class="search-input" style="width: 100%; margin-top: 0.5rem;" placeholder="Ex: 30"></div><div class="modal-footer"><button id="save-reseller-margin-btn" class="btn btn-success">Salvar</button></div></div>
@@ -635,11 +700,83 @@
             </div>
         </div>
     </div>
+    <div id="new-sale-modal" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Lançar Nova Venda</h3>
+                <button class="modal-close-btn" onclick="closeModal('new-sale-modal')"><i data-feather="x"></i></button>
+            </div>
+            <div class="form-grid" style="grid-template-columns: 2fr 1fr 1fr auto; align-items: flex-end;">
+                <div class="form-group">
+                    <label for="sale-product-select">Produto</label>
+                    <select id="sale-product-select" class="search-input"></select>
+                </div>
+                <div class="form-group">
+                    <label for="sale-variation-select">Variação</label>
+                    <select id="sale-variation-select" class="search-input"></select>
+                </div>
+                <div class="form-group">
+                    <label for="sale-quantity-input">Qtd.</label>
+                    <input type="number" id="sale-quantity-input" class="search-input" value="1" min="1">
+                </div>
+                <button class="btn btn-primary" id="add-sale-item-btn" style="height: 48px;"><i data-feather="plus"></i></button>
+            </div>
+            <div class="table-container" style="margin-top: 1.5rem;">
+                <table class="product-table">
+                    <thead><tr><th>Produto</th><th>Qtd.</th><th>Subtotal</th><th></th></tr></thead>
+                    <tbody id="sale-items-body"></tbody>
+                </table>
+            </div>
+            <div class="modal-footer">
+                <h3 style="margin-right: auto;">Total: <span id="sale-total">R$ 0,00</span></h3>
+                <button class="btn btn-success" id="save-sale-btn">Salvar Venda</button>
+            </div>
+        </div>
+    </div>
+    <div id="customer-info-modal" class="modal-overlay">
+        <div class="modal-content" style="max-width: 450px;">
+            <div class="modal-header">
+                <h3>Identifique-se para continuar</h3>
+            </div>
+            <div class="form-group">
+                <label for="customer-name">Seu Nome</label>
+                <input type="text" id="customer-name" class="search-input" style="width: 100%;">
+            </div>
+            <div class="form-group" style="margin-top: 1rem;">
+                <label for="customer-phone">Seu WhatsApp</label>
+                <input type="tel" id="customer-phone" class="search-input" style="width: 100%;" placeholder="(XX) 9XXXX-XXXX">
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-success" id="save-customer-info-btn">Continuar Compra</button>
+            </div>
+        </div>
+    </div>
     <div id="toast"></div>
 
     <script>
     // --- DADOS MOCKADOS E VARIÁVEIS GLOBAIS ---
-    let mockResellers = [ { id: 1, name: 'Ana Silva', doc: '123.456.789-00', phone: '(11) 98765-4321', email: 'ana.silva@example.com', status: 'em_analise' }, { id: 2, name: 'Joana Modas LTDA', doc: '12.345.678/0001-99', phone: '(21) 99999-8888', email: 'contato@joanamodas.com', status: 'aprovado' }, ];
+    let mockResellers = [ 
+        { 
+            id: 1, name: 'Ana Silva', doc: '123.456.789-00', phone: '(11) 98765-4321', email: 'ana.silva@example.com', status: 'em_analise',
+            sales: [], topProducts: [] 
+        }, 
+        { 
+            id: 2, name: 'Joana Modas LTDA', doc: '12.345.678/0001-99', phone: '(21) 99999-8888', email: 'contato@joanamodas.com', status: 'aprovado',
+            sales: [
+                { id: 1, date: '2025-02-15', total: 1200, items: [] },
+                { id: 2, date: '2025-03-20', total: 1500, items: [] },
+                { id: 3, date: '2025-04-10', total: 1300, items: [] },
+                { id: 4, date: '2025-05-25', total: 1800, items: [] },
+                { id: 5, date: '2025-06-18', total: 2100, items: [] },
+                { id: 6, date: '2025-07-05', total: 1950, items: [] },
+            ],
+            topProducts: [
+                { name: 'Rasteirinha Feminina Grace Rose', sold: 25 },
+                { name: 'Rasteirinha Feminina  Havaiana com Strass  Ouro TPU', sold: 18 },
+                { name: 'Rasteirinha Feminina CE-08 Flor Preto', sold: 15 },
+            ]
+        }, 
+    ];
     let allApiProducts = [];
     let allCategories = [];
     let publishedProductIds = [];
@@ -649,6 +786,10 @@
     let resellerActiveProductIds = [];
     let resellerSettings = {};
     let cart = [];
+    let currentSaleItems = [];
+    let abandonedCarts = [];
+    let currentCustomer = null;
+    let pendingCartAction = null;
     const availableTags = ['Destaque', 'Lançamento', 'Promoção'];
 
     // --- INICIALIZAÇÃO ---
@@ -812,6 +953,9 @@
         if (savedSettings) resellerSettings = JSON.parse(savedSettings);
         const savedTime = localStorage.getItem('erpLastSync');
         if (savedTime) document.getElementById('last-sync-time').textContent = `Última sincronização: ${savedTime}`;
+        
+        const savedAbandonedCarts = localStorage.getItem('abandonedCarts');
+        if (savedAbandonedCarts) abandonedCarts = JSON.parse(savedAbandonedCarts);
     }
 
     async function syncFromFacilZap() {
@@ -943,12 +1087,18 @@
             row.insertCell().textContent = r.phone;
             row.insertCell().innerHTML = `<span class="status-badge ${r.status}">${r.status.replace('_', ' ')}</span>`;
             const actionsCell = row.insertCell();
-            const reviewButton = document.createElement('button');
-            reviewButton.className = 'btn';
-            reviewButton.style.padding = '0.25rem 0.5rem';
-            reviewButton.innerHTML = `<i data-feather="edit"></i> Analisar`;
-            reviewButton.addEventListener('click', () => showResellerReview(r.id));
-            actionsCell.appendChild(reviewButton);
+            const actionButton = document.createElement('button');
+            actionButton.className = 'btn';
+            actionButton.style.padding = '0.25rem 0.5rem';
+
+            if (r.status === 'aprovado') {
+                actionButton.innerHTML = `<i data-feather="bar-chart-2"></i> Ver Detalhes`;
+                actionButton.addEventListener('click', () => showResellerDetailsModal(r.id));
+            } else {
+                actionButton.innerHTML = `<i data-feather="edit"></i> Analisar`;
+                actionButton.addEventListener('click', () => showResellerDetailsModal(r.id));
+            }
+            actionsCell.appendChild(actionButton);
         });
         feather.replace();
     }
@@ -1016,18 +1166,61 @@
         feather.replace();
     }
 
-    function showResellerReview(resellerId) {
+    function showResellerDetailsModal(resellerId) {
         const reseller = mockResellers.find(r => r.id === resellerId);
         if (!reseller) return;
-        document.getElementById('modal-reseller-name').textContent = `Analisar: ${reseller.name}`;
-        document.getElementById('review-reseller-name').textContent = reseller.name;
-        document.getElementById('review-reseller-doc').textContent = reseller.doc;
-        document.getElementById('review-reseller-phone').textContent = reseller.phone;
-        document.getElementById('review-reseller-email').textContent = reseller.email;
-        document.getElementById('approve-btn').onclick = () => updateResellerStatus(resellerId, 'aprovado');
-        document.getElementById('reprove-btn').onclick = () => updateResellerStatus(resellerId, 'reprovado');
-        document.getElementById('reseller-review-modal').classList.add('active');
+
+        const modal = document.getElementById('reseller-details-modal');
+        document.getElementById('modal-reseller-name').textContent = `Detalhes: ${reseller.name}`;
+        const content = document.getElementById('reseller-dashboard-content');
+        
+        if (reseller.status === 'aprovado') {
+            const totalSales = reseller.sales.reduce((sum, s) => sum + s.total, 0);
+            const totalItems = reseller.topProducts.reduce((sum, p) => sum + p.sold, 0);
+            const ticketMedio = totalItems > 0 ? (totalSales / totalItems) : 0;
+            
+            let topProductsHTML = reseller.topProducts.map(p => `<li>${p.name} <strong>(${p.sold} vendidos)</strong></li>`).join('');
+
+            const maxSale = Math.max(...reseller.sales.map(s => s.total));
+
+            content.innerHTML = `
+                <div class="stats-grid">
+                    <div class="stat-card"><p class="stat-card-title">Vendas no Mês (Jul)</p><p class="stat-card-value">R$ ${reseller.sales.slice(-1)[0].total.toFixed(2)}</p></div>
+                    <div class="stat-card"><p class="stat-card-title">Ticket Médio</p><p class="stat-card-value">R$ ${ticketMedio.toFixed(2)}</p></div>
+                    <div class="stat-card"><p class="stat-card-title">Total de Itens Vendidos</p><p class="stat-card-value">${totalItems}</p></div>
+                </div>
+                <div class="settings-section">
+                    <h2>Top Produtos Vendidos</h2>
+                    <ul class="info-list">${topProductsHTML}</ul>
+                </div>
+                <div class="settings-section">
+                    <h2>Evolução de Vendas (Últimos 6 meses)</h2>
+                    <div class="chart-container">
+                        <div class="bar-chart">
+                            ${reseller.sales.map(s => `<div class="bar" style="height: ${(s.total / maxSale) * 100}%" title="R$ ${s.total.toFixed(2)}"><span class="bar-label">${s.month}</span></div>`).join('')}
+                        </div>
+                    </div>
+                </div>
+            `;
+        } else { // Status 'em_analise'
+            content.innerHTML = `
+                <ul class="info-list">
+                    <li><strong>Nome:</strong> <span>${reseller.name}</span></li>
+                    <li><strong>Documento (CPF/CNPJ):</strong> <span>${reseller.doc}</span></li>
+                    <li><strong>Telefone:</strong> <span>${reseller.phone}</span></li>
+                    <li><strong>E-mail:</strong> <span>${reseller.email}</span></li>
+                </ul>
+                <div class="modal-footer">
+                    <button class="btn btn-danger" onclick="updateResellerStatus(${reseller.id}, 'reprovado')">Reprovar</button>
+                    <button class="btn btn-success" onclick="updateResellerStatus(${reseller.id}, 'aprovado')">Aprovar</button>
+                </div>
+            `;
+        }
+        
+        modal.classList.add('active');
+        feather.replace();
     }
+
 
     function updateResellerStatus(resellerId, newStatus) {
         const reseller = mockResellers.find(r => r.id === resellerId);
@@ -1036,7 +1229,7 @@
             localStorage.setItem('erpResellers', JSON.stringify(mockResellers));
             renderResellersTable();
             updateDashboard();
-            closeModal('reseller-review-modal');
+            closeModal('reseller-details-modal');
             showToast(`Revendedora ${newStatus === 'aprovado' ? 'aprovada' : 'reprovada'}!`, 'success');
         }
     }
@@ -1071,6 +1264,8 @@
             mainContent.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
             mainContent.querySelector(`#${pageId}`).classList.add('active');
             if(pageId === 'reseller-products') renderResellerProductsTable();
+            if(pageId === 'reseller-sales') renderSalesHistory();
+            if(pageId === 'abandoned-carts') renderAbandonedCartsTable();
             if(pageId === 'reseller-settings') loadResellerSettings();
             feather.replace();
         });
@@ -1081,6 +1276,10 @@
             input.addEventListener('change', (e) => handleImageUpload(e, `banner-preview-${e.target.dataset.bannerId}`, `banner-${e.target.dataset.bannerId}`));
         });
         document.getElementById('finalize-order-btn').addEventListener('click', finalizeOnWhatsApp);
+        document.getElementById('add-sale-item-btn').addEventListener('click', addSaleItem);
+        document.getElementById('save-sale-btn').addEventListener('click', saveSale);
+        document.getElementById('sale-product-select').addEventListener('change', updateSaleVariationSelect);
+        document.getElementById('save-customer-info-btn').addEventListener('click', saveCustomerAndAddToCart);
     }
 
     function renderResellerProductsTable() {
@@ -1458,23 +1657,53 @@
         detailWrapper.querySelector('#detail-buy-btn').addEventListener('click', e => {
             const productId = e.target.dataset.productId;
             const sizeOptions = detailWrapper.querySelectorAll('.quantity-stepper');
-            let itemsAdded = 0;
+            let itemsToAdd = [];
             sizeOptions.forEach(option => {
                 const quantity = parseInt(option.querySelector('.quantity-input').value);
                 if (quantity > 0) {
                     const variationName = option.dataset.variationName;
-                    addToCart(productId, variationName, quantity);
-                    itemsAdded++;
+                    itemsToAdd.push({ productId, variationName, quantity });
                 }
             });
-            if (itemsAdded > 0) {
-                showToast(`${itemsAdded} item(ns) adicionado(s) ao carrinho!`, 'success');
+
+            if (itemsToAdd.length > 0) {
+                handleAddToCart(itemsToAdd);
             } else {
                 showToast('Selecione a quantidade de pelo menos um item.', 'error');
             }
         });
 
         feather.replace();
+    }
+
+    function handleAddToCart(items) {
+        if (!currentCustomer) {
+            pendingCartAction = () => {
+                items.forEach(item => addToCart(item.productId, item.variationName, item.quantity));
+                showToast(`${items.length} item(ns) adicionado(s) ao carrinho!`, 'success');
+            };
+            document.getElementById('customer-info-modal').classList.add('active');
+        } else {
+            items.forEach(item => addToCart(item.productId, item.variationName, item.quantity));
+            showToast(`${items.length} item(ns) adicionado(s) ao carrinho!`, 'success');
+        }
+    }
+
+    function saveCustomerAndAddToCart() {
+        const name = document.getElementById('customer-name').value;
+        const phone = document.getElementById('customer-phone').value;
+        if (!name || !phone) {
+            showToast('Por favor, preencha nome e telefone.', 'error');
+            return;
+        }
+        currentCustomer = { name, phone };
+        localStorage.setItem('currentCustomer', JSON.stringify(currentCustomer));
+        
+        closeModal('customer-info-modal');
+        if (pendingCartAction) {
+            pendingCartAction();
+            pendingCartAction = null;
+        }
     }
 
     function addToCart(productId, variation, quantity) {
@@ -1488,6 +1717,26 @@
             cart.push({ ...product, quantity: quantity, variation: variation, cartId: cartItemId });
         }
         updateCartCount();
+        updateAbandonedCart();
+    }
+
+    function updateAbandonedCart() {
+        if (!currentCustomer) return;
+
+        const existingCartIndex = abandonedCarts.findIndex(c => c.customer.phone === currentCustomer.phone);
+        
+        if (existingCartIndex > -1) {
+            abandonedCarts[existingCartIndex].items = cart;
+            abandonedCarts[existingCartIndex].date = new Date().toISOString();
+        } else {
+            abandonedCarts.push({
+                id: Date.now(),
+                customer: currentCustomer,
+                items: cart,
+                date: new Date().toISOString()
+            });
+        }
+        localStorage.setItem('abandonedCarts', JSON.stringify(abandonedCarts));
     }
 
     function updateCartCount() {
@@ -1535,6 +1784,170 @@
         
         const phone = (resellerSettings.contactPhone || '').replace(/\D/g, '');
         if (!phone) { showToast('O número de contato da revendedora não está configurado.', 'error'); return; }
+        
+        const whatsappUrl = `https://wa.me/55${phone}?text=${encodeURIComponent(message)}`;
+        window.open(whatsappUrl, '_blank');
+    }
+
+    // --- NOVAS FUNÇÕES PARA LANÇAMENTO DE VENDAS ---
+    function showNewSaleModal() {
+        currentSaleItems = [];
+        updateSaleItemsTable();
+        const productSelect = document.getElementById('sale-product-select');
+        productSelect.innerHTML = '<option value="">Selecione um produto...</option>';
+        const availableProducts = allApiProducts.filter(p => resellerActiveProductIds.includes(p.id));
+        availableProducts.forEach(p => {
+            productSelect.innerHTML += `<option value="${p.id}">${p.nome}</option>`;
+        });
+        updateSaleVariationSelect();
+        document.getElementById('new-sale-modal').classList.add('active');
+    }
+
+    function updateSaleVariationSelect() {
+        const productId = document.getElementById('sale-product-select').value;
+        const variationSelect = document.getElementById('sale-variation-select');
+        variationSelect.innerHTML = '';
+        if (!productId) return;
+
+        const product = allApiProducts.find(p => p.id == productId);
+        if (product && product.variacoes) {
+            product.variacoes.forEach(v => {
+                variationSelect.innerHTML += `<option value="${v.nome}">${v.nome}</option>`;
+            });
+        }
+    }
+
+    function addSaleItem() {
+        const productId = document.getElementById('sale-product-select').value;
+        const variation = document.getElementById('sale-variation-select').value;
+        const quantity = parseInt(document.getElementById('sale-quantity-input').value);
+
+        if (!productId || !variation || !quantity || quantity < 1) {
+            showToast('Por favor, preencha todos os campos.', 'error');
+            return;
+        }
+
+        const product = allApiProducts.find(p => p.id == productId);
+        const margin = resellerProductMargins[product.id] || 30;
+        const finalPrice = product.preco_original * (1 + margin / 100);
+
+        currentSaleItems.push({
+            productId: product.id,
+            name: product.nome,
+            variation: variation,
+            quantity: quantity,
+            price: finalPrice,
+            subtotal: finalPrice * quantity
+        });
+
+        updateSaleItemsTable();
+    }
+
+    function updateSaleItemsTable() {
+        const tbody = document.getElementById('sale-items-body');
+        const totalEl = document.getElementById('sale-total');
+        tbody.innerHTML = '';
+        let total = 0;
+
+        currentSaleItems.forEach((item, index) => {
+            const row = tbody.insertRow();
+            row.innerHTML = `
+                <td>${item.name} (${item.variation})</td>
+                <td>${item.quantity}</td>
+                <td>R$ ${item.subtotal.toFixed(2)}</td>
+                <td class="actions-cell"><button class="btn btn-danger" style="padding: 0.25rem 0.5rem;" onclick="removeSaleItem(${index})"><i data-feather="trash-2"></i></button></td>
+            `;
+            total += item.subtotal;
+        });
+
+        totalEl.textContent = `R$ ${total.toFixed(2)}`;
+        feather.replace();
+    }
+
+    function removeSaleItem(index) {
+        currentSaleItems.splice(index, 1);
+        updateSaleItemsTable();
+    }
+
+    function saveSale() {
+        if (currentSaleItems.length === 0) {
+            showToast('Adicione pelo menos um item à venda.', 'error');
+            return;
+        }
+        
+        const total = currentSaleItems.reduce((sum, item) => sum + item.subtotal, 0);
+        const newSale = {
+            id: Date.now(),
+            date: new Date().toISOString().split('T')[0],
+            items: currentSaleItems,
+            total: total
+        };
+
+        // Simulação: Adiciona a venda ao histórico da revendedora "Joana Modas"
+        const reseller = mockResellers.find(r => r.id === 2);
+        if (reseller) {
+            reseller.sales.push(newSale);
+            localStorage.setItem('erpResellers', JSON.stringify(mockResellers));
+        }
+        
+        renderSalesHistory();
+        closeModal('new-sale-modal');
+        showToast('Venda salva com sucesso!', 'success');
+    }
+
+    function renderSalesHistory() {
+        const tbody = document.getElementById('sales-history-body');
+        // Simulação: Pega as vendas da revendedora "Joana Modas"
+        const reseller = mockResellers.find(r => r.id === 2);
+        const sales = reseller ? reseller.sales : [];
+        
+        tbody.innerHTML = '';
+        if (sales.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="3" style="text-align:center;">Nenhuma venda lançada.</td></tr>';
+            return;
+        }
+
+        sales.sort((a, b) => new Date(b.date) - new Date(a.date)).forEach(sale => {
+            const row = tbody.insertRow();
+            row.insertCell().textContent = new Date(sale.date).toLocaleDateString('pt-BR');
+            row.insertCell().textContent = sale.items.reduce((sum, item) => sum + item.quantity, 0);
+            row.insertCell().textContent = `R$ ${sale.total.toFixed(2)}`;
+        });
+    }
+
+    // --- NOVAS FUNÇÕES PARA CARRINHOS ABANDONADOS ---
+    function renderAbandonedCartsTable() {
+        const tbody = document.getElementById('abandoned-carts-body');
+        tbody.innerHTML = '';
+        if (abandonedCarts.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;">Nenhum carrinho abandonado.</td></tr>';
+            return;
+        }
+
+        abandonedCarts.sort((a, b) => new Date(b.date) - new Date(a.date)).forEach(cart => {
+            const row = tbody.insertRow();
+            const totalValue = cart.items.reduce((sum, item) => sum + (item.preco_original * (1 + (resellerProductMargins[item.id] || 30) / 100) * item.quantity), 0);
+            row.insertCell().textContent = new Date(cart.date).toLocaleDateString('pt-BR');
+            row.insertCell().textContent = cart.customer.name;
+            row.insertCell().textContent = cart.customer.phone;
+            row.insertCell().textContent = cart.items.reduce((sum, item) => sum + item.quantity, 0);
+            row.insertCell().textContent = `R$ ${totalValue.toFixed(2)}`;
+            
+            const actionsCell = row.insertCell();
+            const recoverButton = document.createElement('button');
+            recoverButton.className = 'btn btn-success';
+            recoverButton.style.padding = '0.25rem 0.5rem';
+            recoverButton.innerHTML = `<i data-feather="message-square"></i> Recuperar`;
+            recoverButton.onclick = () => recoverCart(cart.customer, cart.items);
+            actionsCell.appendChild(recoverButton);
+        });
+        feather.replace();
+    }
+
+    function recoverCart(customer, items) {
+        let message = `Olá ${customer.name}, vi que você se interessou por alguns produtos em meu catálogo. Gostaria de ajuda para finalizar seu pedido?`;
+        const phone = (customer.phone || '').replace(/\D/g, '');
+        if (!phone) { showToast('Número de telefone inválido.', 'error'); return; }
         
         const whatsappUrl = `https://wa.me/55${phone}?text=${encodeURIComponent(message)}`;
         window.open(whatsappUrl, '_blank');
