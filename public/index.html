@@ -94,9 +94,9 @@
         .product-image { width: 40px; height: 40px; object-fit: cover; border-radius: 0.25rem; }
         
         .status-badge { padding: 0.25rem 0.75rem; border-radius: 999px; font-size: 0.75rem; font-weight: 600; text-transform: capitalize; }
-        .status-badge.ativo, .status-badge.aprovado { background-color: #dcfce7; color: #16a34a; }
+        .status-badge.ativo, .status-badge.aprovado, .status-badge.pago { background-color: #dcfce7; color: #16a34a; }
         .status-badge.sem_estoque, .status-badge.reprovado { background-color: #fee2e2; color: #dc2626; }
-        .status-badge.em_analise { background-color: #fef3c7; color: #d97706; }
+        .status-badge.em_analise, .status-badge.pendente { background-color: #fef3c7; color: #d97706; }
         
         .toggle-switch { position: relative; display: inline-block; width: 44px; height: 24px; }
         .toggle-switch input { opacity: 0; width: 0; height: 0; }
@@ -782,12 +782,12 @@
         { 
             id: 2, name: 'Joana Modas LTDA', doc: '12.345.678/0001-99', phone: '(21) 99999-8888', email: 'contato@joanamodas.com', status: 'aprovado',
             sales: [
-                { id: 1, date: '2025-02-15', total: 1200, items: [{productId: 3178781, quantity: 10, price: 40}, {productId: 3178782, quantity: 10, price: 35}] },
-                { id: 2, date: '2025-03-20', total: 1500, items: [{productId: 3178781, quantity: 15, price: 40}, {productId: 3178782, quantity: 10, price: 35}] },
-                { id: 3, date: '2025-04-10', total: 1300, items: [{productId: 3178781, quantity: 10, price: 40}, {productId: 3178782, quantity: 10, price: 35}] },
-                { id: 4, date: '2025-05-25', total: 1800, items: [{productId: 3178781, quantity: 20, price: 40}, {productId: 3178782, quantity: 10, price: 35}] },
-                { id: 5, date: '2025-06-18', total: 2100, items: [{productId: 3178781, quantity: 25, price: 40}, {productId: 3178782, quantity: 10, price: 35}] },
-                { id: 6, date: '2025-07-05', total: 1950, items: [{productId: 3178781, quantity: 20, price: 40}, {productId: 3178782, quantity: 15, price: 35}] },
+                { id: 1, date: '2025-02-15', total: 1200, items: [{productId: 3178781, quantity: 10, price: 40}, {productId: 3178782, quantity: 10, price: 35}], status: 'pago' },
+                { id: 2, date: '2025-03-20', total: 1500, items: [{productId: 3178781, quantity: 15, price: 40}, {productId: 3178782, quantity: 10, price: 35}], status: 'pago' },
+                { id: 3, date: '2025-04-10', total: 1300, items: [{productId: 3178781, quantity: 10, price: 40}, {productId: 3178782, quantity: 10, price: 35}], status: 'pago' },
+                { id: 4, date: '2025-05-25', total: 1800, items: [{productId: 3178781, quantity: 20, price: 40}, {productId: 3178782, quantity: 10, price: 35}], status: 'pago' },
+                { id: 5, date: '2025-06-18', total: 2100, items: [{productId: 3178781, quantity: 25, price: 40}, {productId: 3178782, quantity: 10, price: 35}], status: 'pago' },
+                { id: 6, date: '2025-07-05', total: 1950, items: [{productId: 3178781, quantity: 20, price: 40}, {productId: 3178782, quantity: 15, price: 35}], status: 'pago' },
             ],
             topProducts: [
                 { name: 'Rasteirinha Feminina Grace Rose', sold: 25 },
@@ -1195,17 +1195,25 @@
         const content = document.getElementById('reseller-dashboard-content');
         
         if (reseller.status === 'aprovado') {
-            const totalSales = reseller.sales.reduce((sum, s) => sum + s.total, 0);
+            const paidSales = reseller.sales.filter(s => s.status === 'pago');
+            const totalSales = paidSales.reduce((sum, s) => sum + s.total, 0);
             const totalItems = reseller.topProducts.reduce((sum, p) => sum + p.sold, 0);
             const ticketMedio = totalItems > 0 ? (totalSales / totalItems) : 0;
             
             let topProductsHTML = reseller.topProducts.map(p => `<li>${p.name} <strong>(${p.sold} vendidos)</strong></li>`).join('');
 
-            const maxSale = Math.max(...reseller.sales.map(s => s.total));
+            const salesByMonth = reseller.sales.reduce((acc, sale) => {
+                const month = new Date(sale.date).toLocaleString('default', { month: 'short' });
+                acc[month] = (acc[month] || 0) + sale.total;
+                return acc;
+            }, {});
+
+            const salesChartData = Object.keys(salesByMonth).map(month => ({ month, total: salesByMonth[month] }));
+            const maxSale = Math.max(...salesChartData.map(s => s.total));
 
             content.innerHTML = `
                 <div class="stats-grid">
-                    <div class="stat-card"><p class="stat-card-title">Vendas no Mês (Jul)</p><p class="stat-card-value">R$ ${reseller.sales.slice(-1)[0].total.toFixed(2)}</p></div>
+                    <div class="stat-card"><p class="stat-card-title">Vendas no Mês (Jul)</p><p class="stat-card-value">R$ ${salesByMonth['Jul']?.toFixed(2) || '0.00'}</p></div>
                     <div class="stat-card"><p class="stat-card-title">Ticket Médio</p><p class="stat-card-value">R$ ${ticketMedio.toFixed(2)}</p></div>
                     <div class="stat-card"><p class="stat-card-title">Total de Itens Vendidos</p><p class="stat-card-value">${totalItems}</p></div>
                 </div>
@@ -1217,7 +1225,7 @@
                     <h2>Evolução de Vendas (Últimos 6 meses)</h2>
                     <div class="chart-container">
                         <div class="bar-chart">
-                            ${reseller.sales.map(s => `<div class="bar" style="height: ${(s.total / maxSale) * 100}%" title="R$ ${s.total.toFixed(2)}"><span class="bar-label">${s.month}</span></div>`).join('')}
+                            ${salesChartData.map(s => `<div class="bar" style="height: ${(s.total / maxSale) * 100}%" title="R$ ${s.total.toFixed(2)}"><span class="bar-label">${s.month}</span></div>`).join('')}
                         </div>
                     </div>
                 </div>
@@ -1295,7 +1303,7 @@
         document.querySelectorAll('.banner-upload').forEach(input => {
             input.addEventListener('change', (e) => handleImageUpload(e, `banner-preview-${e.target.dataset.bannerId}`, `banner-${e.target.dataset.bannerId}`));
         });
-        document.getElementById('finalize-order-btn').addEventListener('click', finalizeOnWhatsApp);
+        document.getElementById('finalize-order-btn').addEventListener('click', createPendingOrderAndOpenWhatsApp);
         document.getElementById('add-sale-item-btn').addEventListener('click', addSaleItem);
         document.getElementById('save-sale-btn').addEventListener('click', saveSale);
         document.getElementById('sale-product-select').addEventListener('change', updateSaleVariationSelect);
@@ -1822,14 +1830,42 @@
         feather.replace();
     }
     
-    function finalizeOnWhatsApp() {
-        if (cart.length === 0) { showToast('Seu carrinho está vazio.', 'error'); return; }
+    function createPendingOrderAndOpenWhatsApp() {
+        if (cart.length === 0) {
+            showToast('Seu carrinho está vazio.', 'error');
+            return;
+        }
+        if (!currentCustomer) {
+             showToast('Informações do cliente não encontradas.', 'error');
+             return;
+        }
+
+        const total = cart.reduce((sum, item) => {
+            const margin = resellerProductMargins[item.id] || 30;
+            const finalPrice = item.preco_original * (1 + margin / 100);
+            return sum + (finalPrice * item.quantity);
+        }, 0);
+
+        const newSale = {
+            id: Date.now(),
+            date: new Date().toISOString().split('T')[0],
+            customer: currentCustomer,
+            items: [...cart],
+            total: total,
+            status: 'pendente'
+        };
+
+        const reseller = mockResellers.find(r => r.id === 2); // Simulação para revendedora 2
+        if (reseller) {
+            if(!reseller.sales) reseller.sales = [];
+            reseller.sales.push(newSale);
+            localStorage.setItem('erpResellers', JSON.stringify(mockResellers));
+        }
+
         let message = `Olá, ${resellerSettings.brandName || 'Revendedora'}! Gostaria de fazer o seguinte pedido:\n\n`;
-        let total = 0;
         cart.forEach(item => {
             const margin = resellerProductMargins[item.id] || 30;
             const finalPrice = item.preco_original * (1 + margin / 100);
-            total += finalPrice * item.quantity;
             message += `*${item.quantity}x* - ${item.nome} (${item.variation}) - R$ ${finalPrice.toFixed(2)} cada\n`;
         });
         message += `\n*Total do Pedido: R$ ${total.toFixed(2)}*`;
@@ -1839,6 +1875,11 @@
         
         const whatsappUrl = `https://wa.me/55${phone}?text=${encodeURIComponent(message)}`;
         window.open(whatsappUrl, '_blank');
+
+        cart = [];
+        updateCartCount();
+        closeModal('cart-modal');
+        showToast('Pedido enviado! Aguardando confirmação.', 'success');
     }
 
     // --- NOVAS FUNÇÕES PARA LANÇAMENTO DE VENDAS ---
@@ -1932,7 +1973,8 @@
             id: Date.now(),
             date: new Date().toISOString().split('T')[0],
             items: currentSaleItems,
-            total: total
+            total: total,
+            status: 'pago' // Vendas manuais são consideradas pagas
         };
 
         // Simulação: Adiciona a venda ao histórico da revendedora "Joana Modas"
@@ -1955,7 +1997,7 @@
         
         tbody.innerHTML = '';
         if (sales.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="3" style="text-align:center;">Nenhuma venda lançada.</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;">Nenhuma venda lançada.</td></tr>';
             return;
         }
 
@@ -1964,8 +2006,34 @@
             row.insertCell().textContent = new Date(sale.date).toLocaleDateString('pt-BR');
             row.insertCell().textContent = sale.items.reduce((sum, item) => sum + item.quantity, 0);
             row.insertCell().textContent = `R$ ${sale.total.toFixed(2)}`;
+            row.insertCell().innerHTML = `<span class="status-badge ${sale.status}">${sale.status}</span>`;
+            
+            const actionsCell = row.insertCell();
+            if (sale.status === 'pendente') {
+                const payButton = document.createElement('button');
+                payButton.className = 'btn btn-success';
+                payButton.style.padding = '0.25rem 0.5rem';
+                payButton.innerHTML = `<i data-feather="check"></i> Pago`;
+                payButton.onclick = () => markSaleAsPaid(sale.id);
+                actionsCell.appendChild(payButton);
+            }
         });
+        feather.replace();
     }
+    
+    function markSaleAsPaid(saleId) {
+        const reseller = mockResellers.find(r => r.id === 2); // Simulação
+        if(reseller && reseller.sales) {
+            const sale = reseller.sales.find(s => s.id === saleId);
+            if (sale) {
+                sale.status = 'pago';
+                localStorage.setItem('erpResellers', JSON.stringify(mockResellers));
+                renderSalesHistory();
+                showToast('Venda marcada como paga!', 'success');
+            }
+        }
+    }
+
 
     // --- NOVAS FUNÇÕES PARA CARRINHOS ABANDONADOS ---
     function renderAbandonedCartsTable() {
@@ -2010,7 +2078,8 @@
         const salesByProduct = {};
         mockResellers.forEach(reseller => {
             if (reseller.sales) {
-                reseller.sales.forEach(sale => {
+                const paidSales = reseller.sales.filter(s => s.status === 'pago');
+                paidSales.forEach(sale => {
                     sale.items.forEach(item => {
                         const product = allApiProducts.find(p => p.id === item.productId);
                         if (!product) return;
@@ -2037,7 +2106,7 @@
 
         productArray.forEach(p => {
             cumulativeRevenue += p.revenue;
-            const percentage = (cumulativeRevenue / totalRevenue) * 100;
+            const percentage = totalRevenue > 0 ? (cumulativeRevenue / totalRevenue) * 100 : 0;
             if (percentage <= 80) {
                 curveA.push(p);
             } else if (percentage <= 95) {
