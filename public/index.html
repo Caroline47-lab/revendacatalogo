@@ -954,11 +954,14 @@
     
     function togglePublished(productId) {
         const index = publishedProductIds.indexOf(productId);
-        if (index > -1) publishedProductIds.splice(index, 1);
-        else publishedProductIds.push(productId);
+        if (index > -1) {
+            publishedProductIds.splice(index, 1);
+        } else {
+            publishedProductIds.push(productId);
+        }
         localStorage.setItem('erpPublished', JSON.stringify(publishedProductIds));
         updateDashboard();
-        showToast('Catálogo de revenda atualizado!', 'success');
+        renderAllTables(); // CORREÇÃO: Re-renderiza as tabelas para garantir a atualização visual
     }
 
     // --- LÓGICA DO PAINEL DA REVENDEDORA ---
