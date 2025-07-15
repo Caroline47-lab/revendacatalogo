@@ -780,6 +780,16 @@
                 if (!response.ok) throw new Error(`Erro na API: ${response.statusText}`);
                 const data = await response.json();
                 const productsFromPage = data.data || [];
+                
+                // --- DIAGNÓSTICO TEMPORÁRIO ---
+                if (currentPage === 1 && productsFromPage.length > 0) {
+                    console.log("--- DADOS BRUTOS DA API (DIAGNÓSTICO) ---");
+                    console.log("Por favor, copie o conteúdo abaixo e cole no chat.");
+                    console.log(JSON.stringify(productsFromPage.slice(0, 5), null, 2)); // Mostra os 5 primeiros produtos
+                    console.log("-----------------------------------------");
+                }
+                // --- FIM DO DIAGNÓSTICO ---
+
                 if (productsFromPage.length === 0) break;
                 const processedProducts = productsFromPage.map(p => {
                     const variacoes = processVariations(p.estoque);
@@ -911,7 +921,6 @@
                 
                 const nameSpan = document.createElement('span');
                 nameSpan.className = 'variacao_nome';
-                // CORREÇÃO: Exibe o nome diretamente, que já foi processado
                 nameSpan.textContent = v.nome; 
                 nameCell.appendChild(nameSpan);
 
