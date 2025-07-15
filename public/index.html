@@ -488,6 +488,7 @@
                     <li class="nav-item"><a href="#" class="nav-link active" data-page="dashboard"><i data-feather="home"></i> Visão Geral</a></li>
                     <li class="nav-item"><a href="#" class="nav-link" data-page="products"><i data-feather="package"></i> Produtos</a></li>
                     <li class="nav-item"><a href="#" class="nav-link" data-page="categories"><i data-feather="grid"></i> Categorias</a></li>
+                    <li class="nav-item"><a href="#" class="nav-link" data-page="abc-curve"><i data-feather="trending-up"></i> Curva ABC</a></li>
                     <li class="nav-item"><a href="#" class="nav-link" data-page="catalog"><i data-feather="book-open"></i> Catálogo Revenda</a></li>
                     <li class="nav-item"><a href="#" class="nav-link" data-page="resellers"><i data-feather="users"></i> Gerenciar Revendedoras</a></li>
                     <li class="nav-item"><a href="#" class="nav-link" data-page="sync"><i data-feather="refresh-cw"></i> Sincronização</a></li>
@@ -531,6 +532,21 @@
                             <thead><tr><th>Nome da Categoria</th><th>Publicar no Catálogo</th></tr></thead>
                             <tbody id="categories-table-body"></tbody>
                         </table>
+                    </div>
+                </section>
+                <section id="abc-curve" class="page">
+                    <div class="page-header"><h1>Curva ABC de Produtos</h1></div>
+                    <div class="settings-section">
+                        <h2>Curva A <span style="font-size: 0.9rem; color: var(--text-light); font-weight: 500;">(Produtos mais importantes - Top 80% do Faturamento)</span></h2>
+                        <div id="curve-a-list"></div>
+                    </div>
+                    <div class="settings-section">
+                        <h2>Curva B <span style="font-size: 0.9rem; color: var(--text-light); font-weight: 500;">(Produtos intermediários - Próximos 15% do Faturamento)</span></h2>
+                        <div id="curve-b-list"></div>
+                    </div>
+                    <div class="settings-section">
+                        <h2>Curva C <span style="font-size: 0.9rem; color: var(--text-light); font-weight: 500;">(Produtos com menor giro - Últimos 5% do Faturamento)</span></h2>
+                        <div id="curve-c-list"></div>
                     </div>
                 </section>
                 <section id="catalog" class="page">
@@ -638,6 +654,7 @@
                 <section id="reseller-settings" class="page">
                     <div class="settings-section"><h2>Identidade Visual</h2><div class="form-grid"><div class="form-group"><label for="logo-upload">Logo da Marca</label><input type="file" id="logo-upload" accept="image/*"><img id="logo-preview" class="logo-preview" src="https://placehold.co/100x100/e2e8f0/94a3b8?text=Logo" alt="Prévia da logo"></div><div class="form-group"><label for="brand-name-input">Nome da Marca</label><input type="text" id="brand-name-input" placeholder="Ex: Maria Modas"></div><div class="form-group"><label for="primary-color-input">Cor Primária</label><input type="color" id="primary-color-input" value="#DB1472"></div><div class="form-group"><label for="secondary-color-input">Cor de Destaque</label><input type="color" id="secondary-color-input" value="#F8B81F"></div></div></div>
                     <div class="settings-section"><h2>Informações do Catálogo</h2><div class="form-grid"><div class="form-group"><label for="contact-phone-input">Contato (WhatsApp)</label><input type="tel" id="contact-phone-input" placeholder="(XX) 9XXXX-XXXX"></div><div class="form-group"><label for="instagram-input">Instagram</label><input type="text" id="instagram-input" placeholder="@seunome"></div></div><div class="form-group" style="margin-top: 1.5rem;"><label for="description-textarea">Descrição Curta</label><textarea id="description-textarea" placeholder="Fale um pouco sobre sua loja..."></textarea></div></div>
+                    <div class="settings-section"><h2>Link do Catálogo</h2><div class="form-grid" style="grid-template-columns: 2fr 1fr; align-items: flex-end;"><div class="form-group"><label for="catalog-url-name">Nome da Loja na URL</label><input type="text" id="catalog-url-name" placeholder="ex: joana-modas"></div><button class="btn btn-primary" id="generate-link-btn">Gerar e Copiar Link</button></div></div>
                     <div class="settings-section"><h2>Banners do Catálogo</h2><p style="color: var(--text-light); margin-bottom: 1rem;">Envie imagens para os banners que aparecerão no topo do seu catálogo.</p><div class="banner-option"><h3 style="font-weight: 600; margin-bottom: 0.5rem;">Banner Principal (Desktop e Mobile)</h3><div class="form-grid"><div class="form-group"><label>Imagem para Desktop (1900x400px)</label><input type="file" class="banner-upload" data-banner-id="desktop-main" accept="image/*"><div class="banner-preview mt-2"><img id="banner-preview-desktop-main" src="https://placehold.co/600x200/e2e8f0/94a3b8?text=Banner+Desktop" alt="Prévia Banner Desktop"></div></div><div class="form-group"><label>Imagem para Mobile (700x800px)</label><input type="file" class="banner-upload" data-banner-id="mobile-main" accept="image/*"><div class="banner-preview mt-2"><img id="banner-preview-mobile-main" src="https://placehold.co/300x200/e2e8f0/94a3b8?text=Banner+Mobile" alt="Prévia Banner Mobile"></div></div></div></div></div>
                     <div class="settings-section"><h2>Mensagens da Barra Superior</h2><div class="form-grid"><div class="form-group"><label for="top-bar-msg-1">Mensagem 1</label><input type="text" id="top-bar-msg-1"></div><div class="form-group"><label for="top-bar-msg-2">Mensagem 2</label><input type="text" id="top-bar-msg-2"></div><div class="form-group"><label for="top-bar-msg-3">Mensagem 3</label><input type="text" id="top-bar-msg-3"></div></div></div>
                     <div class="modal-footer" style="justify-content: flex-start;"><button id="save-settings-btn" class="btn btn-success"><i data-feather="save"></i> Salvar Configurações</button></div>
@@ -763,12 +780,12 @@
         { 
             id: 2, name: 'Joana Modas LTDA', doc: '12.345.678/0001-99', phone: '(21) 99999-8888', email: 'contato@joanamodas.com', status: 'aprovado',
             sales: [
-                { id: 1, date: '2025-02-15', total: 1200, items: [] },
-                { id: 2, date: '2025-03-20', total: 1500, items: [] },
-                { id: 3, date: '2025-04-10', total: 1300, items: [] },
-                { id: 4, date: '2025-05-25', total: 1800, items: [] },
-                { id: 5, date: '2025-06-18', total: 2100, items: [] },
-                { id: 6, date: '2025-07-05', total: 1950, items: [] },
+                { id: 1, date: '2025-02-15', total: 1200, items: [{productId: 3178781, quantity: 10, price: 40}, {productId: 3178782, quantity: 10, price: 35}] },
+                { id: 2, date: '2025-03-20', total: 1500, items: [{productId: 3178781, quantity: 15, price: 40}, {productId: 3178782, quantity: 10, price: 35}] },
+                { id: 3, date: '2025-04-10', total: 1300, items: [{productId: 3178781, quantity: 10, price: 40}, {productId: 3178782, quantity: 10, price: 35}] },
+                { id: 4, date: '2025-05-25', total: 1800, items: [{productId: 3178781, quantity: 20, price: 40}, {productId: 3178782, quantity: 10, price: 35}] },
+                { id: 5, date: '2025-06-18', total: 2100, items: [{productId: 3178781, quantity: 25, price: 40}, {productId: 3178782, quantity: 10, price: 35}] },
+                { id: 6, date: '2025-07-05', total: 1950, items: [{productId: 3178781, quantity: 20, price: 40}, {productId: 3178782, quantity: 15, price: 35}] },
             ],
             topProducts: [
                 { name: 'Rasteirinha Feminina Grace Rose', sold: 25 },
@@ -872,6 +889,7 @@
                 page.classList.add('active');
                 page.prepend(mainContent.querySelector('.page-header'));
             }
+            if(pageId === 'abc-curve') renderAbcCurve();
             feather.replace();
         });
     }
@@ -1280,6 +1298,7 @@
         document.getElementById('save-sale-btn').addEventListener('click', saveSale);
         document.getElementById('sale-product-select').addEventListener('change', updateSaleVariationSelect);
         document.getElementById('save-customer-info-btn').addEventListener('click', saveCustomerAndAddToCart);
+        document.getElementById('generate-link-btn').addEventListener('click', generateAndCopyCatalogLink);
     }
 
     function renderResellerProductsTable() {
@@ -1422,6 +1441,7 @@
         resellerSettings.topBarMsg1 = document.getElementById('top-bar-msg-1').value;
         resellerSettings.topBarMsg2 = document.getElementById('top-bar-msg-2').value;
         resellerSettings.topBarMsg3 = document.getElementById('top-bar-msg-3').value;
+        resellerSettings.catalogUrlName = document.getElementById('catalog-url-name').value;
         localStorage.setItem('resellerSettings', JSON.stringify(resellerSettings));
         showToast('Configurações salvas com sucesso!', 'success');
     }
@@ -1437,6 +1457,7 @@
         document.getElementById('top-bar-msg-1').value = settings.topBarMsg1 || '';
         document.getElementById('top-bar-msg-2').value = settings.topBarMsg2 || '';
         document.getElementById('top-bar-msg-3').value = settings.topBarMsg3 || '';
+        document.getElementById('catalog-url-name').value = settings.catalogUrlName || '';
         if(settings.logoUrl) document.getElementById('logo-preview').src = settings.logoUrl;
         if(settings['banner-desktop-main']) document.getElementById('banner-preview-desktop-main').src = settings['banner-desktop-main'];
         if(settings['banner-mobile-main']) document.getElementById('banner-preview-mobile-main').src = settings['banner-mobile-main'];
@@ -1951,6 +1972,93 @@
         
         const whatsappUrl = `https://wa.me/55${phone}?text=${encodeURIComponent(message)}`;
         window.open(whatsappUrl, '_blank');
+    }
+
+    // --- NOVA FUNÇÃO PARA CURVA ABC ---
+    function renderAbcCurve() {
+        const salesByProduct = {};
+        mockResellers.forEach(reseller => {
+            if (reseller.sales) {
+                reseller.sales.forEach(sale => {
+                    sale.items.forEach(item => {
+                        const product = allApiProducts.find(p => p.id === item.productId);
+                        if (!product) return;
+
+                        if (!salesByProduct[item.productId]) {
+                            salesByProduct[item.productId] = { id: item.productId, name: product.nome, quantity: 0, revenue: 0 };
+                        }
+                        salesByProduct[item.productId].quantity += item.quantity;
+                        salesByProduct[item.productId].revenue += item.price * item.quantity;
+                    });
+                });
+            }
+        });
+
+        const productArray = Object.values(salesByProduct);
+        productArray.sort((a, b) => b.revenue - a.revenue);
+
+        const totalRevenue = productArray.reduce((sum, p) => sum + p.revenue, 0);
+        
+        const curveA = [];
+        const curveB = [];
+        const curveC = [];
+        let cumulativeRevenue = 0;
+
+        productArray.forEach(p => {
+            cumulativeRevenue += p.revenue;
+            const percentage = (cumulativeRevenue / totalRevenue) * 100;
+            if (percentage <= 80) {
+                curveA.push(p);
+            } else if (percentage <= 95) {
+                curveB.push(p);
+            } else {
+                curveC.push(p);
+            }
+        });
+
+        const renderList = (products, containerId) => {
+            const container = document.getElementById(containerId);
+            if (products.length === 0) {
+                container.innerHTML = '<p class="text-light">Nenhum produto nesta categoria com base nas vendas atuais.</p>';
+                return;
+            }
+            let html = '<ul class="info-list">';
+            products.forEach(p => {
+                const percentageOfTotal = totalRevenue > 0 ? ((p.revenue / totalRevenue) * 100).toFixed(2) : 0;
+                html += `<li><span>${p.name}</span><strong>${p.quantity} vendidos (R$ ${p.revenue.toFixed(2)}) - ${percentageOfTotal}%</strong></li>`;
+            });
+            html += '</ul>';
+            container.innerHTML = html;
+        };
+
+        renderList(curveA, 'curve-a-list');
+        renderList(curveB, 'curve-b-list');
+        renderList(curveC, 'curve-c-list');
+    }
+
+    // --- NOVA FUNÇÃO PARA GERAR LINK DO CATÁLOGO ---
+    function generateAndCopyCatalogLink() {
+        const urlName = document.getElementById('catalog-url-name').value.trim().toLowerCase().replace(/[^a-z0-9-]/g, '');
+        if (!urlName) {
+            showToast('Por favor, insira um nome para a URL da sua loja.', 'error');
+            return;
+        }
+        
+        const baseUrl = "https://meucatalogo.app"; // URL base do seu sistema
+        const finalUrl = `${baseUrl}/?loja=${urlName}`;
+
+        // Lógica para copiar para a área de transferência
+        const textArea = document.createElement("textarea");
+        textArea.value = finalUrl;
+        document.body.appendChild(textArea);
+        textArea.select();
+        try {
+            document.execCommand('copy');
+            showToast('Link copiado para a área de transferência!', 'success');
+        } catch (err) {
+            showToast('Não foi possível copiar o link.', 'error');
+        }
+        document.body.removeChild(textArea);
     }
 
     </script>
