@@ -327,6 +327,8 @@
         .quantity-stepper button { background: transparent; border: none; cursor: pointer; padding: 0.5rem; font-size: 1.2rem; line-height: 1; color: var(--text-color); }
         .quantity-stepper input { width: 40px; text-align: center; border: none; background: transparent; font-size: 1rem; font-weight: 600; -moz-appearance: textfield; }
         .quantity-stepper input::-webkit-outer-spin-button, .quantity-stepper input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+        .size-option.disabled { opacity: 0.5; pointer-events: none; }
+        .size-option.disabled .size-label { text-decoration: line-through; }
 
         .buy-button { width: 100%; padding: 1rem; font-size: 1.1rem; background-color: var(--reseller-primary-color); border-radius: 0.5rem; margin-bottom: 1.5rem; }
 
@@ -1611,13 +1613,14 @@
 
         const variationsHTML = product.variacoes.map(v => {
             const size = String(v.nome || '').replace('Tamanho: ', '').trim();
+            const isOutOfStock = v.quantidade <= 0;
             return `
-                <div class="size-option">
+                <div class="size-option ${isOutOfStock ? 'disabled' : ''}">
                     <div class="size-label">${size}</div>
-                    <div class="quantity-stepper" data-variation-name="${v.nome}">
-                        <button class="quantity-btn" data-action="decrease">-</button>
-                        <input type="number" class="quantity-input" value="0" min="0" readonly>
-                        <button class="quantity-btn" data-action="increase">+</button>
+                    <div class="quantity-stepper" data-variation-name="${v.nome}" data-max-stock="${v.quantidade}">
+                        <button class="quantity-btn" data-action="decrease" ${isOutOfStock ? 'disabled' : ''}>-</button>
+                        <input type="number" class="quantity-input" value="0" min="0" max="${v.quantidade}" ${isOutOfStock ? 'disabled' : ''} readonly>
+                        <button class="quantity-btn" data-action="increase" ${isOutOfStock ? 'disabled' : ''}>+</button>
                     </div>
                 </div>
             `;
@@ -1668,10 +1671,19 @@
             if (e.target.classList.contains('quantity-btn')) {
                 const stepper = e.target.closest('.quantity-stepper');
                 const input = stepper.querySelector('.quantity-input');
+                const maxStock = parseInt(stepper.dataset.maxStock);
                 let currentValue = parseInt(input.value);
                 const action = e.target.dataset.action;
-                if (action === 'increase') input.value = currentValue + 1;
-                else if (action === 'decrease' && currentValue > 0) input.value = currentValue - 1;
+
+                if (action === 'increase') {
+                    if (currentValue < maxStock) {
+                        input.value = currentValue + 1;
+                    } else {
+                        showToast(`Apenas ${maxStock} unidades em estoque.`, 'warning');
+                    }
+                } else if (action === 'decrease' && currentValue > 0) {
+                    input.value = currentValue - 1;
+                }
             }
         });
 
@@ -1679,13 +1691,21 @@
             const productId = e.target.dataset.productId;
             const sizeOptions = detailWrapper.querySelectorAll('.quantity-stepper');
             let itemsToAdd = [];
+            let hasError = false;
             sizeOptions.forEach(option => {
                 const quantity = parseInt(option.querySelector('.quantity-input').value);
                 if (quantity > 0) {
                     const variationName = option.dataset.variationName;
+                    const maxStock = parseInt(option.dataset.maxStock);
+                    if (quantity > maxStock) {
+                        showToast(`Quantidade para ${variationName} excede o estoque (${maxStock}).`, 'error');
+                        hasError = true;
+                    }
                     itemsToAdd.push({ productId, variationName, quantity });
                 }
             });
+
+            if (hasError) return;
 
             if (itemsToAdd.length > 0) {
                 handleAddToCart(itemsToAdd);
@@ -1730,9 +1750,20 @@
     function addToCart(productId, variation, quantity) {
         const product = allApiProducts.find(p => p.id == productId);
         if (!product) return;
+
+        const variationData = product.variacoes.find(v => v.nome === variation);
+        if (!variationData || quantity > variationData.quantidade) {
+            showToast(`Estoque insuficiente para ${product.nome} (${variation}).`, 'error');
+            return;
+        }
+
         const cartItemId = `${productId}-${variation}`;
         const existingItem = cart.find(item => item.cartId === cartItemId);
         if (existingItem) {
+            if (existingItem.quantity + quantity > variationData.quantidade) {
+                showToast(`Quantidade máxima para ${product.nome} (${variation}) atingida.`, 'error');
+                return;
+            }
             existingItem.quantity += quantity;
         } else {
             cart.push({ ...product, quantity: quantity, variation: variation, cartId: cartItemId });
