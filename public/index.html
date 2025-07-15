@@ -715,7 +715,7 @@
         const extractVariationName = (item) => {
             if (typeof item === 'string') return item;
             if (typeof item === 'object' && item !== null) {
-                return item.nome || item.tamanho || item.variacao || 'N/A'; // Mantém fallbacks por segurança, mas prioriza 'nome'.
+                return item.nome || 'N/A';
             }
             return String(item);
         };
