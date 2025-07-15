@@ -707,56 +707,48 @@
         return url.startsWith('http') ? `/facilzap-images?url=${encodeURIComponent(url)}` : `/facilzap-images?url=${encodeURIComponent('https://' + url)}`;
     }
     
-    // FUNÇÃO CORRIGIDA
-    function processVariations(estoqueData) {
-        if (!estoqueData) return [];
-        
-        // CORREÇÃO 1: A função interna agora extrai a propriedade 'nome' diretamente.
-        const extractVariationName = (item) => {
-            if (typeof item === 'string') return item;
-            if (typeof item === 'object' && item !== null) {
-                return item.nome || 'N/A';
-            }
-            return String(item);
-        };
+    // FUNÇÃO CORRIGIDA E MAIS ROBUSTA
+    function processVariations(stockData) {
+        if (!stockData) return [];
 
-        if (typeof estoqueData === 'number') {
-            return [{ nome: 'Único', quantidade: estoqueData }];
-        }
-        
-        if (typeof estoqueData === 'string') {
+        // Tenta analisar se for uma string JSON
+        let data = stockData;
+        if (typeof data === 'string') {
             try {
-                const parsed = JSON.parse(estoqueData);
-                 if (Array.isArray(parsed)) {
-                    return parsed.map(item => ({ 
-                        nome: extractVariationName(item), 
-                        quantidade: parseInt(item.estoque || item.quantidade || 0) 
-                    }));
-                 } else if (typeof parsed === 'object' && parsed !== null) {
-                    return [{ 
-                        nome: extractVariationName(parsed), 
-                        quantidade: parseInt(parsed.estoque || parsed.quantidade || 0) 
-                    }];
-                 }
+                data = JSON.parse(data);
             } catch (e) {
-                return [{ nome: estoqueData, quantidade: 0 }];
+                // Se não for um JSON válido, pode ser um nome simples ou lixo.
+                // Retornar um array vazio é mais seguro.
+                return [];
             }
         }
 
-        if (Array.isArray(estoqueData)) {
-            return estoqueData.map(item => ({ 
-                nome: extractVariationName(item), 
-                quantidade: parseInt(item.estoque || item.quantidade || 0) 
+        // Caso 1: É um array de objetos (formato ideal com "nome")
+        if (Array.isArray(data)) {
+            return data.map(item => ({
+                nome: item.nome || 'N/A', // Proteção caso o objeto não tenha a propriedade 'nome'
+                quantidade: parseInt(item.estoque || item.quantidade || 0)
             }));
         }
 
-        if (typeof estoqueData === 'object' && estoqueData !== null) {
-             return [{ 
-                nome: extractVariationName(estoqueData), 
-                quantidade: parseInt(estoqueData.estoque || estoqueData.quantidade || 0) 
-            }];
+        // Caso 2: É um objeto com chaves como nome da variação (ex: { "34": 10, "35": 8 })
+        if (typeof data === 'object' && data !== null) {
+            return Object.entries(data).map(([name, qty]) => {
+                // Adiciona "Tamanho: " se a chave for um número, para padronizar
+                const variationName = /^\d+$/.test(name) ? `Tamanho: ${name}` : name;
+                return {
+                    nome: variationName,
+                    quantidade: parseInt(qty) || 0
+                };
+            });
         }
         
+        // Caso 3: É apenas um número (estoque único)
+        if (typeof data === 'number') {
+            return [{ nome: 'Único', quantidade: data }];
+        }
+
+        // Se nenhum dos casos acima corresponder, retorna um array vazio.
         return [];
     }
 
@@ -923,10 +915,9 @@
                 const row = tbody.insertRow();
                 const nameCell = row.insertCell();
                 
-                // CORREÇÃO 2: Cria o elemento span com a classe e o conteúdo corretos.
                 const nameSpan = document.createElement('span');
                 nameSpan.className = 'variacao_nome';
-                nameSpan.textContent = v.nome; // O nome já foi processado corretamente.
+                nameSpan.textContent = v.nome; 
                 nameCell.appendChild(nameSpan);
 
                 const stockCell = row.insertCell();
