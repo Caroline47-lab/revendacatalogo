@@ -717,8 +717,6 @@
             try {
                 data = JSON.parse(data);
             } catch (e) {
-                // Se não for um JSON válido, pode ser um nome simples ou lixo.
-                // Retornar um array vazio é mais seguro.
                 return [];
             }
         }
@@ -726,21 +724,18 @@
         // Caso 1: É um array de objetos (formato ideal com "nome")
         if (Array.isArray(data)) {
             return data.map(item => ({
-                nome: item.nome || 'N/A', // Proteção caso o objeto não tenha a propriedade 'nome'
+                // CORREÇÃO: Garante que o nome seja extraído de várias propriedades possíveis
+                nome: item.nome || item.tamanho || item.variacao || 'N/A',
                 quantidade: parseInt(item.estoque || item.quantidade || 0)
             }));
         }
 
-        // Caso 2: É um objeto com chaves como nome da variação (ex: { "34": 10, "35": 8 })
+        // Caso 2: É um objeto com chaves como nome da variação
         if (typeof data === 'object' && data !== null) {
-            return Object.entries(data).map(([name, qty]) => {
-                // ALTERAÇÃO: Não adiciona mais o prefixo "Tamanho: ".
-                // Usa diretamente a chave (que agora é "34", "35", etc.) como o nome.
-                return {
-                    nome: name,
-                    quantidade: parseInt(qty) || 0
-                };
-            });
+            return Object.entries(data).map(([name, qty]) => ({
+                nome: name,
+                quantidade: parseInt(qty) || 0
+            }));
         }
         
         // Caso 3: É apenas um número (estoque único)
@@ -748,7 +743,6 @@
             return [{ nome: 'Único', quantidade: data }];
         }
 
-        // Se nenhum dos casos acima corresponder, retorna um array vazio.
         return [];
     }
 
@@ -917,6 +911,7 @@
                 
                 const nameSpan = document.createElement('span');
                 nameSpan.className = 'variacao_nome';
+                // CORREÇÃO: Exibe o nome diretamente, que já foi processado
                 nameSpan.textContent = v.nome; 
                 nameCell.appendChild(nameSpan);
 
