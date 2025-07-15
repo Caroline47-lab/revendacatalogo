@@ -409,6 +409,29 @@
                 padding: 0 40px 0 1rem;
             }
         }
+        
+        /* NOVO CSS PARA VARIAÇÕES */
+        .variation-container {
+            padding-top: 1rem;
+            margin-top: 1rem;
+            border-top: 1px solid var(--border-color);
+        }
+        .variation-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.5rem 0;
+        }
+        .variation-name {
+            font-weight: 500;
+        }
+        .variation-stock.in-stock {
+            color: var(--success-color);
+        }
+        .variation-stock.out-of-stock {
+            color: var(--danger-color);
+        }
+
     </style>
 </head>
 <body>
@@ -568,7 +591,20 @@
     
     <!-- MODAIS -->
     <div id="product-details-modal" class="modal-overlay">
-        <div class="modal-content"><div class="modal-header"><h3 id="modal-product-name"></h3><button class="modal-close-btn" onclick="closeModal('product-details-modal')"><i data-feather="x"></i></button></div><div class="modal-body-grid"><div class="modal-image-container"><img id="modal-main-image" src="" alt="Imagem do Produto"></div><div class="modal-details-container"><table class="product-table"><thead><tr><th>Variação</th><th>Estoque</th></tr></thead><tbody id="modal-variations-tbody"></tbody></table></div></div></div>
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="modal-product-name"></h3>
+                <button class="modal-close-btn" onclick="closeModal('product-details-modal')"><i data-feather="x"></i></button>
+            </div>
+            <div class="modal-body-grid">
+                <div class="modal-image-container">
+                    <img id="modal-main-image" src="" alt="Imagem do Produto">
+                </div>
+                <div class="modal-details-container">
+                    <!-- O conteúdo das variações será inserido aqui pelo JS -->
+                </div>
+            </div>
+        </div>
     </div>
     <div id="reseller-review-modal" class="modal-overlay">
         <div class="modal-content"><div class="modal-header"><h3 id="modal-reseller-name">Analisar Cadastro</h3><button class="modal-close-btn" onclick="closeModal('reseller-review-modal')"><i data-feather="x"></i></button></div><div class="modal-body"><ul class="info-list"><li><strong>Nome:</strong> <span id="review-reseller-name"></span></li><li><strong>Documento (CPF/CNPJ):</strong> <span id="review-reseller-doc"></span></li><li><strong>Telefone:</strong> <span id="review-reseller-phone"></span></li><li><strong>E-mail:</strong> <span id="review-reseller-email"></span></li></ul></div><div class="modal-footer"><button id="reprove-btn" class="btn btn-danger">Reprovar</button><button id="approve-btn" class="btn btn-success">Aprovar</button></div></div>
@@ -704,27 +740,55 @@
 
     function proxyImageUrl(url) {
         if (!url || typeof url !== 'string' || url.trim() === '') return 'https://placehold.co/300x300/e2e8f0/94a3b8?text=Sem+Imagem';
+        // Em um ambiente real, este endpoint faria a requisição no backend para evitar problemas de CORS e validar a URL.
+        // A validação de URL (app.use('/facilzap-images', ...)) seria feita nesse endpoint do backend.
         return url.startsWith('http') ? `/facilzap-images?url=${encodeURIComponent(url)}` : `/facilzap-images?url=${encodeURIComponent('https://' + url)}`;
     }
     
-    function processVariations(estoqueData) {
-        if (!estoqueData) return [];
-        const extractVariationName = (item) => {
-            if (typeof item === 'string') return item;
-            if (typeof item === 'object' && item !== null) return item.tamanho || item.variacao || item.nome || 'N/A';
-            return String(item);
-        };
-        if (typeof estoqueData === 'number') return [{ nome: 'Único', quantidade: estoqueData }];
-        if (typeof estoqueData === 'string') {
-            try {
-                const parsed = JSON.parse(estoqueData);
-                return Array.isArray(parsed) ? parsed.map(item => ({ nome: extractVariationName(item), quantidade: parseInt(item.estoque || item.quantidade || 0) })) : [{ nome: extractVariationName(parsed), quantidade: parseInt(parsed.estoque || parsed.quantidade || 0) }];
-            } catch (e) { return [{ nome: estoqueData, quantidade: 0 }]; }
+    /**
+     * NOVA FUNÇÃO: Interpreta de forma robusta os dados de variações da API.
+     * @param {*} stockData - Os dados de estoque/variações da API.
+     * @returns {Array<{nome: string, quantidade: number}>} - Um array de objetos de variação.
+     */
+    function parseVariations(stockData) {
+        // Caso 1: Dados já estruturados como um objeto (ex: { "P": 10, "M": 5 })
+        if (stockData && typeof stockData === 'object' && !Array.isArray(stockData)) {
+            return Object.entries(stockData).map(([name, qty]) => ({
+            nome: name,
+            quantidade: parseInt(qty, 10) || 0
+            }));
         }
-        if (Array.isArray(estoqueData)) return estoqueData.map(item => ({ nome: extractVariationName(item), quantidade: parseInt(item.estoque || item.quantidade || 0) }));
-        if (typeof estoqueData === 'object' && estoqueData !== null) return [{ nome: extractVariationName(estoqueData), quantidade: parseInt(estoqueData.estoque || estoqueData.quantidade || 0) }];
-        return [];
+        
+        // Caso 2: String que pode ser um JSON
+        if (typeof stockData === 'string') {
+            try {
+                const parsed = JSON.parse(stockData);
+                // Se o JSON for um array, retorna diretamente (ex: [{ "tamanho": "P", "estoque": 10 }])
+                if (Array.isArray(parsed)) {
+                    return parsed.map(item => ({
+                        nome: item.tamanho || item.variacao || item.nome || 'N/A',
+                        quantidade: parseInt(item.estoque || item.quantidade, 10) || 0
+                    }));
+                }
+                // Se o JSON for um objeto, processa como no Caso 1
+                if (typeof parsed === 'object' && parsed !== null) {
+                    return Object.entries(parsed).map(([name, qty]) => ({
+                        nome: name,
+                        quantidade: parseInt(qty, 10) || 0
+                    }));
+                }
+            } catch (e) {
+                // Não é um JSON válido, tratar como string simples no próximo passo.
+            }
+        }
+        
+        // Caso 3: Valor único (número ou string não-JSON)
+        return [{
+            nome: 'Único',
+            quantidade: parseInt(stockData, 10) || 0
+        }];
     }
+
 
     function loadLocalData() {
         const savedProducts = localStorage.getItem('erpProducts');
@@ -761,7 +825,7 @@
                 const productsFromPage = data.data || [];
                 if (productsFromPage.length === 0) break;
                 const processedProducts = productsFromPage.map(p => {
-                    const variacoes = processVariations(p.estoque);
+                    const variacoes = parseVariations(p.estoque); // USA A NOVA FUNÇÃO
                     const estoqueTotal = variacoes.reduce((total, v) => total + v.quantidade, 0);
                     const imagens = typeof p.imagem === 'string' ? p.imagem.split(',').map(url => url.trim()) : [];
                     return { id: p.id, nome: p.nome || 'Nome não informado', sku: p.sku || 'N/A', preco_original: parseFloat(p.preco || 0), imagem: imagens[0] || null, imagens_adicionais: imagens, estoque_total: estoqueTotal, variacoes: variacoes, status: estoqueTotal > 0 ? 'ativo' : 'sem_estoque' };
@@ -881,23 +945,25 @@
         if (!product) return;
         document.getElementById('modal-product-name').textContent = product.nome;
         document.getElementById('modal-main-image').src = proxyImageUrl(product.imagem);
-        const tbody = document.getElementById('modal-variations-tbody');
-        tbody.innerHTML = '';
+        const detailsContainer = document.querySelector('#product-details-modal .modal-details-container');
+        
+        // USA A NOVA ESTRUTURA HTML PARA VARIAÇÕES
+        let variationsHTML = '<div class="variation-container">';
         if (product.variacoes && product.variacoes.length > 0) {
-            product.variacoes.forEach(v => {
-                const row = tbody.insertRow();
-                const nameCell = row.insertCell();
-                const nameSpan = document.createElement('span');
-                nameSpan.className = 'variacao_nome';
-                nameSpan.textContent = typeof v.nome === 'string' ? v.nome : (v.nome?.toString() || 'N/A');
-                nameCell.appendChild(nameSpan);
-                const stockCell = row.insertCell();
-                const badge = document.createElement('span');
-                badge.className = `stock-badge ${v.quantidade > 0 ? 'in-stock' : 'out-of-stock'}`;
-                badge.textContent = v.quantidade > 0 ? `Disponível (${v.quantidade})` : 'Esgotado';
-                stockCell.appendChild(badge);
-            });
-        } else { tbody.innerHTML = '<tr><td colspan="2" style="text-align:center;">Nenhuma variação encontrada.</td></tr>'; }
+            variationsHTML += product.variacoes.map(v => `
+                <div class="variation-item">
+                    <span class="variation-name">${v.nome}</span>
+                    <span class="variation-stock ${v.quantidade > 0 ? 'in-stock' : 'out-of-stock'}">
+                        ${v.quantidade > 0 ? `Disponível (${v.quantidade})` : 'Esgotado'}
+                    </span>
+                </div>
+            `).join('');
+        } else {
+            variationsHTML += '<p>Nenhuma variação encontrada.</p>';
+        }
+        variationsHTML += '</div>';
+        detailsContainer.innerHTML = variationsHTML;
+
         document.getElementById('product-details-modal').classList.add('active');
         feather.replace();
     }
@@ -1401,8 +1467,56 @@
         feather.replace();
     }
     
+    /**
+     * NOVA FUNÇÃO: Simula o log de atualização de estoque.
+     * @param {string} productId - O ID do produto.
+     * @param {string} variationName - O nome da variação.
+     * @param {number} oldStock - A quantidade em estoque antes da atualização.
+     * @param {number} newStock - A quantidade em estoque após a atualização.
+     */
+    function logStockUpdate(productId, variationName, oldStock, newStock) {
+        console.log(`[STOCK] Produto ${productId} (Variação: ${variationName}) atualizado:`, {
+            old: oldStock,
+            new: newStock,
+            timestamp: new Date().toISOString()
+        });
+        // Aqui, no futuro, poderia ser enviado para um serviço de monitoramento.
+        // Ex: fetch('https://monitoring.service/log', { ... });
+    }
+
     function finalizeOnWhatsApp() {
         if (cart.length === 0) { showToast('Seu carrinho está vazio.', 'error'); return; }
+        
+        // SIMULAÇÃO DA ATUALIZAÇÃO DE ESTOQUE
+        cart.forEach(item => {
+            const productInDb = allApiProducts.find(p => p.id === item.id);
+            if (!productInDb) return;
+
+            const variationInDb = productInDb.variacoes.find(v => v.nome === item.variation);
+            if (!variationInDb) return;
+
+            const oldStock = variationInDb.quantidade;
+            const newStock = oldStock - item.quantity;
+            
+            logStockUpdate(item.id, item.variation, oldStock, newStock); // Log da atualização
+            
+            variationInDb.quantidade = newStock < 0 ? 0 : newStock; // Atualiza a variação
+        });
+
+        // Recalcula o estoque total e o status de cada produto afetado
+        const affectedProductIds = [...new Set(cart.map(item => item.id))];
+        affectedProductIds.forEach(id => {
+            const product = allApiProducts.find(p => p.id === id);
+            if (product) {
+                product.estoque_total = product.variacoes.reduce((sum, v) => sum + v.quantidade, 0);
+                product.status = product.estoque_total > 0 ? 'ativo' : 'sem_estoque';
+            }
+        });
+        
+        // Salva os dados atualizados no localStorage
+        localStorage.setItem('erpProducts', JSON.stringify(allApiProducts));
+
+        // Monta a mensagem para o WhatsApp
         let message = `Olá, ${resellerSettings.brandName || 'Revendedora'}! Gostaria de fazer o seguinte pedido:\n\n`;
         let total = 0;
         cart.forEach(item => {
@@ -1416,8 +1530,18 @@
         const phone = (resellerSettings.contactPhone || '').replace(/\D/g, '');
         if (!phone) { showToast('O número de contato da revendedora não está configurado.', 'error'); return; }
         
+        // Limpa o carrinho após o pedido
+        cart = [];
+        updateCartCount();
+        closeModal('cart-modal');
+        showToast('Estoque atualizado e pedido enviado!', 'success');
+        
+        // Abre o WhatsApp
         const whatsappUrl = `https://wa.me/55${phone}?text=${encodeURIComponent(message)}`;
         window.open(whatsappUrl, '_blank');
+
+        // Re-renderiza as tabelas para refletir o novo estoque
+        renderAllTables();
     }
 
     </script>
