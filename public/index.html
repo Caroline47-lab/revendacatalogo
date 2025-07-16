@@ -207,7 +207,6 @@
             gap: 1rem;
         }
         
-        /* --- INÍCIO: TAREFA 3.1 - SIMPLIFICAÇÃO DE CSS --- */
         .form-control {
             width: 100%; 
             padding: 0.75rem; 
@@ -224,7 +223,6 @@
         .search-input {
             max-width: 400px;
         }
-        /* --- FIM: TAREFA 3.1 --- */
         
         .variacao_nome { font-weight: 600; color: var(--primary-color); background-color: #fce7f3; padding: 0.2rem 0.6rem; border-radius: 0.375rem; display: inline-block; }
         .placeholder-card { background-color: var(--card-bg); padding: 4rem 2rem; border-radius: var(--border-radius); box-shadow: var(--shadow); text-align: center; color: var(--text-light); }
@@ -335,6 +333,27 @@
         .bar-chart { display: flex; justify-content: space-around; align-items: flex-end; height: 150px; gap: 1rem; }
         .bar { flex-grow: 1; background-color: var(--primary-color); border-radius: 0.25rem 0.25rem 0 0; position: relative; text-align: center; }
         .bar-label { position: absolute; bottom: -20px; width: 100%; font-size: 0.75rem; }
+
+        /* --- INÍCIO: NAVEGAÇÃO MOBILE - BOTÃO VOLTAR CATÁLOGO --- */
+        #back-to-panel-btn {
+            position: fixed;
+            top: 100px;
+            left: 20px;
+            z-index: 100;
+            background-color: rgba(0, 0, 0, 0.5);
+            color: white;
+            border-radius: 50%;
+            width: 44px;
+            height: 44px;
+            padding: 0;
+            display: none; /* Escondido por padrão, mostrado via JS */
+            align-items: center;
+            justify-content: center;
+        }
+        #back-to-panel-btn:hover {
+            background-color: rgba(0, 0, 0, 0.7);
+        }
+        /* --- FIM: NAVEGAÇÃO MOBILE --- */
 
         @media (max-width: 768px) {
             .sidebar { position: absolute; top: 0; left: 0; height: 100%; transform: translateX(-100%); }
@@ -676,9 +695,7 @@
     <div id="toast"></div>
 
     <script>
-    /* --- INÍCIO: TAREFA 3.2 - ORGANIZAÇÃO DO JAVASCRIPT --- */
     const App = {
-        // Módulo de Configuração e Estado Global
         State: {
             mockResellers: [ 
                 { 
@@ -690,10 +707,6 @@
                     sales: [
                         { id: 1, date: '2025-02-15', total: 1200, items: [{productId: 3178781, quantity: 10, price: 40}, {productId: 3178782, quantity: 10, price: 35}], status: 'pago' },
                         { id: 2, date: '2025-03-20', total: 1500, items: [{productId: 3178781, quantity: 15, price: 40}, {productId: 3178782, quantity: 10, price: 35}], status: 'pago' },
-                        { id: 3, date: '2025-04-10', total: 1300, items: [{productId: 3178781, quantity: 10, price: 40}, {productId: 3178782, quantity: 10, price: 35}], status: 'pago' },
-                        { id: 4, date: '2025-05-25', total: 1800, items: [{productId: 3178781, quantity: 20, price: 40}, {productId: 3178782, quantity: 10, price: 35}], status: 'pago' },
-                        { id: 5, date: '2025-06-18', total: 2100, items: [{productId: 3178781, quantity: 25, price: 40}, {productId: 3178782, quantity: 10, price: 35}], status: 'pago' },
-                        { id: 6, date: '2025-07-05', total: 1950, items: [{productId: 3178781, quantity: 20, price: 40}, {productId: 3178782, quantity: 15, price: 35}], status: 'pago' },
                     ],
                     topProducts: [
                         { name: 'Rasteirinha Feminina Grace Rose', sold: 25 },
@@ -716,9 +729,16 @@
             currentCustomer: null,
             pendingCartAction: null,
             availableTags: ['Destaque', 'Lançamento', 'Promoção'],
+            // --- INÍCIO: OTIMIZAÇÃO DE PERFORMANCE ---
+            pagesRendered: { // Rastreia quais páginas já foram renderizadas
+                dashboard: false, products: false, categories: false, abcCurve: false,
+                catalog: false, resellers: false, sync: false,
+                resellerProducts: false, resellerPromotions: false, resellerSales: false,
+                abandonedCarts: false, resellerSettings: false
+            }
+            // --- FIM: OTIMIZAÇÃO DE PERFORMANCE ---
         },
 
-        // Módulo de Funções Compartilhadas
         Shared: {
             init() {
                 App.Shared.loadLocalData();
@@ -731,7 +751,7 @@
 
             setupViewSwitcher() {
                 document.getElementById('show-empresa-panel').addEventListener('click', () => App.Shared.switchView('empresa-view'));
-                document.getElementById('show-revendedor-panel').addEventListener('click', () => { App.Shared.switchView('revendedor-view'); App.Revendedor.renderProductsTable(); });
+                document.getElementById('show-revendedor-panel').addEventListener('click', () => { App.Shared.switchView('revendedor-view'); });
                 document.getElementById('view-catalog-btn').addEventListener('click', (e) => { e.preventDefault(); App.Catalog.renderPreview(); App.Shared.switchView('catalog-preview-view'); });
                 
                 document.getElementById('back-to-landing-empresa').addEventListener('click', (e) => { e.preventDefault(); App.Shared.switchView('landing-view'); });
@@ -811,12 +831,12 @@
             }
         },
 
-        // Módulo do Painel da Empresa
         Empresa: {
+            // --- INÍCIO: OTIMIZAÇÃO DE PERFORMANCE ---
             init() {
                 App.Empresa.setupNavigation();
-                App.Empresa.updateDashboard();
-                App.Empresa.renderAllTables();
+                App.Empresa.updateDashboard(); // Renderiza apenas o dashboard inicialmente
+                App.State.pagesRendered.dashboard = true;
                 document.getElementById('product-search-input').addEventListener('keyup', (e) => App.Empresa.renderProductsTable(e.target.value.toLowerCase()));
             },
 
@@ -838,10 +858,28 @@
                         page.classList.add('active');
                         page.prepend(mainContent.querySelector('.page-header'));
                     }
-                    if(pageId === 'abc-curve') App.Empresa.renderAbcCurve();
+
+                    // Renderiza a página somente se ainda não foi renderizada
+                    if (!App.State.pagesRendered[pageId]) {
+                        const renderFunction = App.Empresa.pageRenderMap[pageId];
+                        if (renderFunction) renderFunction();
+                        App.State.pagesRendered[pageId] = true;
+                    }
+                    
                     feather.replace();
                 });
             },
+            
+            // Mapeia a página ao seu respectivo método de renderização
+            pageRenderMap: {
+                'dashboard': () => App.Empresa.updateDashboard(),
+                'products': () => App.Empresa.renderProductsTable(),
+                'categories': () => App.Empresa.renderCategoriesTable(),
+                'abc-curve': () => App.Empresa.renderAbcCurve(),
+                'catalog': () => App.Empresa.renderCatalogTable(),
+                'resellers': () => App.Empresa.renderResellersTable(),
+            },
+            // --- FIM: OTIMIZAÇÃO DE PERFORMANCE ---
 
             updateDashboard() {
                 const { State } = App;
@@ -849,14 +887,6 @@
                 document.getElementById('stat-active-products').textContent = State.allApiProducts.filter(p => p.status === 'ativo').length;
                 document.getElementById('stat-published-products').textContent = State.publishedProductIds.length;
                 document.getElementById('stat-active-resellers').textContent = State.mockResellers.filter(r => r.status === 'aprovado').length;
-            },
-
-            renderAllTables() {
-                const searchTerm = document.getElementById('product-search-input').value.toLowerCase();
-                App.Empresa.renderProductsTable(searchTerm);
-                App.Empresa.renderCatalogTable();
-                App.Empresa.renderResellersTable();
-                App.Empresa.renderCategoriesTable();
             },
 
             renderProductsTable(searchTerm = '') {
@@ -872,7 +902,9 @@
 
                     let cell = row.insertCell();
                     cell.setAttribute('data-label', 'Produto');
-                    cell.innerHTML = `<img src="${Shared.proxyImageUrl(p.imagem)}" alt="${p.nome}" class="product-image" onerror="this.src='https://placehold.co/40x40/DB1472/FFFFFF?text=X'"><span>${p.nome}</span>`;
+                    // --- INÍCIO: OTIMIZAÇÃO DE PERFORMANCE (Lazy Loading) ---
+                    cell.innerHTML = `<img src="${Shared.proxyImageUrl(p.imagem)}" alt="${p.nome}" class="product-image" loading="lazy" onerror="this.src='https://placehold.co/40x40/DB1472/FFFFFF?text=X'"><span>${p.nome}</span>`;
+                    // --- FIM: OTIMIZAÇÃO DE PERFORMANCE ---
 
                     cell = row.insertCell();
                     cell.setAttribute('data-label', 'Preço');
@@ -914,7 +946,7 @@
                 if (publishedProducts.length === 0) { tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;">Nenhum produto publicado para revenda.</td></tr>'; return; }
                 publishedProducts.forEach(p => {
                     const variationsText = p.variacoes.filter(v => v.quantidade > 0).map(v => v.nome).join(', ');
-                    tbody.insertRow().innerHTML = `<td><img src="${Shared.proxyImageUrl(p.imagem)}" alt="${p.nome}" class="product-image" onerror="this.src='https://placehold.co/40x40/DB1472/FFFFFF?text=X'"></td><td>${p.nome}</td><td>R$ ${p.preco_original.toFixed(2)}</td><td>${variationsText || 'Nenhuma'}</td>`;
+                    tbody.insertRow().innerHTML = `<td><img src="${Shared.proxyImageUrl(p.imagem)}" alt="${p.nome}" class="product-image" loading="lazy" onerror="this.src='https://placehold.co/40x40/DB1472/FFFFFF?text=X'"></td><td>${p.nome}</td><td>R$ ${p.preco_original.toFixed(2)}</td><td>${variationsText || 'Nenhuma'}</td>`;
                 });
             },
 
@@ -1116,7 +1148,7 @@
                 }
                 localStorage.setItem('erpPublished', JSON.stringify(State.publishedProductIds));
                 App.Empresa.updateDashboard();
-                App.Empresa.renderAllTables();
+                App.Empresa.renderProductsTable();
             },
 
             async syncFromFacilZap() {
@@ -1155,8 +1187,12 @@
 
                     Empresa.updateLastSyncTime();
                     Shared.showToast(`Sincronização completa! ${State.allApiProducts.length} produtos e ${State.allCategories.length} categorias carregadas.`, 'success');
+                    
+                    // Limpa o estado de páginas renderizadas para forçar a recarga dos dados
+                    Object.keys(App.State.pagesRendered).forEach(k => App.State.pagesRendered[k] = false);
                     Empresa.renderAllTables();
                     Empresa.updateDashboard();
+
                 } catch (error) {
                     console.error("Erro na sincronização:", error);
                     Shared.showToast(`Falha: ${error.message}`, 'error');
@@ -1248,11 +1284,9 @@
             }
         },
 
-        // Módulo do Painel da Revendedora
         Revendedor: {
             init() {
                 App.Revendedor.setupNavigation();
-                App.Revendedor.renderProductsTable();
                 document.getElementById('apply-mass-margin').addEventListener('click', App.Revendedor.applyMassMargin);
                 document.getElementById('save-settings-btn').addEventListener('click', App.Revendedor.saveSettings);
                 document.getElementById('logo-upload').addEventListener('change', (e) => App.Revendedor.handleImageUpload(e, 'logo-preview', 'logoUrl'));
@@ -1280,12 +1314,20 @@
                     mainContent.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
                     mainContent.querySelector(`#${pageId}`).classList.add('active');
                     
-                    if(pageId === 'reseller-products') App.Revendedor.renderProductsTable();
-                    if(pageId === 'reseller-sales') App.Revendedor.renderSalesHistory();
-                    if(pageId === 'abandoned-carts') App.Revendedor.renderAbandonedCartsTable();
-                    if(pageId === 'reseller-settings') App.Revendedor.loadSettings();
+                    if (!App.State.pagesRendered[pageId]) {
+                        const renderFunction = App.Revendedor.pageRenderMap[pageId];
+                        if (renderFunction) renderFunction();
+                        App.State.pagesRendered[pageId] = true;
+                    }
                     feather.replace();
                 });
+            },
+            
+            pageRenderMap: {
+                'reseller-products': () => App.Revendedor.renderProductsTable(),
+                'reseller-sales': () => App.Revendedor.renderSalesHistory(),
+                'abandoned-carts': () => App.Revendedor.renderAbandonedCartsTable(),
+                'reseller-settings': () => App.Revendedor.loadSettings()
             },
 
             renderProductsTable() {
@@ -1303,7 +1345,7 @@
                     
                     let cell = row.insertCell();
                     cell.setAttribute('data-label', 'Produto');
-                    cell.innerHTML = `<img src="${Shared.proxyImageUrl(p.imagem)}" alt="${p.nome}" class="product-image" onerror="this.src='https://placehold.co/40x40/DB1472/FFFFFF?text=X'"><span>${p.nome}</span>`;
+                    cell.innerHTML = `<img src="${Shared.proxyImageUrl(p.imagem)}" alt="${p.nome}" class="product-image" loading="lazy" onerror="this.src='https://placehold.co/40x40/DB1472/FFFFFF?text=X'"><span>${p.nome}</span>`;
                     
                     cell = row.insertCell();
                     cell.setAttribute('data-label', 'Preço Base');
@@ -1686,12 +1728,14 @@
             }
         },
 
-        // Módulo do Catálogo Público
         Catalog: {
             renderPreview(searchTerm = '', categoryFilter = '') {
                 const { State, Shared } = App;
                 const catalogView = document.getElementById('catalog-preview-view');
                 catalogView.innerHTML = `
+                    <!-- INÍCIO: NAVEGAÇÃO MOBILE - BOTÃO VOLTAR CATÁLOGO -->
+                    <button id="back-to-panel-btn" class="btn"><i data-feather="arrow-left"></i></button>
+                    <!-- FIM: NAVEGAÇÃO MOBILE -->
                     <div id="catalog-wrapper">
                         <div class="catalog-top-bar" id="catalog-top-bar-container"></div>
                         <div class="catalog-header-container">
@@ -1730,6 +1774,12 @@
                     <div id="product-detail-wrapper"></div>
                 `;
                 
+                // --- INÍCIO: NAVEGAÇÃO MOBILE - LÓGICA DO BOTÃO VOLTAR ---
+                const backToPanelBtn = document.getElementById('back-to-panel-btn');
+                backToPanelBtn.style.display = 'flex'; // Torna o botão visível
+                backToPanelBtn.onclick = () => App.Shared.switchView('revendedor-view');
+                // --- FIM: NAVEGAÇÃO MOBILE ---
+
                 const { resellerSettings } = State;
                 document.documentElement.style.setProperty('--reseller-primary-color', resellerSettings.primaryColor || '#DB1472');
                 document.documentElement.style.setProperty('--reseller-secondary-color', resellerSettings.secondaryColor || '#F8B81F');
@@ -1770,7 +1820,7 @@
                     const finalPrice = p.preco_original * (1 + margin / 100);
                     const card = document.createElement('div');
                     card.className = 'catalog-product-card';
-                    card.innerHTML = `<img src="${Shared.proxyImageUrl(p.imagem)}" alt="${p.nome}" onerror="this.src='https://placehold.co/300x300/e2e8f0/94a3b8?text=Imagem'"><div class="catalog-product-card-body"><h3>${p.nome}</h3><p class="price">R$ ${finalPrice.toFixed(2)}</p><button class="btn view-product-btn" data-product-id="${p.id}">Ver Detalhes</button></div>`;
+                    card.innerHTML = `<img src="${Shared.proxyImageUrl(p.imagem)}" loading="lazy" alt="${p.nome}" onerror="this.src='https://placehold.co/300x300/e2e8f0/94a3b8?text=Imagem'"><div class="catalog-product-card-body"><h3>${p.nome}</h3><p class="price">R$ ${finalPrice.toFixed(2)}</p><button class="btn view-product-btn" data-product-id="${p.id}">Ver Detalhes</button></div>`;
                     grid.appendChild(card);
                 });
                 
@@ -2085,8 +2135,6 @@
     };
 
     document.addEventListener('DOMContentLoaded', App.Shared.init);
-    /* --- FIM: TAREFA 3.2 --- */
     </script>
 </body>
 </html>
-```
