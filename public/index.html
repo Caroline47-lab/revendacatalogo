@@ -708,6 +708,9 @@
                             <tbody id="reseller-products-table-body"></tbody>
                         </table>
                     </div>
+                    <div id="reseller-product-list-loader" class="loading-indicator">
+                        <div class="spinner"></div>
+                    </div>
                 </section>
                 <section id="reseller-promotions" class="page">
                     <div class="settings-section"><h2><i data-feather="scissors" style="margin-right: 0.5rem;"></i>Cupom de Desconto</h2><div class="form-grid"><div class="form-group"><label for="coupon-code">Código do Cupom</label><input type="text" id="coupon-code" placeholder="EX: PROMO10"></div><div class="form-group"><label for="coupon-type">Tipo</label><select id="coupon-type" class="search-input"><option value="percentage">Percentual (%)</option><option value="fixed">Fixo (R$)</option></select></div><div class="form-group"><label for="coupon-value">Valor do Desconto</label><input type="number" id="coupon-value" placeholder="10"></div><div class="form-group" style="justify-content: flex-end;"><button class="btn btn-success">Criar Cupom</button></div></div></div>
@@ -876,6 +879,7 @@
     ];
     
     let loadedProducts = [];
+    let resellerProducts = []; // Lista separada para os produtos da revendedora
     let allCategories = [];
     let publishedProductIds = [];
     let publishedCategoryIds = [];
@@ -893,10 +897,10 @@
     // PAGINAÇÃO COM BOTÕES: Variáveis de estado
     let productCurrentPage = 1;
     let productIsLoading = false;
-    let productHasNextPage = true; // Assumimos que há uma próxima página inicialmente
+    let productHasNextPage = true; 
     let productSearchTerm = '';
     let searchDebounceTimer;
-    const PRODUCTS_PER_PAGE = 20; // Defina quantos produtos por página
+    const PRODUCTS_PER_PAGE = 20;
 
     // --- INICIALIZAÇÃO ---
     document.addEventListener('DOMContentLoaded', () => {
@@ -910,7 +914,11 @@
     // --- LÓGICA DE TROCA DE PAINEL ---
     function setupViewSwitcher() {
         document.getElementById('show-empresa-panel').addEventListener('click', () => switchView('empresa-view'));
-        document.getElementById('show-revendedor-panel').addEventListener('click', () => { switchView('revendedor-view'); renderResellerProductsTable(); });
+        document.getElementById('show-revendedor-panel').addEventListener('click', () => { 
+            switchView('revendedor-view'); 
+            // CORREÇÃO: Inicia o carregamento dos produtos da revendedora
+            loadAllPublishedProducts(); 
+        });
         document.getElementById('view-catalog-btn').addEventListener('click', (e) => { e.preventDefault(); renderCatalogPreview(); switchView('catalog-preview-view'); });
         
         document.getElementById('back-to-landing-empresa').addEventListener('click', (e) => { e.preventDefault(); switchView('landing-view'); });
@@ -957,7 +965,6 @@
         setupEmpresaNavigation();
         updateDashboard();
         
-        // PAGINAÇÃO COM BOTÕES: Configura os eventos dos botões
         document.getElementById('prev-page-btn').addEventListener('click', () => {
             if (productCurrentPage > 1) {
                 productCurrentPage--;
@@ -972,7 +979,6 @@
             }
         });
 
-        // Configura a busca com debounce
         const searchInput = document.getElementById('product-search-input');
         searchInput.addEventListener('keyup', () => {
             clearTimeout(searchDebounceTimer);
@@ -982,11 +988,7 @@
             }, 500); 
         });
         
-        // Carrega a primeira página de produtos
         loadProductsForPage(1);
-        
-        // Carrega outras tabelas que não são paginadas
-        renderCatalogTable();
         renderResellersTable();
         renderCategoriesTable();
     }
@@ -1002,15 +1004,13 @@
         const nextBtn = document.getElementById('next-page-btn');
 
         loader.classList.add('visible');
-        tbody.innerHTML = ''; // Limpa a tabela para a nova página
+        tbody.innerHTML = ''; 
         pageInfo.textContent = `Carregando...`;
         prevBtn.disabled = true;
         nextBtn.disabled = true;
 
         try {
-            // AQUI USAMOS A CHAMADA REAL PARA A API
             const data = await realApiFetch(page, PRODUCTS_PER_PAGE, productSearchTerm);
-
             const productsFromPage = data.data || [];
             productHasNextPage = data.hasNext;
 
@@ -1024,8 +1024,8 @@
                     return { id: p.id, nome: p.nome || 'Nome não informado', sku: p.sku || 'N/A', preco_original: parseFloat(p.preco || 0), imagem: imagens[0] || null, imagens_adicionais: imagens, estoque_total: estoqueTotal, variacoes: variacoes, status: estoqueTotal > 0 ? 'ativo' : 'sem_estoque', categoria_nome: p.categoria_nome || 'Sem Categoria' };
                 });
                 
-                loadedProducts = processedProducts; // Substitui os produtos antigos pelos da nova página
-                renderProductsTable(); // Renderiza a tabela com os novos produtos
+                loadedProducts = processedProducts; 
+                renderProductsTable();
             }
         } catch (error) {
             console.error("Erro ao carregar produtos:", error);
@@ -1041,7 +1041,6 @@
         }
     }
     
-    // Função para fazer a chamada real (para quando estiver em produção)
     async function realApiFetch(page, length, search) {
         let relativeUrl = `/api/facilzap-proxy?page=${page}&length=${length}`;
         if (search) {
@@ -1053,7 +1052,7 @@
         const result = await response.json();
         return {
             data: result.data || [],
-            hasNext: (result.data || []).length === length // Uma forma simples de adivinhar se há próxima página
+            hasNext: (result.data || []).length === length
         };
     }
     
@@ -1156,7 +1155,6 @@
     
     function updateDashboard() {
         // Esta função precisaria de um endpoint de API para obter totais reais.
-        // Por enquanto, os totais refletirão apenas os dados visíveis.
         document.getElementById('stat-total-products').textContent = '...';
         document.getElementById('stat-active-products').textContent = '...';
         document.getElementById('stat-published-products').textContent = publishedProductIds.length;
@@ -1165,7 +1163,7 @@
     
     function renderProductsTable() {
         const tbody = document.getElementById('products-table-body');
-        tbody.innerHTML = ''; // Sempre limpa antes de renderizar a página atual
+        tbody.innerHTML = ''; 
         
         loadedProducts.forEach(p => {
             const row = tbody.insertRow();
@@ -1217,7 +1215,7 @@
         const tbody = document.getElementById('catalog-table-body');
         tbody.innerHTML = '';
         const publishedProducts = loadedProducts.filter(p => publishedProductIds.includes(p.id) && p.status === 'ativo');
-        if (publishedProducts.length === 0) { tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;">Nenhum produto publicado para revenda.</td></tr>'; return; }
+        if (publishedProducts.length === 0) { tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;">Nenhum produto publicado para revenda nesta página.</td></tr>'; return; }
         publishedProducts.forEach(p => {
             const variationsText = p.variacoes.filter(v => v.quantidade > 0).map(v => v.nome).join(', ');
             tbody.insertRow().innerHTML = `
@@ -1274,9 +1272,8 @@
     function renderCategoriesTable() {
         const tbody = document.getElementById('categories-table-body');
         tbody.innerHTML = '';
-        // Categoria agora precisa ser carregada de uma fonte confiável, não dos produtos da página
         if (allCategories.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="2" style="text-align:center;">Carregue as categorias na seção de Sincronização.</td></tr>';
+             tbody.innerHTML = '<tr><td colspan="2" style="text-align:center;">Nenhuma categoria encontrada.</td></tr>';
         }
         allCategories.forEach(categoryName => {
             const row = tbody.insertRow();
@@ -1445,7 +1442,7 @@
             const mainContent = document.querySelector('#revendedor-view .main-content');
             mainContent.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
             mainContent.querySelector(`#${pageId}`).classList.add('active');
-            if(pageId === 'reseller-products') renderResellerProductsTable();
+            if(pageId === 'reseller-products') loadAllPublishedProducts();
             if(pageId === 'reseller-sales') renderSalesHistory();
             if(pageId === 'abandoned-carts') renderAbandonedCartsTable();
             if(pageId === 'reseller-settings') loadResellerSettings();
@@ -1465,11 +1462,55 @@
         document.getElementById('generate-link-btn').addEventListener('click', generateAndCopyCatalogLink);
     }
 
+    // CORREÇÃO: Nova função para carregar todos os produtos publicados para a revendedora
+    async function loadAllPublishedProducts() {
+        const loader = document.getElementById('reseller-product-list-loader');
+        loader.classList.add('visible');
+        
+        resellerProducts = []; // Limpa a lista antiga
+        let currentPage = 1;
+        let hasMore = true;
+
+        try {
+            while(hasMore) {
+                const data = await realApiFetch(currentPage, 100, ''); // Busca de 100 em 100
+                if (data.data.length === 0) {
+                    hasMore = false;
+                    break;
+                }
+
+                const publishedInPage = data.data.filter(p => publishedProductIds.includes(p.id));
+                
+                if (publishedInPage.length > 0) {
+                     const processed = publishedInPage.map(p => {
+                        const variacoes = processVariations(p.estoque);
+                        const estoqueTotal = variacoes.reduce((total, v) => total + v.quantidade, 0);
+                        const imagens = typeof p.imagem === 'string' ? p.imagem.split(',').map(url => url.trim()) : [];
+                        return { id: p.id, nome: p.nome || 'Nome não informado', sku: p.sku || 'N/A', preco_original: parseFloat(p.preco || 0), imagem: imagens[0] || null, imagens_adicionais: imagens, estoque_total: estoqueTotal, variacoes: variacoes, status: estoqueTotal > 0 ? 'ativo' : 'sem_estoque', categoria_nome: p.categoria_nome || 'Sem Categoria' };
+                    });
+                    resellerProducts.push(...processed);
+                }
+                
+                hasMore = data.hasNext;
+                currentPage++;
+            }
+        } catch (error) {
+            console.error("Erro ao buscar produtos para revendedora:", error);
+            showToast("Erro ao carregar seus produtos.", "error");
+        } finally {
+            renderResellerProductsTable(); // Renderiza a tabela com todos os produtos encontrados
+            loader.classList.remove('visible');
+        }
+    }
+
     function renderResellerProductsTable() {
         const tbody = document.getElementById('reseller-products-table-body');
         tbody.innerHTML = '';
-        const resellerProducts = loadedProducts.filter(p => publishedProductIds.includes(p.id));
-        if (resellerProducts.length === 0) { tbody.innerHTML = '<tr><td colspan="7" style="text-align: center;">Nenhum produto disponível no momento.</td></tr>'; return; }
+        
+        if (resellerProducts.length === 0) { 
+            tbody.innerHTML = '<tr><td colspan="7" style="text-align: center;">Nenhum produto publicado para você no momento.</td></tr>'; 
+            return; 
+        }
         
         resellerProducts.forEach(p => {
             const margin = resellerProductMargins[p.id] || 30;
@@ -1541,7 +1582,7 @@
     }
 
     function showResellerProductEditModal(productId) {
-        const product = loadedProducts.find(p => p.id === productId);
+        const product = resellerProducts.find(p => p.id === productId);
         if (!product) return;
         document.getElementById('modal-reseller-product-name').textContent = `Editar Margem: ${product.nome}`;
         const marginInput = document.getElementById('reseller-margin-input');
@@ -1562,7 +1603,7 @@
     }
 
     function showResellerTagsModal(productId) {
-        const product = loadedProducts.find(p => p.id === productId);
+        const product = resellerProducts.find(p => p.id === productId);
         if (!product) return;
         document.getElementById('modal-tags-product-name').textContent = `Editar Tags: ${product.nome}`;
         const container = document.getElementById('tags-selection-container');
@@ -1596,7 +1637,7 @@
         const marginInput = document.getElementById('mass-margin-input');
         const newMargin = parseFloat(marginInput.value);
         if (isNaN(newMargin) || newMargin < 0) { showToast('Por favor, insira uma margem válida para aplicar em massa.', 'error'); return; }
-        const resellerProducts = loadedProducts.filter(p => publishedProductIds.includes(p.id));
+        
         resellerProducts.forEach(p => { resellerProductMargins[p.id] = newMargin; });
         localStorage.setItem('resellerMargins', JSON.stringify(resellerProductMargins));
         renderResellerProductsTable();
@@ -1714,7 +1755,7 @@
         catalogView.querySelector('#catalog-instagram-link').href = settings.instagram ? `https://instagram.com/${settings.instagram.replace('@','')}` : '#';
         catalogView.querySelector('#catalog-whatsapp-link').href = settings.contactPhone ? `https://wa.me/55${settings.contactPhone.replace(/\D/g,'')}` : '#';
         
-        let activeCatalogProducts = loadedProducts.filter(p => resellerActiveProductIds.includes(p.id));
+        let activeCatalogProducts = resellerProducts.filter(p => resellerActiveProductIds.includes(p.id));
         
         if (searchTerm) activeCatalogProducts = activeCatalogProducts.filter(p => p.nome.toLowerCase().includes(searchTerm));
         if (categoryFilter) activeCatalogProducts = activeCatalogProducts.filter(p => p.categoria_nome === categoryFilter);
@@ -1776,7 +1817,7 @@
         const detailWrapper = document.getElementById('product-detail-wrapper');
         detailWrapper.style.display = 'block';
 
-        const product = loadedProducts.find(p => p.id == productId);
+        const product = resellerProducts.find(p => p.id == productId);
         if (!product) return;
 
         const margin = resellerProductMargins[product.id] || 30;
@@ -1929,7 +1970,7 @@
     }
 
     function addToCart(productId, variation, quantity) {
-        const product = loadedProducts.find(p => p.id == productId);
+        const product = resellerProducts.find(p => p.id == productId);
         if (!product) return;
 
         const variationData = product.variacoes.find(v => v.nome === variation);
@@ -2061,7 +2102,7 @@
         updateSaleItemsTable();
         const productSelect = document.getElementById('sale-product-select');
         productSelect.innerHTML = '<option value="">Selecione um produto...</option>';
-        const availableProducts = loadedProducts.filter(p => resellerActiveProductIds.includes(p.id));
+        const availableProducts = resellerProducts.filter(p => resellerActiveProductIds.includes(p.id));
         availableProducts.forEach(p => {
             productSelect.innerHTML += `<option value="${p.id}">${p.nome}</option>`;
         });
@@ -2075,7 +2116,7 @@
         variationSelect.innerHTML = '';
         if (!productId) return;
 
-        const product = loadedProducts.find(p => p.id == productId);
+        const product = resellerProducts.find(p => p.id == productId);
         if (product && product.variacoes) {
             product.variacoes.forEach(v => {
                 variationSelect.innerHTML += `<option value="${v.nome}">${v.nome}</option>`;
@@ -2093,7 +2134,7 @@
             return;
         }
 
-        const product = loadedProducts.find(p => p.id == productId);
+        const product = resellerProducts.find(p => p.id == productId);
         const margin = resellerProductMargins[product.id] || 30;
         const finalPrice = parseFloat(product.preco_original) * (1 + margin / 100);
 
