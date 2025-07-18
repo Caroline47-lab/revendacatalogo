@@ -919,7 +919,14 @@
             // CORREÇÃO: Inicia o carregamento dos produtos da revendedora
             loadAllPublishedProducts(); 
         });
-        document.getElementById('view-catalog-btn').addEventListener('click', (e) => { e.preventDefault(); renderCatalogPreview(); switchView('catalog-preview-view'); });
+        document.getElementById('view-catalog-btn').addEventListener('click', (e) => { 
+            e.preventDefault(); 
+            // CORREÇÃO: Garante que os produtos da revendedora estão carregados antes de mostrar o catálogo
+            loadAllPublishedProducts().then(() => {
+                renderCatalogPreview(); 
+                switchView('catalog-preview-view');
+            });
+        });
         
         document.getElementById('back-to-landing-empresa').addEventListener('click', (e) => { e.preventDefault(); switchView('landing-view'); });
         document.getElementById('back-to-landing-revendedor').addEventListener('click', (e) => { e.preventDefault(); switchView('landing-view'); });
@@ -1755,6 +1762,7 @@
         catalogView.querySelector('#catalog-instagram-link').href = settings.instagram ? `https://instagram.com/${settings.instagram.replace('@','')}` : '#';
         catalogView.querySelector('#catalog-whatsapp-link').href = settings.contactPhone ? `https://wa.me/55${settings.contactPhone.replace(/\D/g,'')}` : '#';
         
+        // CORREÇÃO: Usa a lista correta 'resellerProducts' para montar o catálogo
         let activeCatalogProducts = resellerProducts.filter(p => resellerActiveProductIds.includes(p.id));
         
         if (searchTerm) activeCatalogProducts = activeCatalogProducts.filter(p => p.nome.toLowerCase().includes(searchTerm));
@@ -1817,8 +1825,12 @@
         const detailWrapper = document.getElementById('product-detail-wrapper');
         detailWrapper.style.display = 'block';
 
+        // CORREÇÃO: Busca o produto na lista correta 'resellerProducts'
         const product = resellerProducts.find(p => p.id == productId);
-        if (!product) return;
+        if (!product) {
+            detailWrapper.innerHTML = `<p class="placeholder-card">Produto não encontrado.</p>`;
+            return;
+        }
 
         const margin = resellerProductMargins[product.id] || 30;
         const finalPrice = parseFloat(p.preco_original) * (1 + margin / 100);
