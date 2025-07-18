@@ -1318,7 +1318,7 @@
     }
 
     function showProductDetails(productId) {
-        const product = loadedProducts.find(p => p.id === productId);
+        const product = loadedProducts.find(p => p.id === parseInt(productId));
         if (!product) return;
         document.getElementById('modal-product-name').textContent = product.nome;
         document.getElementById('modal-main-image').src = proxyImageUrl(product.imagem);
@@ -1589,7 +1589,7 @@
     }
 
     function showResellerProductEditModal(productId) {
-        const product = resellerProducts.find(p => p.id === productId);
+        const product = resellerProducts.find(p => p.id === parseInt(productId));
         if (!product) return;
         document.getElementById('modal-reseller-product-name').textContent = `Editar Margem: ${product.nome}`;
         const marginInput = document.getElementById('reseller-margin-input');
@@ -1610,7 +1610,7 @@
     }
 
     function showResellerTagsModal(productId) {
-        const product = resellerProducts.find(p => p.id === productId);
+        const product = resellerProducts.find(p => p.id === parseInt(productId));
         if (!product) return;
         document.getElementById('modal-tags-product-name').textContent = `Editar Tags: ${product.nome}`;
         const container = document.getElementById('tags-selection-container');
@@ -1825,8 +1825,8 @@
         const detailWrapper = document.getElementById('product-detail-wrapper');
         detailWrapper.style.display = 'block';
 
-        // CORREÇÃO: Busca o produto na lista correta 'resellerProducts'
-        const product = resellerProducts.find(p => p.id == productId);
+        // CORREÇÃO: Busca o produto na lista correta 'resellerProducts' e converte o ID para número
+        const product = resellerProducts.find(p => p.id === parseInt(productId));
         if (!product) {
             detailWrapper.innerHTML = `<p class="placeholder-card">Produto não encontrado.</p>`;
             return;
@@ -1982,7 +1982,7 @@
     }
 
     function addToCart(productId, variation, quantity) {
-        const product = resellerProducts.find(p => p.id == productId);
+        const product = resellerProducts.find(p => p.id === parseInt(productId));
         if (!product) return;
 
         const variationData = product.variacoes.find(v => v.nome === variation);
