@@ -71,14 +71,15 @@
         #menu-toggle { background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 0.5rem; padding: 0.5rem; }
 
         .btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 0.6rem 1.25rem; border-radius: 0.5rem; border: none; font-weight: 600; font-size: 0.9rem; cursor: pointer; transition: all 0.2s ease; }
+        .btn:disabled { background-color: #cbd5e1; cursor: not-allowed; }
         .btn-primary { background-color: var(--primary-color); color: white; }
-        .btn-primary:hover { opacity: 0.9; }
+        .btn-primary:hover:not(:disabled) { opacity: 0.9; }
         .btn-secondary { background-color: #334155; color: white; }
-        .btn-secondary:hover { opacity: 0.9; }
+        .btn-secondary:hover:not(:disabled) { opacity: 0.9; }
         .btn-success { background-color: var(--success-color); color: white; }
-        .btn-success:hover { opacity: 0.9; }
+        .btn-success:hover:not(:disabled) { opacity: 0.9; }
         .btn-danger { background-color: var(--danger-color); color: white; }
-        .btn-danger:hover { opacity: 0.9; }
+        .btn-danger:hover:not(:disabled) { opacity: 0.9; }
         
         .stats-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 1.5rem; margin-bottom: 2rem; }
         .stat-card { background-color: var(--card-bg); padding: 1.5rem; border-radius: var(--border-radius); box-shadow: var(--shadow); }
@@ -414,6 +415,18 @@
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
         }
+        
+        /* PAGINAÇÃO COM BOTÕES */
+        .pagination-controls {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 1rem;
+            margin-top: 1.5rem;
+        }
+        .pagination-controls .page-info {
+            font-weight: 600;
+        }
 
 
         /* --- MELHORIAS DE RESPONSIVIDADE --- */
@@ -572,8 +585,8 @@
                 </div>
                 <section id="dashboard" class="page active">
                     <div class="stats-grid">
-                        <div class="stat-card"><p class="stat-card-title">Total de Produtos</p><p class="stat-card-value" id="stat-total-products">0</p></div>
-                        <div class="stat-card"><p class="stat-card-title">Produtos Ativos</p><p class="stat-card-value" id="stat-active-products">0</p></div>
+                        <div class="stat-card"><p class="stat-card-title">Total de Produtos (Simulado)</p><p class="stat-card-value" id="stat-total-products">0</p></div>
+                        <div class="stat-card"><p class="stat-card-title">Produtos Ativos (Simulado)</p><p class="stat-card-value" id="stat-active-products">0</p></div>
                         <div class="stat-card"><p class="stat-card-title">Publicados para Revenda</p><p class="stat-card-value" id="stat-published-products">0</p></div>
                         <div class="stat-card"><p class="stat-card-title">Revendedoras Ativas</p><p class="stat-card-value" id="stat-active-resellers">0</p></div>
                     </div>
@@ -587,9 +600,14 @@
                             <tbody id="products-table-body"></tbody>
                         </table>
                     </div>
-                    <!-- OTIMIZAÇÃO FASE 2: Gatilho para scroll infinito e indicador de carregamento -->
                     <div id="product-list-loader" class="loading-indicator">
                         <div class="spinner"></div>
+                    </div>
+                    <!-- PAGINAÇÃO COM BOTÕES -->
+                    <div id="pagination-controls" class="pagination-controls">
+                        <button id="prev-page-btn" class="btn btn-secondary"><i data-feather="arrow-left"></i> Anterior</button>
+                        <span id="page-info" class="page-info">Página 1</span>
+                        <button id="next-page-btn" class="btn btn-secondary">Próxima <i data-feather="arrow-right"></i></button>
                     </div>
                 </section>
                  <section id="categories" class="page">
@@ -856,7 +874,7 @@
             ]
         }, 
     ];
-    // OTIMIZAÇÃO FASE 2: 'allApiProducts' agora armazena apenas os produtos carregados na tela.
+    
     let loadedProducts = [];
     let allCategories = [];
     let publishedProductIds = [];
@@ -872,13 +890,13 @@
     let pendingCartAction = null;
     const availableTags = ['Destaque', 'Lançamento', 'Promoção'];
     
-    // OTIMIZAÇÃO FASE 2: Variáveis de estado para a paginação de produtos
+    // PAGINAÇÃO COM BOTÕES: Variáveis de estado
     let productCurrentPage = 1;
     let productIsLoading = false;
-    let productAllDataLoaded = false;
+    let productHasNextPage = true; // Assumimos que há uma próxima página inicialmente
     let productSearchTerm = '';
     let searchDebounceTimer;
-
+    const PRODUCTS_PER_PAGE = 20; // Defina quantos produtos por página
 
     // --- INICIALIZAÇÃO ---
     document.addEventListener('DOMContentLoaded', () => {
@@ -939,18 +957,33 @@
         setupEmpresaNavigation();
         updateDashboard();
         
-        // OTIMIZAÇÃO FASE 2: Inicia o carregamento paginado de produtos
-        initializeProductView();
-        
-        // OTIMIZAÇÃO FASE 2: Configura a busca com debounce
+        // PAGINAÇÃO COM BOTÕES: Configura os eventos dos botões
+        document.getElementById('prev-page-btn').addEventListener('click', () => {
+            if (productCurrentPage > 1) {
+                productCurrentPage--;
+                loadProductsForPage(productCurrentPage);
+            }
+        });
+
+        document.getElementById('next-page-btn').addEventListener('click', () => {
+            if (productHasNextPage) {
+                productCurrentPage++;
+                loadProductsForPage(productCurrentPage);
+            }
+        });
+
+        // Configura a busca com debounce
         const searchInput = document.getElementById('product-search-input');
         searchInput.addEventListener('keyup', () => {
             clearTimeout(searchDebounceTimer);
             searchDebounceTimer = setTimeout(() => {
                 productSearchTerm = searchInput.value;
                 resetAndReloadProducts();
-            }, 500); // Espera 500ms após o usuário parar de digitar
+            }, 500); 
         });
+        
+        // Carrega a primeira página de produtos
+        loadProductsForPage(1);
         
         // Carrega outras tabelas que não são paginadas
         renderCatalogTable();
@@ -958,54 +991,31 @@
         renderCategoriesTable();
     }
     
-    // OTIMIZAÇÃO FASE 2: Nova função para inicializar a visualização de produtos com scroll infinito
-    function initializeProductView() {
-        const loader = document.getElementById('product-list-loader');
-        
-        const observer = new IntersectionObserver(entries => {
-            if (entries[0].isIntersecting && !productIsLoading) {
-                loadProductsPage();
-            }
-        }, { threshold: 1.0 });
-
-        observer.observe(loader);
-        
-        // Carrega a primeira página
-        loadProductsPage();
-    }
-    
-    /**
-     * OTIMIZAÇÃO FASE 2: CORREÇÃO DO ERRO DE URL (v2)
-     * A URL agora é construída usando o 'window.location.origin' para garantir
-     * que seja sempre um endereço absoluto, resolvendo o erro em ambientes 'blob:'.
-     */
-    async function loadProductsPage() {
-        if (productIsLoading || productAllDataLoaded) return;
+    async function loadProductsForPage(page) {
+        if (productIsLoading) return;
 
         productIsLoading = true;
         const loader = document.getElementById('product-list-loader');
+        const tbody = document.getElementById('products-table-body');
+        const pageInfo = document.getElementById('page-info');
+        const prevBtn = document.getElementById('prev-page-btn');
+        const nextBtn = document.getElementById('next-page-btn');
+
         loader.classList.add('visible');
+        tbody.innerHTML = ''; // Limpa a tabela para a nova página
+        pageInfo.textContent = `Carregando...`;
+        prevBtn.disabled = true;
+        nextBtn.disabled = true;
 
         try {
-            // Constrói a parte relativa da URL
-            let relativeUrl = `/api/facilzap-proxy?page=${productCurrentPage}&length=50`;
-            if (productSearchTerm) {
-                relativeUrl += `&search=${encodeURIComponent(productSearchTerm)}`;
-            }
-            // Cria a URL absoluta
-            const absoluteApiUrl = `${window.location.origin}${relativeUrl}`;
+            // AQUI USAMOS A CHAMADA REAL PARA A API
+            const data = await realApiFetch(page, PRODUCTS_PER_PAGE, productSearchTerm);
 
-            const response = await fetch(absoluteApiUrl);
-            if (!response.ok) throw new Error(`Erro na API: ${response.statusText}`);
-            
-            const data = await response.json();
             const productsFromPage = data.data || [];
+            productHasNextPage = data.hasNext;
 
-            if (productsFromPage.length === 0) {
-                productAllDataLoaded = true;
-                if(productCurrentPage > 1) { // Só mostra se não for a primeira página vazia
-                    showToast('Todos os produtos foram carregados.', 'info');
-                }
+            if (productsFromPage.length === 0 && page === 1) {
+                tbody.innerHTML = '<tr><td colspan="6" style="text-align: center;">Nenhum produto encontrado.</td></tr>';
             } else {
                 const processedProducts = productsFromPage.map(p => {
                     const variacoes = processVariations(p.estoque);
@@ -1013,27 +1023,43 @@
                     const imagens = typeof p.imagem === 'string' ? p.imagem.split(',').map(url => url.trim()) : [];
                     return { id: p.id, nome: p.nome || 'Nome não informado', sku: p.sku || 'N/A', preco_original: parseFloat(p.preco || 0), imagem: imagens[0] || null, imagens_adicionais: imagens, estoque_total: estoqueTotal, variacoes: variacoes, status: estoqueTotal > 0 ? 'ativo' : 'sem_estoque', categoria_nome: p.categoria_nome || 'Sem Categoria' };
                 });
-
-                loadedProducts.push(...processedProducts);
-                appendProductsToTable(processedProducts);
-                productCurrentPage++;
+                
+                loadedProducts = processedProducts; // Substitui os produtos antigos pelos da nova página
+                renderProductsTable(); // Renderiza a tabela com os novos produtos
             }
         } catch (error) {
             console.error("Erro ao carregar produtos:", error);
             showToast(`Falha ao carregar produtos: ${error.message}`, 'error');
+            tbody.innerHTML = '<tr><td colspan="6" style="text-align: center;">Erro ao carregar produtos. Verifique a conexão.</td></tr>';
         } finally {
             productIsLoading = false;
             loader.classList.remove('visible');
+            pageInfo.textContent = `Página ${productCurrentPage}`;
+            prevBtn.disabled = productCurrentPage <= 1;
+            nextBtn.disabled = !productHasNextPage;
+            feather.replace();
         }
     }
     
-    // OTIMIZAÇÃO FASE 2: Nova função para reiniciar a lista de produtos (para nova busca ou recarga manual)
+    // Função para fazer a chamada real (para quando estiver em produção)
+    async function realApiFetch(page, length, search) {
+        let relativeUrl = `/api/facilzap-proxy?page=${page}&length=${length}`;
+        if (search) {
+            relativeUrl += `&search=${encodeURIComponent(search)}`;
+        }
+        const absoluteApiUrl = `${window.location.origin}${relativeUrl}`;
+        const response = await fetch(absoluteApiUrl);
+        if (!response.ok) throw new Error(`Erro na API: ${response.statusText}`);
+        const result = await response.json();
+        return {
+            data: result.data || [],
+            hasNext: (result.data || []).length === length // Uma forma simples de adivinhar se há próxima página
+        };
+    }
+    
     function resetAndReloadProducts() {
         productCurrentPage = 1;
-        productAllDataLoaded = false;
-        loadedProducts = [];
-        document.getElementById('products-table-body').innerHTML = '';
-        loadProductsPage();
+        loadProductsForPage(productCurrentPage);
     }
 
     function setupEmpresaNavigation() {
@@ -1069,57 +1095,33 @@
 
     function proxyImageUrl(url) {
         if (!url || typeof url !== 'string' || url.trim() === '') return 'https://placehold.co/300x300/e2e8f0/94a3b8?text=Sem+Imagem';
-        // URLs em `src` de imagens funcionam bem de forma relativa, não precisam de correção.
         return url.startsWith('http') ? `/facilzap-images?url=${encodeURIComponent(url)}` : `/facilzap-images?url=${encodeURIComponent('https://' + url)}`;
     }
     
     function processVariations(stockData) {
         if (!stockData) return [];
-
         let data = stockData;
         if (typeof data === 'string') {
-            try {
-                data = JSON.parse(data);
-            } catch (e) {
-                return [];
-            }
+            try { data = JSON.parse(data); } catch (e) { return []; }
         }
-
         if (Array.isArray(data)) {
-            return data.map(item => ({
-                nome: item.variacao?.nome || 'N/A', 
-                quantidade: parseInt(item.quantidade || 0)
-            }));
+            return data.map(item => ({ nome: item.variacao?.nome || 'N/A', quantidade: parseInt(item.quantidade || 0) }));
         }
-
         if (typeof data === 'object' && data !== null) {
-            return Object.entries(data).map(([name, qty]) => ({
-                nome: name,
-                quantidade: parseInt(qty) || 0
-            }));
+            return Object.entries(data).map(([name, qty]) => ({ nome: name, quantidade: parseInt(qty) || 0 }));
         }
-        
-        if (typeof data === 'number') {
-            return [{ nome: 'Único', quantidade: data }];
-        }
-
+        if (typeof data === 'number') { return [{ nome: 'Único', quantidade: data }]; }
         return [];
     }
 
 
     function loadLocalData() {
-        // OTIMIZAÇÃO FASE 2: Não carrega mais todos os produtos do localStorage.
-        // localStorage.getItem('erpProducts') foi removido.
-        
         const savedCategories = localStorage.getItem('erpCategories');
         if (savedCategories) allCategories = JSON.parse(savedCategories);
-
         const savedPublished = localStorage.getItem('erpPublished');
         if (savedPublished) publishedProductIds = JSON.parse(savedPublished);
-
         const savedPublishedCategories = localStorage.getItem('erpPublishedCategories');
         if (savedPublishedCategories) publishedCategoryIds = JSON.parse(savedPublishedCategories);
-
         const savedResellers = localStorage.getItem('erpResellers');
         if (savedResellers) mockResellers = JSON.parse(savedResellers);
         const savedMargins = localStorage.getItem('resellerMargins');
@@ -1132,15 +1134,8 @@
         if (savedSettings) resellerSettings = JSON.parse(savedSettings);
         const savedTime = localStorage.getItem('erpLastSync');
         if (savedTime) document.getElementById('last-sync-time').textContent = `Última sincronização: ${savedTime}`;
-        
         const savedAbandonedCarts = localStorage.getItem('abandonedCarts');
         if (savedAbandonedCarts) abandonedCarts = JSON.parse(savedAbandonedCarts);
-    }
-
-    // OTIMIZAÇÃO FASE 2: Esta função foi descontinuada e substituída pela lógica de carregamento paginado.
-    // A sincronização completa agora é feita pelo botão "Recarregar Produtos".
-    async function syncFromFacilZap() {
-        showToast("Esta função foi substituída. Use 'Recarregar Produtos' para atualizar a lista.", "info");
     }
 
     async function testApiConnection() {
@@ -1160,23 +1155,19 @@
     }
     
     function updateDashboard() {
-        // Nota: Estas estatísticas podem precisar ser ajustadas para refletir os totais reais da API, não apenas os carregados.
-        // Por enquanto, elas refletirão os dados carregados na tela.
-        document.getElementById('stat-total-products').textContent = loadedProducts.length;
-        document.getElementById('stat-active-products').textContent = loadedProducts.filter(p => p.status === 'ativo').length;
+        // Esta função precisaria de um endpoint de API para obter totais reais.
+        // Por enquanto, os totais refletirão apenas os dados visíveis.
+        document.getElementById('stat-total-products').textContent = '...';
+        document.getElementById('stat-active-products').textContent = '...';
         document.getElementById('stat-published-products').textContent = publishedProductIds.length;
         document.getElementById('stat-active-resellers').textContent = mockResellers.filter(r => r.status === 'aprovado').length;
     }
     
-    // OTIMIZAÇÃO FASE 2: Nova função que apenas adiciona produtos à tabela, sem limpá-la.
-    function appendProductsToTable(productsToAppend) {
+    function renderProductsTable() {
         const tbody = document.getElementById('products-table-body');
-        if (productsToAppend.length === 0 && productCurrentPage === 1) { 
-            tbody.innerHTML = '<tr><td colspan="6" style="text-align: center;">Nenhum produto encontrado.</td></tr>'; 
-            return; 
-        }
+        tbody.innerHTML = ''; // Sempre limpa antes de renderizar a página atual
         
-        productsToAppend.forEach(p => {
+        loadedProducts.forEach(p => {
             const row = tbody.insertRow();
             const isPublished = publishedProductIds.includes(p.id);
             let td;
@@ -1191,7 +1182,7 @@
 
             td = row.insertCell();
             td.dataset.label = 'Preço';
-            td.textContent = `R$ ${p.preco_original.toFixed(2)}`;
+            td.textContent = `R$ ${parseFloat(p.preco_original).toFixed(2)}`;
 
             td = row.insertCell();
             td.dataset.label = 'Status';
@@ -1225,7 +1216,6 @@
     function renderCatalogTable() {
         const tbody = document.getElementById('catalog-table-body');
         tbody.innerHTML = '';
-        // Nota: Esta tabela ainda usa a lógica antiga. A paginação pode ser aplicada aqui também.
         const publishedProducts = loadedProducts.filter(p => publishedProductIds.includes(p.id) && p.status === 'ativo');
         if (publishedProducts.length === 0) { tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;">Nenhum produto publicado para revenda.</td></tr>'; return; }
         publishedProducts.forEach(p => {
@@ -1233,7 +1223,7 @@
             tbody.insertRow().innerHTML = `
                 <td data-label="Imagem"><img src="${proxyImageUrl(p.imagem)}" alt="${p.nome}" class="product-image" loading="lazy" width="40" height="40" onerror="this.src='https://placehold.co/40x40/DB1472/FFFFFF?text=X'"></td>
                 <td data-label="Nome">${p.nome}</td>
-                <td data-label="Preço">R$ ${p.preco_original.toFixed(2)}</td>
+                <td data-label="Preço">R$ ${parseFloat(p.preco_original).toFixed(2)}</td>
                 <td data-label="Variações">${variationsText || 'Nenhuma'}</td>
             `;
         });
@@ -1284,9 +1274,9 @@
     function renderCategoriesTable() {
         const tbody = document.getElementById('categories-table-body');
         tbody.innerHTML = '';
+        // Categoria agora precisa ser carregada de uma fonte confiável, não dos produtos da página
         if (allCategories.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="2" style="text-align: center;">Nenhuma categoria encontrada. Sincronize os produtos.</td></tr>';
-            return;
+            tbody.innerHTML = '<tr><td colspan="2" style="text-align:center;">Carregue as categorias na seção de Sincronização.</td></tr>';
         }
         allCategories.forEach(categoryName => {
             const row = tbody.insertRow();
@@ -1438,7 +1428,6 @@
         }
         localStorage.setItem('erpPublished', JSON.stringify(publishedProductIds));
         updateDashboard();
-        // Não é mais necessário chamar renderAllTables() aqui, a UI já foi atualizada.
     }
 
     // --- LÓGICA DO PAINEL DA REVENDEDORA ---
@@ -1479,13 +1468,12 @@
     function renderResellerProductsTable() {
         const tbody = document.getElementById('reseller-products-table-body');
         tbody.innerHTML = '';
-        // Nota: Esta tabela ainda usa a lógica antiga. A paginação pode ser aplicada aqui também.
         const resellerProducts = loadedProducts.filter(p => publishedProductIds.includes(p.id));
         if (resellerProducts.length === 0) { tbody.innerHTML = '<tr><td colspan="7" style="text-align: center;">Nenhum produto disponível no momento.</td></tr>'; return; }
         
         resellerProducts.forEach(p => {
             const margin = resellerProductMargins[p.id] || 30;
-            const finalPrice = p.preco_original * (1 + margin / 100);
+            const finalPrice = parseFloat(p.preco_original) * (1 + margin / 100);
             const isActive = resellerActiveProductIds.includes(p.id);
             const row = tbody.insertRow();
             let td;
@@ -1500,7 +1488,7 @@
 
             td = row.insertCell();
             td.dataset.label = 'Preço Base';
-            td.textContent = `R$ ${p.preco_original.toFixed(2)}`;
+            td.textContent = `R$ ${parseFloat(p.preco_original).toFixed(2)}`;
 
             td = row.insertCell();
             td.dataset.label = 'Sua Margem (%)';
@@ -1737,7 +1725,7 @@
 
         activeCatalogProducts.forEach(p => {
             const margin = resellerProductMargins[p.id] || 30;
-            const finalPrice = p.preco_original * (1 + margin / 100);
+            const finalPrice = parseFloat(p.preco_original) * (1 + margin / 100);
             const card = document.createElement('div');
             card.className = 'catalog-product-card';
             card.innerHTML = `<img src="${proxyImageUrl(p.imagem)}" alt="${p.nome}" loading="lazy" width="300" height="300" onerror="this.src='https://placehold.co/300x300/e2e8f0/94a3b8?text=Imagem'"><div class="catalog-product-card-body"><h3>${p.nome}</h3><p class="price">R$ ${finalPrice.toFixed(2)}</p><button class="btn view-product-btn" data-product-id="${p.id}">Ver Detalhes</button></div>`;
@@ -1792,7 +1780,7 @@
         if (!product) return;
 
         const margin = resellerProductMargins[product.id] || 30;
-        const finalPrice = product.preco_original * (1 + margin / 100);
+        const finalPrice = parseFloat(p.preco_original) * (1 + margin / 100);
         const priceFrom = finalPrice / 0.92;
         const productTags = resellerProductTags[productId] || [];
 
@@ -2001,7 +1989,7 @@
         } else {
             cart.forEach(item => {
                 const margin = resellerProductMargins[item.id] || 30;
-                const finalPrice = item.preco_original * (1 + margin / 100);
+                const finalPrice = parseFloat(item.preco_original) * (1 + margin / 100);
                 total += finalPrice * item.quantity;
                 const itemEl = document.createElement('div');
                 itemEl.style.padding = '0.5rem 0';
@@ -2027,7 +2015,7 @@
 
         const total = cart.reduce((sum, item) => {
             const margin = resellerProductMargins[item.id] || 30;
-            const finalPrice = item.preco_original * (1 + margin / 100);
+            const finalPrice = parseFloat(item.preco_original) * (1 + margin / 100);
             return sum + (finalPrice * item.quantity);
         }, 0);
 
@@ -2050,7 +2038,7 @@
         let message = `Olá, ${resellerSettings.brandName || 'Revendedora'}! Gostaria de fazer o seguinte pedido:\n\n`;
         cart.forEach(item => {
             const margin = resellerProductMargins[item.id] || 30;
-            const finalPrice = item.preco_original * (1 + margin / 100);
+            const finalPrice = parseFloat(item.preco_original) * (1 + margin / 100);
             message += `*${item.quantity}x* - ${item.nome} (${item.variation}) - R$ ${finalPrice.toFixed(2)} cada\n`;
         });
         message += `\n*Total do Pedido: R$ ${total.toFixed(2)}*`;
@@ -2107,7 +2095,7 @@
 
         const product = loadedProducts.find(p => p.id == productId);
         const margin = resellerProductMargins[product.id] || 30;
-        const finalPrice = product.preco_original * (1 + margin / 100);
+        const finalPrice = parseFloat(product.preco_original) * (1 + margin / 100);
 
         currentSaleItems.push({
             productId: product.id,
@@ -2244,7 +2232,7 @@
 
         abandonedCarts.sort((a, b) => new Date(b.date) - new Date(a.date)).forEach(cart => {
             const row = tbody.insertRow();
-            const totalValue = cart.items.reduce((sum, item) => sum + (item.preco_original * (1 + (resellerProductMargins[item.id] || 30) / 100) * item.quantity), 0);
+            const totalValue = cart.items.reduce((sum, item) => sum + (parseFloat(item.preco_original) * (1 + (resellerProductMargins[item.id] || 30) / 100) * item.quantity), 0);
             let td;
 
             td = row.insertCell();
@@ -2354,7 +2342,7 @@
 
     // --- NOVA FUNÇÃO PARA GERAR LINK DO CATÁLOGO ---
     function generateAndCopyCatalogLink() {
-        const urlName = document.getElementById('catalog-url-name').value.trim().toLowerCase().replace(/[^a-z0-9-]/g, '');
+        const urlName = document.getElementById('catalog-url-name').value.trim().toLowerCase().replace(/[^a-z0-na-z0-9-]/g, '');
         if (!urlName) {
             showToast('Por favor, insira um nome para a URL da sua loja.', 'error');
             return;
