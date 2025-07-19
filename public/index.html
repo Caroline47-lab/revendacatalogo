@@ -1028,7 +1028,7 @@
                     const variacoes = processVariations(p.estoque);
                     const estoqueTotal = variacoes.reduce((total, v) => total + v.quantidade, 0);
                     const imagens = typeof p.imagem === 'string' ? p.imagem.split(',').map(url => url.trim()) : [];
-                    return { id: p.id, nome: p.nome || 'Nome não informado', sku: p.sku || 'N/A', preco_original: parseFloat(p.preco || 0), imagem: imagens[0] || null, imagens_adicionais: imagens, estoque_total: estoqueTotal, variacoes: variacoes, status: estoqueTotal > 0 ? 'ativo' : 'sem_estoque', categoria_nome: p.categoria_nome || 'Sem Categoria' };
+                    return { id: parseInt(p.id, 10), nome: p.nome || 'Nome não informado', sku: p.sku || 'N/A', preco_original: parseFloat(p.preco || 0), imagem: imagens[0] || null, imagens_adicionais: imagens, estoque_total: estoqueTotal, variacoes: variacoes, status: estoqueTotal > 0 ? 'ativo' : 'sem_estoque', categoria_nome: p.categoria_nome || 'Sem Categoria' };
                 });
                 
                 loadedProducts = processedProducts; 
@@ -1125,7 +1125,10 @@
         const savedCategories = localStorage.getItem('erpCategories');
         if (savedCategories) allCategories = JSON.parse(savedCategories);
         const savedPublished = localStorage.getItem('erpPublished');
-        if (savedPublished) publishedProductIds = JSON.parse(savedPublished);
+        if (savedPublished) {
+            // CORREÇÃO: Garante que os IDs salvos sejam números
+            publishedProductIds = JSON.parse(savedPublished).map(id => parseInt(id, 10));
+        }
         const savedPublishedCategories = localStorage.getItem('erpPublishedCategories');
         if (savedPublishedCategories) publishedCategoryIds = JSON.parse(savedPublishedCategories);
         const savedResellers = localStorage.getItem('erpResellers');
@@ -1135,7 +1138,10 @@
         const savedTags = localStorage.getItem('resellerProductTags');
         if (savedTags) resellerProductTags = JSON.parse(savedTags);
         const savedResellerActive = localStorage.getItem('resellerActiveProducts');
-        if (savedResellerActive) resellerActiveProductIds = JSON.parse(savedResellerActive);
+        if (savedResellerActive) {
+            // CORREÇÃO: Garante que os IDs salvos sejam números
+            resellerActiveProductIds = JSON.parse(savedResellerActive).map(id => parseInt(id, 10));
+        }
         const savedSettings = localStorage.getItem('resellerSettings');
         if (savedSettings) resellerSettings = JSON.parse(savedSettings);
         const savedTime = localStorage.getItem('erpLastSync');
@@ -1486,14 +1492,15 @@
                     break;
                 }
 
-                const publishedInPage = data.data.filter(p => publishedProductIds.includes(p.id));
+                // CORREÇÃO: Garante que a comparação de IDs seja entre números
+                const publishedInPage = data.data.filter(p => publishedProductIds.includes(parseInt(p.id, 10)));
                 
                 if (publishedInPage.length > 0) {
                      const processed = publishedInPage.map(p => {
                         const variacoes = processVariations(p.estoque);
                         const estoqueTotal = variacoes.reduce((total, v) => total + v.quantidade, 0);
                         const imagens = typeof p.imagem === 'string' ? p.imagem.split(',').map(url => url.trim()) : [];
-                        return { id: p.id, nome: p.nome || 'Nome não informado', sku: p.sku || 'N/A', preco_original: parseFloat(p.preco || 0), imagem: imagens[0] || null, imagens_adicionais: imagens, estoque_total: estoqueTotal, variacoes: variacoes, status: estoqueTotal > 0 ? 'ativo' : 'sem_estoque', categoria_nome: p.categoria_nome || 'Sem Categoria' };
+                        return { id: parseInt(p.id, 10), nome: p.nome || 'Nome não informado', sku: p.sku || 'N/A', preco_original: parseFloat(p.preco || 0), imagem: imagens[0] || null, imagens_adicionais: imagens, estoque_total: estoqueTotal, variacoes: variacoes, status: estoqueTotal > 0 ? 'ativo' : 'sem_estoque', categoria_nome: p.categoria_nome || 'Sem Categoria' };
                     });
                     resellerProducts.push(...processed);
                 }
