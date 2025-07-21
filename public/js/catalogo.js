@@ -208,29 +208,46 @@ function appendProductsToCatalogGrid(products, clearGrid = false) {
         card.className = 'catalog-product-card';
         card.innerHTML = `<img src="${proxyImageUrl(p.imagem)}" alt="${p.nome}" loading="lazy" width="300" height="300" onerror="this.src='https://placehold.co/300x300/e2e8f0/94a3b8?text=Imagem'"><div class="catalog-product-card-body"><h3>${p.nome}</h3><p class="price">R$ ${finalPrice.toFixed(2)}</p><button class="btn view-product-btn" data-product-id="${p.id}">Ver Detalhes</button></div>`;
         
-        // CORREÇÃO: Usa e.currentTarget para garantir que pegamos o botão, mesmo se houver um ícone dentro.
         card.querySelector('.view-product-btn').addEventListener('click', (e) => showProductDetailPage(e.currentTarget.dataset.productId));
         grid.appendChild(card);
     });
     feather.replace();
 }
 
-function showProductDetailPage(productId) {
-    // Logging de Diagnóstico Passo 1: A função foi chamada?
-    console.log(`[Diagnóstico] Chamando showProductDetailPage com o ID: ${productId} (tipo: ${typeof productId})`);
+// CORREÇÃO: Função auxiliar para gerar as estrelas de avaliação dinamicamente
+function generateRatingStars(rating = 4.8, reviewCount = 89) {
+    const fullStars = Math.floor(rating);
+    const halfStar = rating % 1 >= 0.5 ? 1 : 0;
+    const emptyStars = 5 - fullStars - halfStar;
+    let starsHTML = '';
 
+    for(let i = 0; i < fullStars; i++) {
+        starsHTML += '<i data-feather="star" class="w-4 h-4 text-amber-500 fill-current"></i>';
+    }
+    if (halfStar) {
+        // Usando uma estrela cheia para simplicidade visual, como no design original
+        starsHTML += '<i data-feather="star" class="w-4 h-4 text-amber-500 fill-current"></i>';
+    }
+    for(let i = 0; i < emptyStars; i++) {
+        starsHTML += '<i data-feather="star" class="w-4 h-4 text-amber-500"></i>';
+    }
+    
+    return `
+        <div class="flex items-center gap-1">${starsHTML}</div>
+        <span class="ml-1 font-semibold text-slate-600">${rating}</span>
+        <span>(${reviewCount} avaliações)</span>
+    `;
+}
+
+
+function showProductDetailPage(productId) {
     document.getElementById('catalog-wrapper').style.display = 'none';
     const detailWrapper = document.getElementById('product-detail-wrapper');
     detailWrapper.style.display = 'block';
 
-    // Logging de Diagnóstico Passo 2: O produto foi encontrado?
     const product = resellerProducts.find(p => p.id === parseInt(productId));
-    console.log('[Diagnóstico] Produto encontrado:', product);
-
     if (!product) {
         detailWrapper.innerHTML = `<p class="placeholder-card">Produto não encontrado.</p>`;
-        // Logging de Diagnóstico Passo 3: O que acontece se o produto não for encontrado.
-        console.error(`[Diagnóstico] ERRO: Produto com ID ${productId} não foi encontrado na lista 'resellerProducts'.`);
         return;
     }
 
@@ -250,6 +267,7 @@ function showProductDetailPage(productId) {
         return `<span class="product-detail-tag ${tagClass}">${tag.toUpperCase()}</span>`;
     }).join('');
 
+    // CORREÇÃO: Garante que os botões de tamanho sejam criados corretamente
     const sizesHTML = product.variacoes.map(v => {
         const size = String(v.nome || '').replace(/Tamanho:\s*/i, '').trim();
         const isOutOfStock = v.quantidade <= 0;
@@ -269,10 +287,7 @@ function showProductDetailPage(productId) {
                 <section class="mt-8 lg:mt-0">
                     <h1 class="text-2xl lg:text-3xl font-bold text-slate-900 leading-tight mb-2">${product.nome}</h1>
                     <div class="flex items-center gap-4 mb-4 text-sm text-slate-500">
-                        <div class="flex items-center gap-1 text-amber-500">
-                            <i data-feather="star" class="w-4 h-4 fill-current"></i><i data-feather="star" class="w-4 h-4 fill-current"></i><i data-feather="star" class="w-4 h-4 fill-current"></i><i data-feather="star" class="w-4 h-4 fill-current"></i><i data-feather="star" class="w-4 h-4"></i>
-                            <span class="ml-1 font-semibold text-slate-600">4.8</span><span>(89 avaliações)</span>
-                        </div>
+                        ${generateRatingStars(4.8, 89)}
                     </div>
                     <div class="mb-6">
                         <span class="text-3xl lg:text-4xl font-bold" style="color: var(--cor-primaria);">R$ ${finalPrice.toFixed(2)}</span>
@@ -304,10 +319,7 @@ function showProductDetailPage(productId) {
         </div>
     `;
     
-    // Logging de Diagnóstico Passo 4: O HTML foi construído?
-    console.log('[Diagnóstico] HTML da página de detalhes foi construído.');
     detailWrapper.innerHTML = detailHTML;
-    console.log('[Diagnóstico] HTML inserido no wrapper.');
 
     detailWrapper.querySelector('#back-to-catalog-btn').addEventListener('click', () => {
         detailWrapper.style.display = 'none';
@@ -315,7 +327,6 @@ function showProductDetailPage(productId) {
     });
 
     feather.replace();
-    console.log('[Diagnóstico] Ícones Feather renderizados.');
 }
 
 function changeImage(thumbElement, newSrc) {
