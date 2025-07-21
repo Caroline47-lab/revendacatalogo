@@ -5,14 +5,19 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Catálogo</title>
     
-    <!-- CORREÇÃO: Adicionado o script do Tailwind CSS, que resolve o problema de layout. -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    
+    <!-- Otimização de Rede: Pré-conexão com domínios críticos -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="preconnect" href="https://api.facilzap.app.br" crossorigin>
+    <link rel="preconnect" href="https://arquivos.facilzap.app.br" crossorigin>
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Otimização de Fontes: Adicionado &display=swap para evitar bloqueio de renderização -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     
-    <script src="https://unpkg.com/feather-icons"></script>
+    <!-- Otimização de Scripts: Ícones carregados com defer -->
+    <script src="https://unpkg.com/feather-icons" defer></script>
 
     <style>
         :root {
@@ -27,8 +32,6 @@
             --danger-color: #ef4444;
             --font-sans: 'Inter', sans-serif;
             --shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
-            --border-radius: 0.75rem;
-            /* Variáveis que serão personalizadas pela revendedora */
             --reseller-primary-color: var(--primary-color);
             --reseller-secondary-color: var(--secondary-color);
         }
@@ -98,16 +101,11 @@
 <body>
 
     <div id="catalog-preview-view" class="view active">
-        <!-- Esta div principal envolve todo o catálogo visível -->
         <div id="catalog-wrapper">
-            <!-- Barra de mensagens no topo -->
             <div class="bg-gradient-to-r from-[var(--reseller-primary-color)] to-[var(--reseller-secondary-color)] text-white py-2 text-sm font-medium overflow-hidden whitespace-nowrap">
                 <div id="catalog-top-bar-container" class="catalog-top-bar inline-block">
-                    <!-- As mensagens serão inseridas aqui pelo JS -->
                 </div>
             </div>
-
-            <!-- Header com busca e logo -->
             <div class="relative">
                 <div class="bg-gradient-to-r from-[var(--reseller-primary-color)] to-[var(--reseller-secondary-color)] h-20 flex justify-between items-center px-4 md:px-6 gap-4">
                     <button id="catalog-menu-toggle" class="text-white"><i data-feather="menu"></i></button>
@@ -127,27 +125,21 @@
                     <img id="catalog-logo" src="https://placehold.co/160x160/e2e8f0/cccccc?text=" alt="Logo da loja" class="w-32 h-32 md:w-40 md:h-40 rounded-full object-cover border-4 border-white shadow-lg">
                 </div>
             </div>
-
-            <!-- Conteúdo Principal com Produtos -->
             <main class="bg-white relative z-0 rounded-t-3xl pt-20">
                 <div class="max-w-7xl mx-auto px-4 py-8">
                      <div class="catalog-filters-container text-center mb-8">
                         <h3 class="text-xl font-bold text-[var(--reseller-primary-color)] mb-4">Filtre por Numeração</h3>
                         <div id="size-filter-bubbles" class="filter-bubbles">
-                            <!-- Filtros de tamanho serão inseridos aqui -->
                         </div>
                     </div>
                     <div id="catalog-product-grid" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                        <!-- Indicador de carregamento inicial -->
-                        <div id="catalog-loader" class="loading-indicator col-span-full">
-                            <div class="spinner"></div>
-                        </div>
-                        <!-- Os cards de produto serão inseridos aqui -->
+                    </div>
+                    <!-- Otimização: Loader para o Infinite Scroll -->
+                    <div id="infinite-scroll-loader" class="loading-indicator col-span-full" style="display: none;">
+                        <div class="spinner"></div>
                     </div>
                 </div>
             </main>
-
-            <!-- Rodapé -->
             <footer class="text-center py-8 bg-slate-800 text-white">
                 <h2 id="catalog-brand-name-footer" class="text-2xl font-bold mb-2">Sua Marca</h2>
                 <p id="catalog-description" class="max-w-xl mx-auto mb-4 text-slate-300"></p>
@@ -157,12 +149,10 @@
                 </div>
             </footer>
         </div>
-
-        <!-- Esta div receberá o conteúdo da página de detalhes do produto -->
         <div id="product-detail-wrapper" class="view"></div>
     </div>
     
-    <!-- MODAIS (Usados pelo Catálogo) -->
+    <!-- MODAIS -->
     <div id="cart-modal" class="modal-overlay">
         <div class="modal-content">
             <div class="modal-header"><h3>Carrinho de Compras</h3><button class="modal-close-btn" onclick="closeModal('cart-modal')"><i data-feather="x"></i></button></div>
@@ -202,8 +192,8 @@
     </div>
     <div id="toast"></div>
 
-    <!-- Scripts JS carregados no final para melhor performance -->
-    <script src="../js/servicos.js"></script>
-    <script src="../js/catalogo.js"></script>
+    <!-- Otimização de Scripts: Adicionado 'defer' para carregamento não-bloqueante -->
+    <script src="../js/servicos.js" defer></script>
+    <script src="../js/catalogo.js" defer></script>
 </body>
 </html>
