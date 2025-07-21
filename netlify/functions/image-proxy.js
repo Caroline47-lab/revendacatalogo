@@ -1,56 +1,199 @@
-exports.handler = async (event) => {
-    // 1. Validar parâmetro
-    const encodedUrl = event.queryStringParameters.url;
-    if (!encodedUrl) return { statusCode: 400, body: "URL ausente" };
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Catálogo</title>
+    
+    <!-- Otimização de Rede: Pré-conexão com domínios críticos -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="preconnect" href="https://api.facilzap.app.br" crossorigin>
+    <link rel="preconnect" href="https://arquivos.facilzap.app.br" crossorigin>
 
-    // 2. Decodificar e corrigir URL
-    let imageUrl;
-    try {
-        imageUrl = decodeURIComponent(encodedUrl);
-        
-        // Correção de URLs malformadas
-        imageUrl = imageUrl
-            .replace(/%3A(\d+)F/g, '%3A%$1F') // Corrige dupla codificação
-            .replace('://produtos/', '://arquivos.facilzap.app.br/produtos/');
-        
-        // Forçar domínio correto se faltante
-        if (!imageUrl.includes('://')) {
-            imageUrl = `https://arquivos.facilzap.app.br/${imageUrl.replace(/^\//, '')}`;
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Otimização de Fontes: Adicionado &display=swap para evitar bloqueio de renderização -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Otimização de Scripts: Ícones carregados com defer -->
+    <script src="https://unpkg.com/feather-icons" defer></script>
+
+    <style>
+        :root {
+            --primary-color: #DB1472;
+            --secondary-color: #F8B81F;
+            --text-color: #334155;
+            --text-light: #64748b;
+            --bg-color: #f8fafc;
+            --card-bg: #ffffff;
+            --border-color: #e2e8f0;
+            --success-color: #10b981;
+            --danger-color: #ef4444;
+            --font-sans: 'Inter', sans-serif;
+            --shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+            --reseller-primary-color: var(--primary-color);
+            --reseller-secondary-color: var(--secondary-color);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: var(--font-sans);
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            line-height: 1.5;
+            overflow-x: hidden;
         }
         
-        const parsedUrl = new URL(imageUrl);
+        .view { display: none; }
+        .view.active { display: block; }
+
+        .btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 0.6rem 1.25rem; border-radius: 0.5rem; border: none; font-weight: 600; font-size: 0.9rem; cursor: pointer; transition: all 0.2s ease; }
+        .btn-success { background-color: var(--success-color); color: white; }
+        .btn-success:hover { opacity: 0.9; }
+        .cta-button { background-image: linear-gradient(to right, var(--reseller-primary-color), var(--reseller-secondary-color)); }
+
+        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: none; justify-content: center; align-items: center; z-index: 1000; }
+        .modal-overlay.active { display: flex; }
+        .modal-content { background: var(--card-bg); padding: 2rem; border-radius: var(--border-radius); width: 90%; max-width: 800px; box-shadow: 0 25px 50px -12px rgb(0 0 0 / 0.25); }
+        .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; }
+        .modal-header h3 { font-size: 1.25rem; }
+        .modal-close-btn { background: none; border: none; cursor: pointer; color: var(--text-light); }
+        .modal-footer { margin-top: 1.5rem; display: flex; justify-content: flex-end; gap: 0.75rem; }
+
+        #toast { position: fixed; bottom: -100px; left: 50%; transform: translateX(-50%); background-color: #333; color: white; padding: 1rem 1.5rem; border-radius: 0.5rem; transition: bottom 0.5s ease; z-index: 2000; box-shadow: var(--shadow); }
         
-        // 3. Validar domínio
-        if (!parsedUrl.hostname.endsWith('.facilzap.app.br')) {
-            return { statusCode: 403, body: "Domínio bloqueado" };
+        .search-input { width: 100%; padding: 0.75rem 1rem; border: 1px solid var(--border-color); border-radius: 0.5rem; font-size: 0.9rem; background-color: var(--card-bg); }
+        .form-group { display: flex; flex-direction: column; }
+        .form-group label { font-weight: 600; margin-bottom: 0.5rem; font-size: 0.9rem; }
+
+        .catalog-top-bar { animation: marquee 25s linear infinite; }
+        @keyframes marquee { from { transform: translateX(0%); } to { transform: translateX(-50%); } }
+        
+        .filter-bubbles { display: flex; gap: 0.5rem; justify-content: center; flex-wrap: wrap; }
+        .filter-bubble { 
+            padding: 0.5rem 1rem;
+            min-width: 60px;
+            height: 60px;
+            border: 2px solid var(--reseller-secondary-color);
+            border-radius: 999px; 
+            cursor: pointer; 
+            font-weight: 600; 
+            font-size: 1rem;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background-color: white;
+            color: var(--reseller-secondary-color);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
         }
-        
-        // 4. Buscar imagem
-        const response = await fetch(imageUrl, {
-            headers: { 'User-Agent': 'Mozilla/5.0' }
-        });
-        
-        // ... (processamento da imagem) ...
-        
-        return {
-            statusCode: 200,
-            headers: {
-                'Content-Type': response.headers.get('content-type'),
-                'Access-Control-Allow-Origin': 'https://cjotarasteirinhas.com.br'
-            },
-            body: Buffer.from(await response.arrayBuffer()).toString('base64'),
-            isBase64Encoded: true
-        };
-        
-    } catch (error) {
-        return {
-            statusCode: 500,
-            body: JSON.stringify({
-                error: "Erro no processamento",
-                originalUrl: encodedUrl,
-                processedUrl: imageUrl,
-                message: error.message
-            })
-        };
-    }
-};
+        .filter-bubble.active { 
+            background-color: var(--reseller-secondary-color); 
+            color: white; 
+        }
+
+        .loading-indicator { text-align: center; padding: 2rem; }
+        .spinner { border: 4px solid rgba(0, 0, 0, 0.1); width: 36px; height: 36px; border-radius: 50%; border-left-color: var(--reseller-primary-color); animation: spin 1s ease infinite; margin: auto; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    </style>
+</head>
+<body>
+
+    <div id="catalog-preview-view" class="view active">
+        <div id="catalog-wrapper">
+            <div class="bg-gradient-to-r from-[var(--reseller-primary-color)] to-[var(--reseller-secondary-color)] text-white py-2 text-sm font-medium overflow-hidden whitespace-nowrap">
+                <div id="catalog-top-bar-container" class="catalog-top-bar inline-block">
+                </div>
+            </div>
+            <div class="relative">
+                <div class="bg-gradient-to-r from-[var(--reseller-primary-color)] to-[var(--reseller-secondary-color)] h-20 flex justify-between items-center px-4 md:px-6 gap-4">
+                    <button id="catalog-menu-toggle" class="text-white"><i data-feather="menu"></i></button>
+                    <div class="relative flex-1 max-w-xl">
+                        <input type="text" id="catalog-search-input" placeholder="o que você procura?..." class="w-full h-11 rounded-full border-none pl-4 pr-12 text-base">
+                        <button id="catalog-search-btn" class="absolute right-1 top-1/2 -translate-y-1/2 bg-[var(--reseller-primary-color)] text-white w-9 h-9 rounded-full flex items-center justify-center">
+                            <i data-feather="search" class="w-5 h-5"></i>
+                        </button>
+                    </div>
+                    <a href="#" id="cart-button" class="relative text-white">
+                        <i data-feather="shopping-cart"></i>
+                        <span class="cart-count absolute -top-2 -right-2 bg-white text-[var(--reseller-primary-color)] w-5 h-5 rounded-full flex items-center justify-center text-xs font-bold" style="display: none;">0</span>
+                    </a>
+                </div>
+                <div id="catalog-banner" class="h-64 md:h-96 bg-slate-200 bg-cover bg-center"></div>
+                <div class="absolute top-full left-1/2 -translate-x-1/2 -translate-y-1/2 z-10">
+                    <img id="catalog-logo" src="https://placehold.co/160x160/e2e8f0/cccccc?text=" alt="Logo da loja" class="w-32 h-32 md:w-40 md:h-40 rounded-full object-cover border-4 border-white shadow-lg">
+                </div>
+            </div>
+            <main class="bg-white relative z-0 rounded-t-3xl pt-20">
+                <div class="max-w-7xl mx-auto px-4 py-8">
+                     <div class="catalog-filters-container text-center mb-8">
+                        <h3 class="text-xl font-bold text-[var(--reseller-primary-color)] mb-4">Filtre por Numeração</h3>
+                        <div id="size-filter-bubbles" class="filter-bubbles">
+                        </div>
+                    </div>
+                    <div id="catalog-product-grid" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                    </div>
+                    <!-- Otimização: Loader para o Infinite Scroll -->
+                    <div id="infinite-scroll-loader" class="loading-indicator col-span-full" style="display: none;">
+                        <div class="spinner"></div>
+                    </div>
+                </div>
+            </main>
+            <footer class="text-center py-8 bg-slate-800 text-white">
+                <h2 id="catalog-brand-name-footer" class="text-2xl font-bold mb-2">Sua Marca</h2>
+                <p id="catalog-description" class="max-w-xl mx-auto mb-4 text-slate-300"></p>
+                <div class="flex justify-center gap-6">
+                    <a id="catalog-instagram-link" href="#" target="_blank" class="text-[var(--reseller-secondary-color)] font-semibold flex items-center gap-2"><i data-feather="instagram"></i>Instagram</a>
+                    <a id="catalog-whatsapp-link" href="#" target="_blank" class="text-[var(--reseller-secondary-color)] font-semibold flex items-center gap-2"><i data-feather="message-circle"></i>WhatsApp</a>
+                </div>
+            </footer>
+        </div>
+        <div id="product-detail-wrapper" class="view"></div>
+    </div>
+    
+    <!-- MODAIS -->
+    <div id="cart-modal" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-header"><h3>Carrinho de Compras</h3><button class="modal-close-btn" onclick="closeModal('cart-modal')"><i data-feather="x"></i></button></div>
+            <div id="cart-items" style="max-height: 300px; overflow-y: auto;"></div>
+            <div class="modal-footer" style="flex-direction: column; align-items: stretch;">
+                <div style="display: flex; justify-content: space-between; font-size: 1.2rem; font-weight: 700; margin-bottom: 1rem;"><span>Total:</span><span id="cart-total">R$ 0,00</span></div>
+                <button onclick="createPendingOrderAndOpenWhatsApp()" class="btn btn-success" style="width: 100%;">Finalizar Compra no WhatsApp</button>
+            </div>
+        </div>
+    </div>
+    <div id="category-modal" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Categorias</h3>
+                <button class="modal-close-btn" onclick="closeModal('category-modal')"><i data-feather="x"></i></button>
+            </div>
+            <div id="category-list" class="category-list-container"></div>
+        </div>
+    </div>
+    <div id="customer-info-modal" class="modal-overlay">
+        <div class="modal-content" style="max-width: 450px;">
+            <div class="modal-header">
+                <h3>Identifique-se para continuar</h3>
+            </div>
+            <div class="form-group">
+                <label for="customer-name">Seu Nome</label>
+                <input type="text" id="customer-name" class="search-input" style="width: 100%;">
+            </div>
+            <div class="form-group" style="margin-top: 1rem;">
+                <label for="customer-phone">Seu WhatsApp</label>
+                <input type="tel" id="customer-phone" class="search-input" style="width: 100%;" placeholder="(XX) 9XXXX-XXXX">
+            </div>
+            <div class="modal-footer">
+                <button id="save-customer-info-btn" class="btn btn-success" onclick="saveCustomerAndAddToCart()">Continuar Compra</button>
+            </div>
+        </div>
+    </div>
+    <div id="toast"></div>
+
+    <!-- Otimização de Scripts: Adicionado 'defer' para carregamento não-bloqueante -->
+    <script src="../js/servicos.js" defer></script>
+    <script src="../js/catalogo.js" defer></script>
+</body>
+</html>
