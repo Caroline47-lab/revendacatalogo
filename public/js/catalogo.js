@@ -214,7 +214,6 @@ function appendProductsToCatalogGrid(products, clearGrid = false) {
     feather.replace();
 }
 
-// CORREÇÃO: Função auxiliar para gerar as estrelas de avaliação dinamicamente
 function generateRatingStars(rating = 4.8, reviewCount = 89) {
     const fullStars = Math.floor(rating);
     const halfStar = rating % 1 >= 0.5 ? 1 : 0;
@@ -243,6 +242,7 @@ function showProductDetailPage(productId) {
     document.getElementById('catalog-wrapper').style.display = 'none';
     const detailWrapper = document.getElementById('product-detail-wrapper');
     detailWrapper.style.display = 'block';
+    detailWrapper.innerHTML = ''; // Limpa o conteúdo antigo
 
     const product = resellerProducts.find(p => p.id === parseInt(productId));
     if (!product) {
@@ -252,20 +252,8 @@ function showProductDetailPage(productId) {
 
     const margin = resellerProductMargins[product.id] || 30;
     const finalPrice = parseFloat(product.preco_original) * (1 + margin / 100);
-    const productTags = resellerProductTags[productId] || [];
 
-    const thumbnailsHTML = (product.imagens_adicionais && product.imagens_adicionais.length > 1 ? product.imagens_adicionais : [product.imagem]).slice(0, 4).map((imgUrl, index) => `
-        <img src="${proxyImageUrl(imgUrl).replace('600x600', '80x80')}" alt="Thumbnail ${index + 1}" class="thumbnail w-16 h-16 md:w-20 md:h-20 object-cover rounded-lg cursor-pointer border-2 ${index === 0 ? 'border-pink-500 active' : 'border-transparent'}" onclick="changeImage(this, '${proxyImageUrl(imgUrl)}')">
-    `).join('');
-
-    const tagsHTML = productTags.map(tag => {
-        let tagClass = '';
-        if (tag === 'Destaque') tagClass = 'highlight';
-        else if (tag === 'Lançamento') tagClass = 'launch';
-        else if (tag === 'Promoção') tagClass = 'promo';
-        return `<span class="product-detail-tag ${tagClass}">${tag.toUpperCase()}</span>`;
-    }).join('');
-
+    // CORREÇÃO: A lógica para criar os botões e estrelas foi movida para cá
     const sizesHTML = product.variacoes.map(v => {
         const size = String(v.nome || '').replace(/Tamanho:\s*/i, '').trim();
         const isOutOfStock = v.quantidade <= 0;
@@ -274,7 +262,7 @@ function showProductDetailPage(productId) {
 
     const detailHTML = `
         <div class="container mx-auto p-4 lg:p-8">
-            <button class="btn mb-4" id="back-to-catalog-btn" style="background-color: var(--cor-primaria); color: white;"><i data-feather="arrow-left"></i> Voltar ao catálogo</button>
+            <button class="btn mb-4" id="back-to-catalog-btn" style="background-color: var(--reseller-primary-color); color: white;"><i data-feather="arrow-left"></i> Voltar ao catálogo</button>
             <main class="grid grid-cols-1 lg:grid-cols-2 lg:gap-16">
                 <section>
                      <img id="main-product-image" src="${proxyImageUrl(product.imagem)}" alt="${product.nome}" class="w-full h-auto object-cover rounded-xl shadow-lg">
@@ -285,13 +273,13 @@ function showProductDetailPage(productId) {
                         ${generateRatingStars(4.8, 89)}
                     </div>
                     <div class="mb-6">
-                        <span class="text-3xl lg:text-4xl font-bold" style="color: var(--cor-primaria);">R$ ${finalPrice.toFixed(2)}</span>
+                        <span class="text-3xl lg:text-4xl font-bold" style="color: var(--reseller-primary-color);">R$ ${finalPrice.toFixed(2)}</span>
                         <span class="text-slate-500">/cada</span>
                     </div>
                     <div class="mb-6">
                         <div class="flex justify-between items-center mb-2">
                             <label class="text-base font-semibold text-slate-800">Selecione a Numeração:</label>
-                            <a href="#" class="text-sm font-medium" style="color: var(--cor-primaria);"><i data-feather="tool" class="w-4 h-4 inline-block -mt-1"></i> Tabela de medidas</a>
+                            <a href="#" class="text-sm font-medium" style="color: var(--reseller-primary-color);"><i data-feather="tool" class="w-4 h-4 inline-block -mt-1"></i> Tabela de medidas</a>
                         </div>
                         <div class="grid grid-cols-4 gap-2">${sizesHTML}</div>
                     </div>
