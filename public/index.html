@@ -916,12 +916,10 @@
         document.getElementById('show-empresa-panel').addEventListener('click', () => switchView('empresa-view'));
         document.getElementById('show-revendedor-panel').addEventListener('click', () => { 
             switchView('revendedor-view'); 
-            // CORREÇÃO: Inicia o carregamento dos produtos da revendedora
             loadAllPublishedProducts(); 
         });
         document.getElementById('view-catalog-btn').addEventListener('click', (e) => { 
             e.preventDefault(); 
-            // CORREÇÃO: Garante que os produtos da revendedora estão carregados antes de mostrar o catálogo
             loadAllPublishedProducts().then(() => {
                 renderCatalogPreview(); 
                 switchView('catalog-preview-view');
