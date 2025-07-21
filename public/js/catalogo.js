@@ -18,8 +18,8 @@ let pendingCartAction = null;
 
 // --- INICIALIZAÇÃO DO CATÁLOGO ---
 document.addEventListener('DOMContentLoaded', () => {
-    // Roda o setup apenas se encontrar o container do catálogo
-    if (document.getElementById('catalog-wrapper')) {
+    // CORREÇÃO: A verificação agora é feita no elemento principal que sempre existe.
+    if (document.getElementById('catalog-preview-view')) {
         loadLocalDataForCatalog();
         loadAllPublishedProducts().then(() => {
             renderCatalogPreview();
@@ -92,9 +92,45 @@ async function loadAllPublishedProducts() {
 
 function renderCatalogPreview(searchTerm = '', categoryFilter = '') {
     const catalogView = document.getElementById('catalog-preview-view');
-    // A estrutura principal do catálogo já estará no HTML, então só precisamos preenchê-la.
-    const wrapper = document.getElementById('catalog-wrapper');
-    if (!wrapper) return;
+    // Preenche o HTML inicial do catálogo
+    catalogView.innerHTML = `
+        <div id="catalog-wrapper">
+            <div class="catalog-top-bar" id="catalog-top-bar-container"></div>
+            <div class="catalog-header-container">
+                <div class="catalog-gradient-bar">
+                    <button id="catalog-menu-toggle"><i data-feather="menu"></i></button>
+                    <div class="header-search-wrapper">
+                        <input type="text" id="catalog-search-input" placeholder="o que você procura?..." value="${searchTerm}">
+                        <button id="catalog-search-btn"><i data-feather="search" style="width: 20px; height: 20px;"></i></button>
+                    </div>
+                    <a href="#" id="cart-button" class="catalog-cart-icon">
+                        <i data-feather="shopping-cart"></i>
+                        <span id="cart-count" class="cart-count" style="display: none;">0</span>
+                    </a>
+                </div>
+                <div class="catalog-banner-area" id="catalog-banner">BANNER AQUI</div>
+                <div class="catalog-logo-container">
+                    <img id="catalog-logo" src="https://placehold.co/180x180/e2e8f0/cccccc?text=" alt="Logo da loja">
+                </div>
+            </div>
+            <main id="catalog-main-container">
+                <div class="catalog-content-body">
+                    <div id="catalog-main-content">
+                        <div id="catalog-product-grid" class="catalog-grid"></div>
+                    </div>
+                </div>
+            </main>
+            <footer class="catalog-footer">
+                <h2 id="catalog-brand-name-footer" style="font-size: 1.5rem; font-weight: 700; margin-bottom: 0.5rem;">Sua Marca</h2>
+                <p id="catalog-description" style="max-width: 600px; margin: 0 auto 1rem;">Descrição da sua loja aqui.</p>
+                <div style="margin-top: 1rem;">
+                    <a id="catalog-instagram-link" href="#" target="_blank" style="margin-right: 1.5rem;"><i data-feather="instagram" style="display: inline-block; vertical-align: middle; margin-right: 0.5rem;"></i>Instagram</a>
+                    <a id="catalog-whatsapp-link" href="#" target="_blank"><i data-feather="message-circle" style="display: inline-block; vertical-align: middle; margin-right: 0.5rem;"></i>WhatsApp</a>
+                </div>
+            </footer>
+        </div>
+        <div id="product-detail-wrapper"></div>
+    `;
 
     const settings = resellerSettings;
     document.documentElement.style.setProperty('--reseller-primary-color', settings.primaryColor || '#DB1472');
@@ -143,24 +179,26 @@ function renderCatalogPreview(searchTerm = '', categoryFilter = '') {
     catalogView.querySelectorAll('.view-product-btn').forEach(btn => btn.addEventListener('click', (e) => showProductDetailPage(e.target.dataset.productId)));
     
     const categoryList = document.getElementById('category-list');
-    categoryList.innerHTML = '<a href="#" class="category-link" data-category="">Ver Todas as Categorias</a>';
-    publishedCategoryIds.forEach(catName => {
-        const link = document.createElement('a');
-        link.href = '#';
-        link.className = 'category-link';
-        link.dataset.category = catName;
-        link.textContent = catName;
-        categoryList.appendChild(link);
-    });
-
-    document.querySelectorAll('.category-link').forEach(link => {
-        link.addEventListener('click', e => {
-            e.preventDefault();
-            const category = e.target.dataset.category;
-            renderCatalogPreview(searchTerm, category);
-            closeModal('category-modal');
+    if(categoryList) {
+        categoryList.innerHTML = '<a href="#" class="category-link" data-category="">Ver Todas as Categorias</a>';
+        publishedCategoryIds.forEach(catName => {
+            const link = document.createElement('a');
+            link.href = '#';
+            link.className = 'category-link';
+            link.dataset.category = catName;
+            link.textContent = catName;
+            categoryList.appendChild(link);
         });
-    });
+
+        document.querySelectorAll('.category-link').forEach(link => {
+            link.addEventListener('click', e => {
+                e.preventDefault();
+                const category = e.target.dataset.category;
+                renderCatalogPreview(searchTerm, category);
+                closeModal('category-modal');
+            });
+        });
+    }
     
     catalogView.querySelector('#catalog-menu-toggle').addEventListener('click', () => {
         document.getElementById('category-modal').classList.add('active');
@@ -465,4 +503,3 @@ function closeModal(modalId) {
         modal.classList.remove('active');
     }
 }
-
