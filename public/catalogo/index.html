@@ -5,13 +5,15 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Catálogo</title>
     
+    <!-- CORREÇÃO: Adicionado o script do Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     
     <script src="https://unpkg.com/feather-icons"></script>
 
-    <!-- O CSS do catálogo é uma versão simplificada do CSS principal -->
     <style>
         :root {
             --primary-color: #DB1472;
@@ -45,7 +47,7 @@
         .btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 0.6rem 1.25rem; border-radius: 0.5rem; border: none; font-weight: 600; font-size: 0.9rem; cursor: pointer; transition: all 0.2s ease; }
         .btn-success { background-color: var(--success-color); color: white; }
         .btn-success:hover { opacity: 0.9; }
-        .cta-button { background-image: linear-gradient(to right, var(--cor-primaria), var(--cor-secundaria)); }
+        .cta-button { background-image: linear-gradient(to right, var(--reseller-primary-color), var(--reseller-secondary-color)); }
 
         .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: none; justify-content: center; align-items: center; z-index: 1000; }
         .modal-overlay.active { display: flex; }
@@ -61,49 +63,9 @@
         .form-group { display: flex; flex-direction: column; }
         .form-group label { font-weight: 600; margin-bottom: 0.5rem; font-size: 0.9rem; }
 
-        #catalog-preview-view { background-color: #f8fafc; }
-        .catalog-top-bar { background: linear-gradient(90deg, var(--reseller-primary-color), var(--reseller-secondary-color)); color: white; padding: 0.5rem 0; font-size: 0.8rem; font-weight: 500; overflow: hidden; white-space: nowrap; }
-        .top-bar-content { display: inline-block; animation: marquee 25s linear infinite; }
-        .top-bar-content span { display: inline-block; padding: 0 2rem; }
+        .catalog-top-bar { animation: marquee 25s linear infinite; }
         @keyframes marquee { from { transform: translateX(0%); } to { transform: translateX(-50%); } }
         
-        .catalog-header-container { position: relative; }
-        .catalog-gradient-bar { background: linear-gradient(90deg, var(--reseller-primary-color), var(--reseller-secondary-color)); height: 80px; display: flex; justify-content: space-between; align-items: center; padding: 0 1.5rem; gap: 1.5rem; }
-        .catalog-gradient-bar button, .catalog-gradient-bar a { color: white; background: none; border: none; cursor: pointer; }
-        
-        .header-search-wrapper { flex-grow: 1; position: relative; max-width: 600px; }
-        .header-search-wrapper input { width: 100%; height: 44px; border-radius: 999px; border: 1px solid transparent; padding: 0 45px 0 1.5rem; font-size: 1rem; }
-        .header-search-wrapper button { position: absolute; right: 5px; top: 50%; transform: translateY(-50%); background-color: var(--reseller-primary-color); color: white; border: none; width: 34px; height: 34px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; }
-
-        .catalog-banner-area { display: flex; align-items: center; justify-content: center; font-size: 2.5rem; font-weight: 700; color: rgba(0,0,0,0.5); background-color: #e2e8f0; height: 400px; background-size: cover; background-position: center; }
-        .catalog-logo-container { position: absolute; top: 480px; left: 50%; transform: translate(-50%, -50%); z-index: 10; }
-        .catalog-logo-container img { height: 160px; width: 160px; border-radius: 50%; object-fit: cover; border: 5px solid white; box-shadow: 0 5px 20px rgba(0,0,0,0.2); background-color: #e2e8f0; }
-        .catalog-cart-icon { position: relative; }
-        .cart-count { position: absolute; top: -8px; right: -8px; background-color: white; color: var(--reseller-primary-color); border-radius: 50%; width: 20px; height: 20px; display: flex; align-items: center; justify-content: center; font-size: 0.75rem; font-weight: 700; }
-        
-        .catalog-content-body { background-color: var(--card-bg); margin-top: 0; position: relative; z-index: 5; border-radius: 1.5rem 1.5rem 0 0; padding-top: 80px; }
-        .catalog-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 1.5rem; padding: 2rem 1rem; max-width: 1200px; margin: 0 auto; }
-        .catalog-product-card { background-color: var(--card-bg); border-radius: var(--border-radius); box-shadow: var(--shadow); overflow: hidden; display: flex; flex-direction: column; }
-        .catalog-product-card img { width: 100%; height: 300px; object-fit: cover; }
-        .catalog-product-card-body { padding: 1rem; flex-grow: 1; display: flex; flex-direction: column; }
-        .catalog-product-card h3 { font-size: 1.1rem; font-weight: 600; margin-bottom: 0.5rem; }
-        .catalog-product-card .price { font-size: 1.25rem; font-weight: 700; color: var(--reseller-primary-color); margin-bottom: 1rem; }
-        .catalog-product-card .btn { background-color: var(--reseller-primary-color); color: white; width: 100%; margin-top: auto; }
-        .catalog-footer { text-align: center; padding: 2rem; background-color: #334155; color: white; }
-        .catalog-footer a { color: var(--reseller-secondary-color); text-decoration: none; font-weight: 600; }
-
-        .product-detail-info h1 { font-size: 2rem; font-weight: 700; margin-bottom: 0.5rem; }
-        .category-list-container { display: flex; flex-direction: column; gap: 0.5rem; }
-        .category-list-container a { text-decoration: none; color: var(--text-color); padding: 0.75rem 1rem; border-radius: 0.5rem; font-weight: 500; transition: background-color 0.2s; }
-        .category-list-container a:hover { background-color: #f1f5f9; }
-        
-        .catalog-filters-container { padding: 2rem 1rem 1.5rem 1rem; background-color: var(--card-bg); text-align: center; }
-        .catalog-filters-container h3 {
-            color: var(--reseller-primary-color);
-            font-weight: 700;
-            font-size: 1.2rem;
-            margin-bottom: 1.5rem;
-        }
         .filter-bubbles { display: flex; gap: 0.5rem; justify-content: center; flex-wrap: wrap; }
         .filter-bubble { 
             padding: 0.5rem 1rem;
@@ -130,72 +92,64 @@
         .loading-indicator { text-align: center; padding: 2rem; }
         .spinner { border: 4px solid rgba(0, 0, 0, 0.1); width: 36px; height: 36px; border-radius: 50%; border-left-color: var(--reseller-primary-color); animation: spin 1s ease infinite; margin: auto; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-
-        @media (max-width: 768px) {
-            .product-detail-grid { grid-template-columns: 1fr; } 
-            .product-detail-info h1 { font-size: 1.8rem; }
-            .catalog-grid { grid-template-columns: repeat(2, 1fr); gap: 1rem; }
-            .catalog-product-card img { height: 200px; }
-            .catalog-product-card h3 { font-size: 0.9rem; }
-            .catalog-product-card .price { font-size: 1rem; }
-            .catalog-banner-area { height: 250px; }
-            .catalog-logo-container { top: 330px; }
-            .catalog-logo-container img { height: 120px; width: 120px; }
-            .catalog-content-body { padding-top: 60px; }
-            .catalog-gradient-bar { gap: 1rem; padding: 0 1rem; }
-            .header-search-wrapper input { font-size: 0.9rem; padding: 0 40px 0 1rem; }
-        }
     </style>
 </head>
 <body>
 
     <div id="catalog-preview-view" class="view active">
         <div id="catalog-wrapper">
-            <div class="catalog-top-bar" id="catalog-top-bar-container"></div>
-            <div class="catalog-header-container">
-                <div class="catalog-gradient-bar">
-                    <button id="catalog-menu-toggle"><i data-feather="menu"></i></button>
-                    <div class="header-search-wrapper">
-                        <input type="text" id="catalog-search-input" placeholder="o que você procura?...">
-                        <button id="catalog-search-btn"><i data-feather="search" style="width: 20px; height: 20px;"></i></button>
-                    </div>
-                    <a href="#" id="cart-button" class="catalog-cart-icon">
-                        <i data-feather="shopping-cart"></i>
-                        <span id="cart-count" class="cart-count" style="display: none;">0</span>
-                    </a>
-                </div>
-                <div class="catalog-banner-area" id="catalog-banner">BANNER AQUI</div>
-                <div class="catalog-logo-container">
-                    <img id="catalog-logo" src="https://placehold.co/180x180/e2e8f0/cccccc?text=" alt="Logo da loja">
+            <div class="bg-gradient-to-r from-[var(--reseller-primary-color)] to-[var(--reseller-secondary-color)] text-white py-2 text-sm font-medium overflow-hidden whitespace-nowrap">
+                <div class="catalog-top-bar inline-block">
+                    <span id="top-bar-msg-1" class="inline-block px-8"></span>
+                    <span id="top-bar-msg-2" class="inline-block px-8"></span>
+                    <span id="top-bar-msg-3" class="inline-block px-8"></span>
+                    <!-- Repetido para efeito contínuo -->
+                    <span id="top-bar-msg-1-repeat" class="inline-block px-8"></span>
+                    <span id="top-bar-msg-2-repeat" class="inline-block px-8"></span>
+                    <span id="top-bar-msg-3-repeat" class="inline-block px-8"></span>
                 </div>
             </div>
-            <main id="catalog-main-container">
-                <div class="catalog-content-body">
-                    <div class="catalog-filters-container">
-                        <h3>Filtre por Numeração</h3>
-                        <div id="size-filter-bubbles" class="filter-bubbles">
-                            <!-- Filtros de tamanho serão inseridos aqui pelo JS -->
-                        </div>
+            <div class="relative">
+                <div class="bg-gradient-to-r from-[var(--reseller-primary-color)] to-[var(--reseller-secondary-color)] h-20 flex justify-between items-center px-4 md:px-6 gap-4">
+                    <button id="catalog-menu-toggle" class="text-white"><i data-feather="menu"></i></button>
+                    <div class="relative flex-1 max-w-xl">
+                        <input type="text" id="catalog-search-input" placeholder="o que você procura?..." class="w-full h-11 rounded-full border-none pl-4 pr-12 text-base">
+                        <button id="catalog-search-btn" class="absolute right-1 top-1/2 -translate-y-1/2 bg-[var(--reseller-primary-color)] text-white w-9 h-9 rounded-full flex items-center justify-center">
+                            <i data-feather="search" class="w-5 h-5"></i>
+                        </button>
                     </div>
-                    <div id="catalog-main-content">
-                        <div id="catalog-product-grid" class="catalog-grid">
-                            <div id="catalog-loader" class="loading-indicator" style="grid-column: 1 / -1;">
-                                <div class="spinner"></div>
-                            </div>
+                    <a href="#" id="cart-button" class="relative text-white">
+                        <i data-feather="shopping-cart"></i>
+                        <span id="cart-count" class="absolute -top-2 -right-2 bg-white text-[var(--reseller-primary-color)] w-5 h-5 rounded-full flex items-center justify-center text-xs font-bold" style="display: none;">0</span>
+                    </a>
+                </div>
+                <div id="catalog-banner" class="h-64 md:h-96 bg-slate-200 bg-cover bg-center"></div>
+                <div class="absolute top-full left-1/2 -translate-x-1/2 -translate-y-1/2 z-10">
+                    <img id="catalog-logo" src="https://placehold.co/160x160/e2e8f0/cccccc?text=" alt="Logo da loja" class="w-32 h-32 md:w-40 md:h-40 rounded-full object-cover border-4 border-white shadow-lg">
+                </div>
+            </div>
+            <main class="bg-white relative z-0 rounded-t-3xl pt-20">
+                <div class="catalog-filters-container">
+                    <h3 class="text-xl font-bold text-[var(--reseller-primary-color)] mb-4">Filtre por Numeração</h3>
+                    <div id="size-filter-bubbles" class="filter-bubbles"></div>
+                </div>
+                <div id="catalog-main-content" class="max-w-7xl mx-auto px-4">
+                    <div id="catalog-product-grid" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                        <div id="catalog-loader" class="loading-indicator col-span-full">
+                            <div class="spinner"></div>
                         </div>
                     </div>
                 </div>
             </main>
-            <footer class="catalog-footer">
-                <h2 id="catalog-brand-name-footer" style="font-size: 1.5rem; font-weight: 700; margin-bottom: 0.5rem;">Sua Marca</h2>
-                <p id="catalog-description" style="max-width: 600px; margin: 0 auto 1rem;">Descrição da sua loja aqui.</p>
-                <div style="margin-top: 1rem;">
-                    <a id="catalog-instagram-link" href="#" target="_blank" style="margin-right: 1.5rem;"><i data-feather="instagram" style="display: inline-block; vertical-align: middle; margin-right: 0.5rem;"></i>Instagram</a>
-                    <a id="catalog-whatsapp-link" href="#" target="_blank"><i data-feather="message-circle" style="display: inline-block; vertical-align: middle; margin-right: 0.5rem;"></i>WhatsApp</a>
+            <footer class="text-center py-8 bg-slate-800 text-white">
+                <h2 id="catalog-brand-name-footer" class="text-2xl font-bold mb-2">Sua Marca</h2>
+                <p id="catalog-description" class="max-w-xl mx-auto mb-4 text-slate-300"></p>
+                <div class="flex justify-center gap-6">
+                    <a id="catalog-instagram-link" href="#" target="_blank" class="text-[var(--reseller-secondary-color)] font-semibold flex items-center gap-2"><i data-feather="instagram"></i>Instagram</a>
+                    <a id="catalog-whatsapp-link" href="#" target="_blank" class="text-[var(--reseller-secondary-color)] font-semibold flex items-center gap-2"><i data-feather="message-circle"></i>WhatsApp</a>
                 </div>
             </footer>
         </div>
-        <!-- Este é o "palco vazio" para a página de detalhes do produto -->
         <div id="product-detail-wrapper" class="view"></div>
     </div>
     
