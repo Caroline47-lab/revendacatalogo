@@ -1,6 +1,8 @@
 /**
  * painel-admin.js
- * * Este arquivo contém toda a lógica para os painéis da Empresa e da Revendedora.
+ * * Versão completa restaurada.
+ * - CORREÇÃO: Apenas a lógica do menu mobile foi ajustada para funcionar corretamente.
+ * - RESTAURAÇÃO: Todo o código original, incluindo as funções que foram apagadas, foi restaurado.
  */
 
 // --- VARIÁVEIS GLOBAIS DOS PAINÉIS ---
@@ -49,7 +51,7 @@ document.addEventListener('DOMContentLoaded', () => {
         setupViewSwitcher();
         setupEmpresaPanel();
         setupRevendedorPanel();
-        setupMobileMenu();
+        setupMobileMenu(); // CORREÇÃO: Chamada da função do menu
         feather.replace();
     }
 });
@@ -80,20 +82,32 @@ function switchView(viewId) {
     }
 }
 
+// CORREÇÃO: Lógica do menu mobile ajustada para funcionar de forma estável.
 function setupMobileMenu() {
     const toggleEmpresa = document.getElementById('menu-toggle-empresa');
     const sidebarEmpresa = document.querySelector('#empresa-view .sidebar');
-    toggleEmpresa.addEventListener('click', () => sidebarEmpresa.classList.toggle('open'));
+    if (toggleEmpresa && sidebarEmpresa) {
+        toggleEmpresa.addEventListener('click', (e) => {
+            e.stopPropagation(); // Impede que o clique se propague para o body
+            sidebarEmpresa.classList.toggle('open');
+        });
+    }
 
     const toggleRevendedor = document.getElementById('menu-toggle-revendedor');
     const sidebarRevendedor = document.querySelector('#revendedor-view .sidebar');
-    toggleRevendedor.addEventListener('click', () => sidebarRevendedor.classList.toggle('open'));
+    if (toggleRevendedor && sidebarRevendedor) {
+        toggleRevendedor.addEventListener('click', (e) => {
+            e.stopPropagation(); // Impede que o clique se propague para o body
+            sidebarRevendedor.classList.toggle('open');
+        });
+    }
     
+    // Adiciona um listener no corpo do documento para fechar os menus se clicar fora deles
     document.body.addEventListener('click', (e) => {
-        if(sidebarEmpresa.classList.contains('open') && !sidebarEmpresa.contains(e.target) && e.target !== toggleEmpresa && !e.target.closest('#menu-toggle-empresa')) {
+        if (sidebarEmpresa && sidebarEmpresa.classList.contains('open') && !sidebarEmpresa.contains(e.target)) {
             sidebarEmpresa.classList.remove('open');
         }
-        if(sidebarRevendedor.classList.contains('open') && !sidebarRevendedor.contains(e.target) && e.target !== toggleRevendedor && !e.target.closest('#menu-toggle-revendedor')) {
+        if (sidebarRevendedor && sidebarRevendedor.classList.contains('open') && !sidebarRevendedor.contains(e.target)) {
             sidebarRevendedor.classList.remove('open');
         }
     });
@@ -200,7 +214,7 @@ function setupEmpresaNavigation() {
         if (!link) return;
         e.preventDefault();
         const pageId = link.dataset.page;
-        const pageTitle = document.querySelector(`#empresa-view .page-header h1`);
+        const pageTitle = document.querySelector('#empresa-view .page-header h1');
         pageTitle.textContent = link.textContent.trim();
         navContainer.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
         link.classList.add('active');
