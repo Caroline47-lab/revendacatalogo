@@ -21,7 +21,6 @@ let selectedSize = ''; // Variável para guardar o tamanho selecionado
 document.addEventListener('DOMContentLoaded', () => {
     if (document.getElementById('catalog-preview-view')) {
         loadLocalDataForCatalog();
-        // Inicia o processo de carregamento progressivo
         loadAndDisplayCatalog();
         feather.replace();
     }
@@ -48,9 +47,7 @@ function loadLocalDataForCatalog() {
     if (savedSettings) resellerSettings = JSON.parse(savedSettings);
 }
 
-// CORREÇÃO: Função principal que controla o carregamento progressivo
 async function loadAndDisplayCatalog() {
-    // 1. Renderiza o "esqueleto" da página imediatamente
     renderCatalogShell();
     
     resellerProducts = []; 
@@ -75,7 +72,6 @@ async function loadAndDisplayCatalog() {
                     return { id: parseInt(p.id, 10), nome: p.nome || 'Nome não informado', sku: p.sku || 'N/A', preco_original: parseFloat(p.preco || 0), imagem: imagens[0] || null, imagens_adicionais: imagens, estoque_total: estoqueTotal, variacoes: variacoes, status: estoqueTotal > 0 ? 'ativo' : 'sem_estoque', categoria_nome: p.categoria_nome || 'Sem Categoria' };
                 });
                 resellerProducts.push(...processed);
-                // 2. Adiciona os produtos encontrados à vitrine assim que chegam
                 appendProductsToCatalogGrid(processed);
             }
             
@@ -86,7 +82,6 @@ async function loadAndDisplayCatalog() {
         console.error("Erro ao buscar produtos para o catálogo:", error);
         showToast("Erro ao carregar os produtos.", "error");
     } finally {
-        // 3. Quando tudo terminar, gera os filtros de tamanho e remove o spinner
         renderSizeFilters();
         const loader = document.getElementById('catalog-loader');
         if(loader) loader.style.display = 'none';
@@ -100,14 +95,14 @@ async function loadAndDisplayCatalog() {
 function renderSizeFilters() {
     const allVariations = resellerProducts
         .flatMap(p => p.variacoes.map(v => (v.nome || '').replace(/Tamanho:\s*/i, '').trim()))
-        .filter(v => v && !isNaN(v)); // Filtra apenas os que são números
+        .filter(v => v && !isNaN(v));
 
     const uniqueSizes = [...new Set(allVariations)].sort((a, b) => a - b);
 
     const container = document.getElementById('size-filter-bubbles');
     if (!container) return;
     
-    container.innerHTML = ''; // Limpa filtros antigos
+    container.innerHTML = '';
 
     const allButton = document.createElement('button');
     allButton.className = 'filter-bubble active';
@@ -135,7 +130,6 @@ function renderSizeFilters() {
     });
 }
 
-// CORREÇÃO: Nova função para renderizar apenas a estrutura principal do catálogo
 function renderCatalogShell() {
     const settings = resellerSettings;
     document.documentElement.style.setProperty('--reseller-primary-color', settings.primaryColor || '#DB1472');
@@ -163,7 +157,6 @@ function renderCatalogShell() {
     document.getElementById('catalog-instagram-link').href = settings.instagram ? `https://instagram.com/${settings.instagram.replace('@','')}` : '#';
     document.getElementById('catalog-whatsapp-link').href = settings.contactPhone ? `https://wa.me/55${settings.contactPhone.replace(/\D/g,'')}` : '#';
 
-    // Adiciona eventos aos elementos do esqueleto
     document.getElementById('catalog-menu-toggle').addEventListener('click', () => {
         document.getElementById('category-modal').classList.add('active');
     });
@@ -180,10 +173,8 @@ function renderCatalogShell() {
     feather.replace();
 }
 
-// CORREÇÃO: Nova função para filtrar e renderizar a grade de produtos
 function filterAndRenderCatalogGrid() {
     const searchTerm = document.getElementById('catalog-search-input').value.toLowerCase();
-    // A categoria ainda não está implementada nesta visão, então deixamos vazio
     const categoryFilter = ''; 
 
     let activeCatalogProducts = resellerProducts.filter(p => resellerActiveProductIds.includes(p.id));
@@ -202,10 +193,9 @@ function filterAndRenderCatalogGrid() {
         grid.innerHTML = '<p class="placeholder-card" style="grid-column: 1 / -1;">Nenhum produto encontrado.</p>';
         return;
     }
-    appendProductsToCatalogGrid(activeCatalogProducts, true); // O 'true' indica para limpar a grade antes
+    appendProductsToCatalogGrid(activeCatalogProducts, true);
 }
 
-// CORREÇÃO: Nova função que apenas adiciona produtos à grade do catálogo
 function appendProductsToCatalogGrid(products, clearGrid = false) {
     const grid = document.getElementById('catalog-product-grid');
     if (!grid) return;
@@ -217,28 +207,40 @@ function appendProductsToCatalogGrid(products, clearGrid = false) {
         const card = document.createElement('div');
         card.className = 'catalog-product-card';
         card.innerHTML = `<img src="${proxyImageUrl(p.imagem)}" alt="${p.nome}" loading="lazy" width="300" height="300" onerror="this.src='https://placehold.co/300x300/e2e8f0/94a3b8?text=Imagem'"><div class="catalog-product-card-body"><h3>${p.nome}</h3><p class="price">R$ ${finalPrice.toFixed(2)}</p><button class="btn view-product-btn" data-product-id="${p.id}">Ver Detalhes</button></div>`;
-        card.querySelector('.view-product-btn').addEventListener('click', (e) => showProductDetailPage(e.target.dataset.productId));
+        
+        // CORREÇÃO: Usa e.currentTarget para garantir que pegamos o botão, mesmo se houver um ícone dentro.
+        card.querySelector('.view-product-btn').addEventListener('click', (e) => showProductDetailPage(e.currentTarget.dataset.productId));
         grid.appendChild(card);
     });
     feather.replace();
 }
 
-
 function showProductDetailPage(productId) {
+    // Logging de Diagnóstico Passo 1: A função foi chamada?
+    console.log(`[Diagnóstico] Chamando showProductDetailPage com o ID: ${productId} (tipo: ${typeof productId})`);
+
     document.getElementById('catalog-wrapper').style.display = 'none';
     const detailWrapper = document.getElementById('product-detail-wrapper');
     detailWrapper.style.display = 'block';
 
+    // Logging de Diagnóstico Passo 2: O produto foi encontrado?
     const product = resellerProducts.find(p => p.id === parseInt(productId));
+    console.log('[Diagnóstico] Produto encontrado:', product);
+
     if (!product) {
         detailWrapper.innerHTML = `<p class="placeholder-card">Produto não encontrado.</p>`;
+        // Logging de Diagnóstico Passo 3: O que acontece se o produto não for encontrado.
+        console.error(`[Diagnóstico] ERRO: Produto com ID ${productId} não foi encontrado na lista 'resellerProducts'.`);
         return;
     }
 
     const margin = resellerProductMargins[product.id] || 30;
-    const finalPrice = parseFloat(p.preco_original) * (1 + margin / 100);
-    const priceFrom = finalPrice / 0.92;
+    const finalPrice = parseFloat(product.preco_original) * (1 + margin / 100);
     const productTags = resellerProductTags[productId] || [];
+
+    const thumbnailsHTML = (product.imagens_adicionais && product.imagens_adicionais.length > 0 ? product.imagens_adicionais : [product.imagem]).slice(0, 4).map((imgUrl, index) => `
+        <img src="${proxyImageUrl(imgUrl).replace('600x600', '80x80')}" alt="Thumbnail ${index + 1}" class="thumbnail w-16 h-16 md:w-20 md:h-20 object-cover rounded-lg cursor-pointer border-2 ${index === 0 ? 'border-pink-500 active' : 'border-transparent'}" onclick="changeImage(this, '${proxyImageUrl(imgUrl)}')">
+    `).join('');
 
     const tagsHTML = productTags.map(tag => {
         let tagClass = '';
@@ -248,110 +250,86 @@ function showProductDetailPage(productId) {
         return `<span class="product-detail-tag ${tagClass}">${tag.toUpperCase()}</span>`;
     }).join('');
 
-    const variationsHTML = product.variacoes.map(v => {
-        const size = String(v.nome || '').replace('Tamanho: ', '').trim();
+    const sizesHTML = product.variacoes.map(v => {
+        const size = String(v.nome || '').replace(/Tamanho:\s*/i, '').trim();
         const isOutOfStock = v.quantidade <= 0;
-        return `
-            <div class="size-option ${isOutOfStock ? 'disabled' : ''}">
-                <div class="size-label">${size}</div>
-                <div class="quantity-stepper" data-variation-name="${v.nome}" data-max-stock="${v.quantidade}">
-                    <button class="quantity-btn" data-action="decrease" ${isOutOfStock ? 'disabled' : ''}>-</button>
-                    <input type="number" class="quantity-input" value="0" min="0" max="${v.quantidade}" ${isOutOfStock ? 'disabled' : ''} readonly>
-                    <button class="quantity-btn" data-action="increase" ${isOutOfStock ? 'disabled' : ''}>+</button>
-                </div>
-            </div>
-        `;
+        return `<button class="size-btn border-2 rounded-lg p-3 text-center font-semibold ${isOutOfStock ? 'border-slate-200 bg-slate-50 text-slate-400 cursor-not-allowed' : 'border-slate-300 hover:border-pink-500 focus:border-pink-500 focus:bg-pink-50'}" ${isOutOfStock ? 'disabled' : ''}>${size}</button>`;
     }).join('');
 
-    detailWrapper.innerHTML = `
-        <div id="product-detail-container">
-            <button class="btn" id="back-to-catalog-btn" style="margin-bottom: 1rem;"><i data-feather="arrow-left"></i> Voltar ao catálogo</button>
-            <div class="product-detail-grid">
-                <div class="product-detail-images">
-                    <img src="${proxyImageUrl(product.imagem)}" alt="${product.nome}" loading="lazy" width="580" height="580">
-                </div>
-                <div class="product-detail-info">
-                    <div class="product-detail-tags">${tagsHTML}</div>
-                    <h1>${product.nome}</h1>
-                    <div class="product-detail-rating">
-                        <i data-feather="star" fill="#f59e0b" stroke="#f59e0b"></i>
-                        <i data-feather="star" fill="#f59e0b" stroke="#f59e0b"></i>
-                        <i data-feather="star" fill="#f59e0b" stroke="#f59e0b"></i>
-                        <i data-feather="star" fill="#f59e0b" stroke="#f59e0b"></i>
-                        <i data-feather="star" fill="#f59e0b" stroke="#f59e0b"></i>
+    const detailHTML = `
+        <div class="container mx-auto p-4 lg:p-8">
+            <button class="btn mb-4" id="back-to-catalog-btn" style="background-color: var(--cor-primaria); color: white;"><i data-feather="arrow-left"></i> Voltar ao catálogo</button>
+            <main class="grid grid-cols-1 lg:grid-cols-2 lg:gap-16">
+                <section class="flex flex-col-reverse md:flex-row gap-4">
+                    <div class="flex md:flex-col gap-3 justify-center">${thumbnailsHTML}</div>
+                    <div class="flex-1">
+                        <img id="main-product-image" src="${proxyImageUrl(product.imagem)}" alt="${product.nome}" class="w-full h-auto object-cover rounded-xl shadow-lg">
                     </div>
-                    <div class="product-detail-price-container">
-                        <span class="price-from">De R$ ${priceFrom.toFixed(2)}</span>
-                        <span class="price-to">A Partir de: R$ ${finalPrice.toFixed(2)}</span>
+                </section>
+                <section class="mt-8 lg:mt-0">
+                    <h1 class="text-2xl lg:text-3xl font-bold text-slate-900 leading-tight mb-2">${product.nome}</h1>
+                    <div class="flex items-center gap-4 mb-4 text-sm text-slate-500">
+                        <div class="flex items-center gap-1 text-amber-500">
+                            <i data-feather="star" class="w-4 h-4 fill-current"></i><i data-feather="star" class="w-4 h-4 fill-current"></i><i data-feather="star" class="w-4 h-4 fill-current"></i><i data-feather="star" class="w-4 h-4 fill-current"></i><i data-feather="star" class="w-4 h-4"></i>
+                            <span class="ml-1 font-semibold text-slate-600">4.8</span><span>(89 avaliações)</span>
+                        </div>
                     </div>
-                    <div class="size-options-container">
-                        <label>Tamanho:</label>
-                        <div class="size-grid">${variationsHTML}</div>
+                    <div class="mb-6">
+                        <span class="text-3xl lg:text-4xl font-bold" style="color: var(--cor-primaria);">R$ ${finalPrice.toFixed(2)}</span>
+                        <span class="text-slate-500">/cada</span>
                     </div>
-                    <button class="btn buy-button" id="detail-buy-btn" data-product-id="${product.id}">COMPRAR</button>
-                    <div class="product-info-icons">
-                        <div><i data-feather="truck"></i><span>Despacho em até 72hs úteis</span></div>
-                        <div><i data-feather="credit-card"></i><span>Pague no cartão de crédito</span></div>
-                        <div><i data-feather="box"></i><span>Receba o produto que está esperando</span></div>
+                    <div class="mb-6">
+                        <div class="flex justify-between items-center mb-2">
+                            <label class="text-base font-semibold text-slate-800">Selecione a Numeração:</label>
+                            <a href="#" class="text-sm font-medium" style="color: var(--cor-primaria);"><i data-feather="ruler" class="w-4 h-4 inline-block -mt-1"></i> Tabela de medidas</a>
+                        </div>
+                        <div class="grid grid-cols-4 gap-2">${sizesHTML}</div>
                     </div>
-                </div>
-            </div>
+                    <div class="mb-6">
+                         <label class="text-base font-semibold text-slate-800 mb-2 block">Quantidade:</label>
+                         <div class="flex items-center border border-slate-300 rounded-lg w-32">
+                            <button class="p-3 text-slate-500 hover:text-pink-600" onclick="updateQuantity(-1)"><i data-feather="minus" class="w-4 h-4"></i></button>
+                            <input id="quantity-input" type="text" value="1" class="w-full text-center font-bold text-lg border-none focus:ring-0">
+                            <button class="p-3 text-slate-500 hover:text-pink-600" onclick="updateQuantity(1)"><i data-feather="plus" class="w-4 h-4"></i></button>
+                         </div>
+                    </div>
+                    <button class="cta-button w-full h-14 rounded-lg text-white font-bold text-lg shadow-lg hover:opacity-90 transition-all transform hover:scale-105">COMPRAR AGORA</button>
+                    <div class="grid grid-cols-2 md:grid-cols-3 gap-4 mt-6 text-center text-sm text-slate-600">
+                        <div class="flex flex-col items-center gap-1"><i data-feather="shield" class="w-6 h-6 text-green-600"></i><span>Compra 100% Segura</span></div>
+                        <div class="flex flex-col items-center gap-1"><i data-feather="truck" class="w-6 h-6 text-blue-600"></i><span>Entrega para todo Brasil</span></div>
+                        <div class="flex flex-col items-center gap-1"><i data-feather="refresh-cw" class="w-6 h-6 text-orange-500"></i><span>Devolução Grátis</span></div>
+                    </div>
+                </section>
+            </main>
         </div>
     `;
+    
+    // Logging de Diagnóstico Passo 4: O HTML foi construído?
+    console.log('[Diagnóstico] HTML da página de detalhes foi construído.');
+    detailWrapper.innerHTML = detailHTML;
+    console.log('[Diagnóstico] HTML inserido no wrapper.');
 
     detailWrapper.querySelector('#back-to-catalog-btn').addEventListener('click', () => {
         detailWrapper.style.display = 'none';
         document.getElementById('catalog-wrapper').style.display = 'block';
     });
 
-    detailWrapper.addEventListener('click', e => {
-        if (e.target.classList.contains('quantity-btn')) {
-            const stepper = e.target.closest('.quantity-stepper');
-            const input = stepper.querySelector('.quantity-input');
-            const maxStock = parseInt(stepper.dataset.maxStock);
-            let currentValue = parseInt(input.value);
-            const action = e.target.dataset.action;
-
-            if (action === 'increase') {
-                if (currentValue < maxStock) {
-                    input.value = currentValue + 1;
-                } else {
-                    showToast(`Apenas ${maxStock} unidades em estoque.`, 'warning');
-                }
-            } else if (action === 'decrease' && currentValue > 0) {
-                input.value = currentValue - 1;
-            }
-        }
-    });
-
-    detailWrapper.querySelector('#detail-buy-btn').addEventListener('click', e => {
-        const productId = e.target.dataset.productId;
-        const sizeOptions = detailWrapper.querySelectorAll('.quantity-stepper');
-        let itemsToAdd = [];
-        let hasError = false;
-        sizeOptions.forEach(option => {
-            const quantity = parseInt(option.querySelector('.quantity-input').value);
-            if (quantity > 0) {
-                const variationName = option.dataset.variationName;
-                const maxStock = parseInt(option.dataset.maxStock);
-                if (quantity > maxStock) {
-                    showToast(`Quantidade para ${variationName} excede o estoque (${maxStock}).`, 'error');
-                    hasError = true;
-                }
-                itemsToAdd.push({ productId, variationName, quantity });
-            }
-        });
-
-        if (hasError) return;
-
-        if (itemsToAdd.length > 0) {
-            handleAddToCart(itemsToAdd);
-        } else {
-            showToast('Selecione a quantidade de pelo menos um item.', 'error');
-        }
-    });
-
     feather.replace();
+    console.log('[Diagnóstico] Ícones Feather renderizados.');
+}
+
+function changeImage(thumbElement, newSrc) {
+    document.getElementById('main-product-image').src = newSrc.replace('80x80', '600x600');
+    document.querySelectorAll('.thumbnail').forEach(thumb => thumb.classList.remove('border-pink-500', 'active'));
+    thumbElement.classList.add('border-pink-500', 'active');
+}
+
+function updateQuantity(amount) {
+    const input = document.getElementById('quantity-input');
+    let currentValue = parseInt(input.value);
+    if (currentValue + amount > 0) {
+        input.value = currentValue + amount;
+    }
 }
 
 function handleAddToCart(items) {
