@@ -1,6 +1,7 @@
 /**
  * painel-admin.js
- * * Versão corrigida e otimizada.
+ * * Versão final corrigida.
+ * - CORREÇÃO: Lógica de integração restaurada pela função loadLocalData().
  * - CORREÇÃO: Menu mobile agora funciona de forma estável.
  * - OTIMIZAÇÃO: Painel da revendedora agora usa paginação para carregamento rápido.
  */
@@ -56,7 +57,6 @@ document.addEventListener('DOMContentLoaded', () => {
         setupViewSwitcher();
         setupEmpresaPanel();
         setupRevendedorPanel();
-        // CORREÇÃO: A configuração do menu é chamada aqui para garantir que os elementos existam.
         setupMobileMenu();
         feather.replace();
     }
@@ -67,7 +67,6 @@ function setupViewSwitcher() {
     document.getElementById('show-empresa-panel').addEventListener('click', () => switchView('empresa-view'));
     document.getElementById('show-revendedor-panel').addEventListener('click', () => { 
         switchView('revendedor-view'); 
-        // OTIMIZAÇÃO: Carrega apenas a primeira página ao entrar
         loadResellerProductsForPage(1); 
     });
     document.getElementById('view-catalog-btn').addEventListener('click', (e) => { 
@@ -88,7 +87,6 @@ function switchView(viewId) {
     }
 }
 
-// CORREÇÃO: Lógica do menu mobile simplificada e robusta.
 function setupMobileMenu() {
     const toggleEmpresa = document.getElementById('menu-toggle-empresa');
     const sidebarEmpresa = document.querySelector('#empresa-view .sidebar');
@@ -108,7 +106,6 @@ function setupMobileMenu() {
         });
     }
     
-    // Fecha o menu se clicar fora
     document.body.addEventListener('click', (e) => {
         if (sidebarEmpresa && sidebarEmpresa.classList.contains('open') && !sidebarEmpresa.contains(e.target)) {
             sidebarEmpresa.classList.remove('open');
@@ -214,7 +211,6 @@ function resetAndReloadProducts() {
     loadProductsForPage(productCurrentPage);
 }
 
-// CORREÇÃO: A movimentação do header foi removida para garantir a estabilidade do menu.
 function setupEmpresaNavigation() {
     const navContainer = document.getElementById('empresa-nav');
     const pageTitle = document.querySelector('#empresa-view .page-header h1');
@@ -242,11 +238,43 @@ function setupEmpresaNavigation() {
     });
 }
 
+// CORREÇÃO: Função restaurada para carregar todos os dados do localStorage.
 function loadLocalData() {
-    // ... (função sem alterações)
+    const savedCategories = localStorage.getItem('erpCategories');
+    if (savedCategories) allCategories = JSON.parse(savedCategories);
+
+    const savedPublished = localStorage.getItem('erpPublished');
+    if (savedPublished) {
+        publishedProductIds = JSON.parse(savedPublished).map(id => parseInt(id, 10));
+    }
+
+    const savedPublishedCategories = localStorage.getItem('erpPublishedCategories');
+    if (savedPublishedCategories) publishedCategoryIds = JSON.parse(savedPublishedCategories);
+
+    const savedResellers = localStorage.getItem('erpResellers');
+    if (savedResellers) mockResellers = JSON.parse(savedResellers);
+
+    const savedMargins = localStorage.getItem('resellerMargins');
+    if (savedMargins) resellerProductMargins = JSON.parse(savedMargins);
+
+    const savedTags = localStorage.getItem('resellerProductTags');
+    if (savedTags) resellerProductTags = JSON.parse(savedTags);
+
+    const savedResellerActive = localStorage.getItem('resellerActiveProducts');
+    if (savedResellerActive) {
+        resellerActiveProductIds = JSON.parse(savedResellerActive).map(id => parseInt(id, 10));
+    }
+
+    const savedSettings = localStorage.getItem('resellerSettings');
+    if (savedSettings) resellerSettings = JSON.parse(savedSettings);
+    
+    const savedTime = localStorage.getItem('erpLastSync');
+    if (savedTime) document.getElementById('last-sync-time').textContent = `Última sincronização: ${savedTime}`;
+
+    const savedAbandonedCarts = localStorage.getItem('abandonedCarts');
+    if (savedAbandonedCarts) abandonedCarts = JSON.parse(savedAbandonedCarts);
 }
 
-// ... (demais funções do painel da empresa sem alterações)
 function renderProductsTable() {
     const tbody = document.getElementById('products-table-body');
     tbody.innerHTML = ''; 
@@ -277,7 +305,6 @@ function renderProductsTable() {
 
 // --- LÓGICA DO PAINEL DA REVENDEDORA ---
 
-// OTIMIZAÇÃO: Adiciona controles de paginação ao HTML do painel da revendedora.
 function addResellerPaginationControls() {
     const section = document.getElementById('reseller-products');
     if (section && !document.getElementById('reseller-pagination-controls')) {
@@ -294,7 +321,7 @@ function addResellerPaginationControls() {
 }
 
 function setupRevendedorPanel() {
-    addResellerPaginationControls(); // Garante que os botões existam
+    addResellerPaginationControls(); 
 
     const navContainer = document.getElementById('revendedor-nav');
     const pageTitle = document.getElementById('revendedor-page-title');
@@ -324,7 +351,6 @@ function setupRevendedorPanel() {
     document.getElementById('apply-mass-margin').addEventListener('click', applyMassMargin);
     document.getElementById('save-settings-btn').addEventListener('click', saveResellerSettings);
     
-    // Paginação da Revendedora
     document.getElementById('reseller-prev-page-btn').addEventListener('click', () => {
         if (resellerCurrentPage > 1) {
             resellerCurrentPage--;
@@ -340,7 +366,6 @@ function setupRevendedorPanel() {
     });
 }
 
-// OTIMIZAÇÃO: Carrega produtos da revendedora de forma paginada.
 async function loadResellerProductsForPage(page) {
     if (resellerIsLoading) return;
     resellerIsLoading = true;
@@ -358,10 +383,9 @@ async function loadResellerProductsForPage(page) {
     nextBtn.disabled = true;
 
     try {
-        // Busca TODOS os produtos da API (a API não tem filtro de "publicados")
         const data = await realApiFetch(page, PRODUCTS_PER_PAGE, '');
         
-        // Filtra apenas os produtos que o admin publicou
+        // A lógica de integração agora funciona pois `publishedProductIds` é carregado corretamente.
         const publishedProducts = data.data.filter(p => publishedProductIds.includes(parseInt(p.id, 10)));
         
         resellerHasNextPage = data.hasNext;
@@ -455,6 +479,3 @@ function saveResellerMargin(productId) {
     closeModal('reseller-product-edit-modal');
     showToast('Margem do produto atualizada!', 'success');
 }
-
-// ... e assim por diante para as outras funções auxiliares que você já tem.
-// Elas não precisam ser modificadas.
