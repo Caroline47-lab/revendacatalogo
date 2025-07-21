@@ -46,6 +46,7 @@ const PRODUCTS_PER_PAGE = 20;
 document.addEventListener('DOMContentLoaded', () => {
     // Verifica se estamos na página principal dos painéis antes de rodar
     if (document.getElementById('empresa-view')) {
+        setupViewSwitcher();
         setupEmpresaPanel();
         setupRevendedorPanel();
         setupMobileMenu();
@@ -62,10 +63,8 @@ function setupViewSwitcher() {
     });
     document.getElementById('view-catalog-btn').addEventListener('click', (e) => { 
         e.preventDefault(); 
-        loadAllPublishedProducts().then(() => {
-            // Abre o catálogo em uma nova aba
-            window.open('catalogo/index.html', '_blank');
-        });
+        // Abre o catálogo em uma nova aba
+        window.open('catalogo/index.html', '_blank');
     });
     
     document.getElementById('back-to-landing-empresa').addEventListener('click', (e) => { e.preventDefault(); switchView('landing-view'); });
@@ -789,727 +788,201 @@ function loadResellerSettings() {
     if(settings['banner-mobile-main']) document.getElementById('banner-preview-mobile-main').src = settings['banner-mobile-main'];
 }
 
-function renderCatalogPreview(searchTerm = '', categoryFilter = '') {
-    const catalogView = document.getElementById('catalog-preview-view');
-    catalogView.innerHTML = `
-        <div id="catalog-wrapper">
-            <div class="catalog-top-bar" id="catalog-top-bar-container"></div>
-            <div class="catalog-header-container">
-                <div class="catalog-gradient-bar">
-                    <button id="catalog-menu-toggle"><i data-feather="menu"></i></button>
-                    <div class="header-search-wrapper">
-                        <input type="text" id="catalog-search-input" placeholder="o que você procura?..." value="${searchTerm}">
-                        <button id="catalog-search-btn"><i data-feather="search" style="width: 20px; height: 20px;"></i></button>
-                    </div>
-                    <a href="#" id="cart-button" class="catalog-cart-icon">
-                        <i data-feather="shopping-cart"></i>
-                        <span id="cart-count" class="cart-count" style="display: none;">0</span>
-                    </a>
-                </div>
-                <div class="catalog-banner-area" id="catalog-banner">BANNER AQUI</div>
-                <div class="catalog-logo-container">
-                    <img id="catalog-logo" src="https://placehold.co/180x180/e2e8f0/cccccc?text=" alt="Logo da loja">
-                </div>
-            </div>
-            <main id="catalog-main-container">
-                <div class="catalog-content-body">
-                    <div id="catalog-main-content">
-                        <div id="catalog-product-grid" class="catalog-grid"></div>
-                    </div>
-                </div>
-            </main>
-            <footer class="catalog-footer">
-                <h2 id="catalog-brand-name-footer" style="font-size: 1.5rem; font-weight: 700; margin-bottom: 0.5rem;">Sua Marca</h2>
-                <p id="catalog-description" style="max-width: 600px; margin: 0 auto 1rem;">Descrição da sua loja aqui.</p>
-                <div style="margin-top: 1rem;">
-                    <a id="catalog-instagram-link" href="#" target="_blank" style="margin-right: 1.5rem;"><i data-feather="instagram" style="display: inline-block; vertical-align: middle; margin-right: 0.5rem;"></i>Instagram</a>
-                    <a id="catalog-whatsapp-link" href="#" target="_blank"><i data-feather="message-circle" style="display: inline-block; vertical-align: middle; margin-right: 0.5rem;"></i>WhatsApp</a>
-                </div>
-            </footer>
-        </div>
-        <div id="product-detail-wrapper"></div>
-    `;
+function renderSalesHistory() {
+    const tbody = document.getElementById('sales-history-body');
+    const reseller = mockResellers.find(r => r.id === 2);
+    const sales = reseller ? reseller.sales : [];
     
-    const settings = resellerSettings;
-    document.documentElement.style.setProperty('--reseller-primary-color', settings.primaryColor || '#DB1472');
-    document.documentElement.style.setProperty('--reseller-secondary-color', settings.secondaryColor || '#F8B81F');
-    
-    const topBarContainer = catalogView.querySelector('#catalog-top-bar-container');
-    const messages = [ settings.topBarMsg1 || 'USE O CUPOM:PRIMEIRACOMPRA', settings.topBarMsg2 || 'APROVEITE 10% OFF', settings.topBarMsg3 || 'FRETE GRÁTIS ACIMA DE R$599' ].filter(Boolean);
-    if (messages.length > 0) {
-        const contentHTML = messages.map(msg => `<span>${msg}</span>`).join('');
-        topBarContainer.innerHTML = `<div class="top-bar-content">${contentHTML}${contentHTML}</div>`;
-    } else {
-        topBarContainer.innerHTML = '';
-    }
-
-    const bannerArea = catalogView.querySelector('#catalog-banner');
-    const bannerUrl = window.innerWidth > 768 ? settings['banner-desktop-main'] : settings['banner-mobile-main'];
-    if (bannerUrl) {
-        bannerArea.style.backgroundImage = `url(${bannerUrl})`;
-        bannerArea.textContent = '';
-    }
-
-    catalogView.querySelector('#catalog-logo').src = settings.logoUrl || 'https://placehold.co/180x180/e2e8f0/cccccc?text=';
-    catalogView.querySelector('#catalog-brand-name-footer').textContent = settings.brandName || 'Sua Marca';
-    catalogView.querySelector('#catalog-description').textContent = settings.description || 'Bem-vindo(a) ao meu catálogo!';
-    catalogView.querySelector('#catalog-instagram-link').href = settings.instagram ? `https://instagram.com/${settings.instagram.replace('@','')}` : '#';
-    catalogView.querySelector('#catalog-whatsapp-link').href = settings.contactPhone ? `https://wa.me/55${settings.contactPhone.replace(/\D/g,'')}` : '#';
-    
-    let activeCatalogProducts = resellerProducts.filter(p => resellerActiveProductIds.includes(p.id));
-    
-    if (searchTerm) activeCatalogProducts = activeCatalogProducts.filter(p => p.nome.toLowerCase().includes(searchTerm));
-    if (categoryFilter) activeCatalogProducts = activeCatalogProducts.filter(p => p.categoria_nome === categoryFilter);
-
-    const grid = catalogView.querySelector('#catalog-product-grid');
-    grid.innerHTML = '';
-    if (activeCatalogProducts.length === 0) { grid.innerHTML = '<p class="placeholder-card" style="grid-column: 1 / -1;">Nenhum produto encontrado.</p>'; return; }
-
-    activeCatalogProducts.forEach(p => {
-        const margin = resellerProductMargins[p.id] || 30;
-        const finalPrice = parseFloat(p.preco_original) * (1 + margin / 100);
-        const card = document.createElement('div');
-        card.className = 'catalog-product-card';
-        card.innerHTML = `<img src="${proxyImageUrl(p.imagem)}" alt="${p.nome}" loading="lazy" width="300" height="300" onerror="this.src='https://placehold.co/300x300/e2e8f0/94a3b8?text=Imagem'"><div class="catalog-product-card-body"><h3>${p.nome}</h3><p class="price">R$ ${finalPrice.toFixed(2)}</p><button class="btn view-product-btn" data-product-id="${p.id}">Ver Detalhes</button></div>`;
-        grid.appendChild(card);
-    });
-    
-    catalogView.querySelectorAll('.view-product-btn').forEach(btn => btn.addEventListener('click', (e) => showProductDetailPage(e.target.dataset.productId)));
-    
-    const categoryList = document.getElementById('category-list');
-    categoryList.innerHTML = '<a href="#" class="category-link" data-category="">Ver Todas as Categorias</a>';
-    publishedCategoryIds.forEach(catName => {
-        const link = document.createElement('a');
-        link.href = '#';
-        link.className = 'category-link';
-        link.dataset.category = catName;
-        link.textContent = catName;
-        categoryList.appendChild(link);
-    });
-
-    document.querySelectorAll('.category-link').forEach(link => {
-        link.addEventListener('click', e => {
-            e.preventDefault();
-            const category = e.target.dataset.category;
-            renderCatalogPreview(searchTerm, category);
-            closeModal('category-modal');
-        });
-    });
-    
-    catalogView.querySelector('#catalog-menu-toggle').addEventListener('click', () => {
-        document.getElementById('category-modal').classList.add('active');
-    });
-
-    catalogView.querySelector('#cart-button').addEventListener('click', (e) => { e.preventDefault(); showCartModal(); });
-    
-    const searchInput = catalogView.querySelector('#catalog-search-input');
-    const searchBtn = catalogView.querySelector('#catalog-search-btn');
-    const performSearch = () => renderCatalogPreview(searchInput.value.toLowerCase(), categoryFilter);
-    
-    searchBtn.addEventListener('click', performSearch);
-    searchInput.addEventListener('keyup', (e) => { if (e.key === 'Enter') performSearch(); });
-    
-    updateCartCount();
-    feather.replace();
-}
-
-function showProductDetailPage(productId) {
-    document.getElementById('catalog-wrapper').style.display = 'none';
-    const detailWrapper = document.getElementById('product-detail-wrapper');
-    detailWrapper.style.display = 'block';
-
-    const product = resellerProducts.find(p => p.id === parseInt(productId));
-    if (!product) {
-        detailWrapper.innerHTML = `<p class="placeholder-card">Produto não encontrado.</p>`;
+    tbody.innerHTML = '';
+    if (sales.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;">Nenhuma venda lançada.</td></tr>';
         return;
     }
 
-    const margin = resellerProductMargins[product.id] || 30;
-    const finalPrice = parseFloat(p.preco_original) * (1 + margin / 100);
-    const priceFrom = finalPrice / 0.92;
-    const productTags = resellerProductTags[productId] || [];
+    sales.sort((a, b) => new Date(b.date) - new Date(a.date)).forEach(sale => {
+        const row = tbody.insertRow();
+        let td;
 
-    const tagsHTML = productTags.map(tag => {
-        let tagClass = '';
-        if (tag === 'Destaque') tagClass = 'highlight';
-        else if (tag === 'Lançamento') tagClass = 'launch';
-        else if (tag === 'Promoção') tagClass = 'promo';
-        return `<span class="product-detail-tag ${tagClass}">${tag.toUpperCase()}</span>`;
-    }).join('');
+        td = row.insertCell();
+        td.dataset.label = "Data";
+        td.textContent = new Date(sale.date).toLocaleDateString('pt-BR');
 
-    const variationsHTML = product.variacoes.map(v => {
-        const size = String(v.nome || '').replace('Tamanho: ', '').trim();
-        const isOutOfStock = v.quantidade <= 0;
-        return `
-            <div class="size-option ${isOutOfStock ? 'disabled' : ''}">
-                <div class="size-label">${size}</div>
-                <div class="quantity-stepper" data-variation-name="${v.nome}" data-max-stock="${v.quantidade}">
-                    <button class="quantity-btn" data-action="decrease" ${isOutOfStock ? 'disabled' : ''}>-</button>
-                    <input type="number" class="quantity-input" value="0" min="0" max="${v.quantidade}" ${isOutOfStock ? 'disabled' : ''} readonly>
-                    <button class="quantity-btn" data-action="increase" ${isOutOfStock ? 'disabled' : ''}>+</button>
-                </div>
-            </div>
-        `;
-    }).join('');
+        td = row.insertCell();
+        td.dataset.label = "Itens";
+        td.textContent = sale.items.reduce((sum, item) => sum + item.quantity, 0);
+        
+        td = row.insertCell();
+        td.dataset.label = "Valor Total";
+        td.textContent = `R$ ${sale.total.toFixed(2)}`;
 
-    detailWrapper.innerHTML = `
-        <div id="product-detail-container">
-            <button class="btn" id="back-to-catalog-btn" style="margin-bottom: 1rem;"><i data-feather="arrow-left"></i> Voltar ao catálogo</button>
-            <div class="product-detail-grid">
-                <div class="product-detail-images">
-                    <img src="${proxyImageUrl(product.imagem)}" alt="${product.nome}" loading="lazy" width="580" height="580">
-                </div>
-                <div class="product-detail-info">
-                    <div class="product-detail-tags">${tagsHTML}</div>
-                    <h1>${product.nome}</h1>
-                    <div class="product-detail-rating">
-                        <i data-feather="star" fill="#f59e0b" stroke="#f59e0b"></i>
-                        <i data-feather="star" fill="#f59e0b" stroke="#f59e0b"></i>
-                        <i data-feather="star" fill="#f59e0b" stroke="#f59e0b"></i>
-                        <i data-feather="star" fill="#f59e0b" stroke="#f59e0b"></i>
-                        <i data-feather="star" fill="#f59e0b" stroke="#f59e0b"></i>
-                    </div>
-                    <div class="product-detail-price-container">
-                        <span class="price-from">De R$ ${priceFrom.toFixed(2)}</span>
-                        <span class="price-to">A Partir de: R$ ${finalPrice.toFixed(2)}</span>
-                    </div>
-                    <div class="size-options-container">
-                        <label>Tamanho:</label>
-                        <div class="size-grid">${variationsHTML}</div>
-                    </div>
-                    <button class="btn buy-button" id="detail-buy-btn" data-product-id="${product.id}">COMPRAR</button>
-                    <div class="product-info-icons">
-                        <div><i data-feather="truck"></i><span>Despacho em até 72hs úteis</span></div>
-                        <div><i data-feather="credit-card"></i><span>Pague no cartão de crédito</span></div>
-                        <div><i data-feather="box"></i><span>Receba o produto que está esperando</span></div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    `;
-
-    detailWrapper.querySelector('#back-to-catalog-btn').addEventListener('click', () => {
-        detailWrapper.style.display = 'none';
-        document.getElementById('catalog-wrapper').style.display = 'block';
-    });
-
-    detailWrapper.addEventListener('click', e => {
-        if (e.target.classList.contains('quantity-btn')) {
-            const stepper = e.target.closest('.quantity-stepper');
-            const input = stepper.querySelector('.quantity-input');
-            const maxStock = parseInt(stepper.dataset.maxStock);
-            let currentValue = parseInt(input.value);
-            const action = e.target.dataset.action;
-
-            if (action === 'increase') {
-                if (currentValue < maxStock) {
-                    input.value = currentValue + 1;
-                } else {
-                    showToast(`Apenas ${maxStock} unidades em estoque.`, 'warning');
-                }
-            } else if (action === 'decrease' && currentValue > 0) {
-                input.value = currentValue - 1;
-            }
+        td = row.insertCell();
+        td.dataset.label = "Status";
+        td.innerHTML = `<span class="status-badge ${sale.status}">${sale.status}</span>`;
+        
+        td = row.insertCell();
+        td.dataset.label = "Ações";
+        td.className = "actions-cell";
+        if (sale.status === 'pendente') {
+            const payButton = document.createElement('button');
+            payButton.className = 'btn btn-success';
+            payButton.style.padding = '0.25rem 0.5rem';
+            payButton.innerHTML = `<i data-feather="check"></i> Pago`;
+            payButton.onclick = () => markSaleAsPaid(sale.id);
+            td.appendChild(payButton);
         }
     });
-
-    detailWrapper.querySelector('#detail-buy-btn').addEventListener('click', e => {
-        const productId = e.target.dataset.productId;
-        const sizeOptions = detailWrapper.querySelectorAll('.quantity-stepper');
-        let itemsToAdd = [];
-        let hasError = false;
-        sizeOptions.forEach(option => {
-            const quantity = parseInt(option.querySelector('.quantity-input').value);
-            if (quantity > 0) {
-                const variationName = option.dataset.variationName;
-                const maxStock = parseInt(option.dataset.maxStock);
-                if (quantity > maxStock) {
-                    showToast(`Quantidade para ${variationName} excede o estoque (${maxStock}).`, 'error');
-                    hasError = true;
-                }
-                itemsToAdd.push({ productId, variationName, quantity });
-            }
-        });
-
-        if (hasError) return;
-
-        if (itemsToAdd.length > 0) {
-            handleAddToCart(itemsToAdd);
-        } else {
-            showToast('Selecione a quantidade de pelo menos um item.', 'error');
-        }
-    });
-
     feather.replace();
 }
 
-function handleAddToCart(items) {
-    if (!currentCustomer) {
-        pendingCartAction = () => {
-            items.forEach(item => addToCart(item.productId, item.variationName, item.quantity));
-            showToast(`${items.length} item(ns) adicionado(s) ao carrinho!`, 'success');
-        };
-        document.getElementById('customer-info-modal').classList.add('active');
-    } else {
-        items.forEach(item => addToCart(item.productId, item.variationName, item.quantity));
-        showToast(`${items.length} item(ns) adicionado(s) ao carrinho!`, 'success');
-    }
-}
-
-function saveCustomerAndAddToCart() {
-    const name = document.getElementById('customer-name').value;
-    const phone = document.getElementById('customer-phone').value;
-    if (!name || !phone) {
-        showToast('Por favor, preencha nome e telefone.', 'error');
-        return;
-    }
-    currentCustomer = { name, phone };
-    localStorage.setItem('currentCustomer', JSON.stringify(currentCustomer));
-    
-    closeModal('customer-info-modal');
-    if (pendingCartAction) {
-        pendingCartAction();
-        pendingCartAction = null;
-    }
-}
-
-function addToCart(productId, variation, quantity) {
-    const product = resellerProducts.find(p => p.id === parseInt(productId));
-    if (!product) return;
-
-    const variationData = product.variacoes.find(v => v.nome === variation);
-    if (!variationData || quantity > variationData.quantidade) {
-        showToast(`Estoque insuficiente para ${product.nome} (${variation}).`, 'error');
-        return;
-    }
-
-    const cartItemId = `${productId}-${variation}`;
-    const existingItem = cart.find(item => item.cartId === cartItemId);
-    if (existingItem) {
-        if (existingItem.quantity + quantity > variationData.quantidade) {
-            showToast(`Quantidade máxima para ${product.nome} (${variation}) atingida.`, 'error');
-            return;
-        }
-        existingItem.quantity += quantity;
-    } else {
-        cart.push({ ...product, quantity: quantity, variation: variation, cartId: cartItemId });
-    }
-    updateCartCount();
-    updateAbandonedCart();
-}
-
-function updateAbandonedCarts() {
-    if (!currentCustomer) return;
-
-    const existingCartIndex = abandonedCarts.findIndex(c => c.customer.phone === currentCustomer.phone);
-    
-    if (existingCartIndex > -1) {
-        abandonedCarts[existingCartIndex].items = cart;
-        abandonedCarts[existingCartIndex].date = new Date().toISOString();
-    } else {
-        abandonedCarts.push({
-            id: Date.now(),
-            customer: currentCustomer,
-            items: cart,
-            date: new Date().toISOString()
-        });
-    }
-    localStorage.setItem('abandonedCarts', JSON.stringify(abandonedCarts));
-}
-
-function updateCartCount() {
-    const count = cart.reduce((sum, item) => sum + item.quantity, 0);
-    document.querySelectorAll('.cart-count').forEach(el => {
-        el.textContent = count;
-        el.style.display = count > 0 ? 'flex' : 'none';
-    });
-}
-
-function showCartModal() {
-    const cartItemsContainer = document.getElementById('cart-items');
-    cartItemsContainer.innerHTML = '';
-    let total = 0;
-    if (cart.length === 0) {
-        cartItemsContainer.innerHTML = '<p style="text-align: center; color: var(--text-light); padding: 2rem 0;">Seu carrinho está vazio.</p>';
-    } else {
-        cart.forEach(item => {
-            const margin = resellerProductMargins[item.id] || 30;
-            const finalPrice = parseFloat(item.preco_original) * (1 + margin / 100);
-            total += finalPrice * item.quantity;
-            const itemEl = document.createElement('div');
-            itemEl.style.padding = '0.5rem 0';
-            itemEl.style.borderBottom = '1px solid var(--border-color)';
-            itemEl.innerHTML = `<p>${item.quantity}x ${item.nome} (${item.variation}) - <strong>R$ ${(finalPrice * item.quantity).toFixed(2)}</strong></p>`;
-            cartItemsContainer.appendChild(itemEl);
-        });
-    }
-    document.getElementById('cart-total').textContent = `R$ ${total.toFixed(2)}`;
-    document.getElementById('cart-modal').classList.add('active');
-    feather.replace();
-}
-    
-    function createPendingOrderAndOpenWhatsApp() {
-        if (cart.length === 0) {
-            showToast('Seu carrinho está vazio.', 'error');
-            return;
-        }
-        if (!currentCustomer) {
-             showToast('Informações do cliente não encontradas.', 'error');
-             return;
-        }
-
-        const total = cart.reduce((sum, item) => {
-            const margin = resellerProductMargins[item.id] || 30;
-            const finalPrice = parseFloat(item.preco_original) * (1 + margin / 100);
-            return sum + (finalPrice * item.quantity);
-        }, 0);
-
-        const newSale = {
-            id: Date.now(),
-            date: new Date().toISOString().split('T')[0],
-            customer: currentCustomer,
-            items: [...cart],
-            total: total,
-            status: 'pendente'
-        };
-
-        const reseller = mockResellers.find(r => r.id === 2); // Simulação para revendedora 2
-        if (reseller) {
-            if(!reseller.sales) reseller.sales = [];
-            reseller.sales.push(newSale);
+function markSaleAsPaid(saleId) {
+    const reseller = mockResellers.find(r => r.id === 2); // Simulação
+    if(reseller && reseller.sales) {
+        const sale = reseller.sales.find(s => s.id === saleId);
+        if (sale) {
+            sale.status = 'pago';
             localStorage.setItem('erpResellers', JSON.stringify(mockResellers));
+            renderSalesHistory();
+            showToast('Venda marcada como paga!', 'success');
         }
+    }
+}
 
-        let message = `Olá, ${resellerSettings.brandName || 'Revendedora'}! Gostaria de fazer o seguinte pedido:\n\n`;
-        cart.forEach(item => {
-            const margin = resellerProductMargins[item.id] || 30;
-            const finalPrice = parseFloat(item.preco_original) * (1 + margin / 100);
-            message += `*${item.quantity}x* - ${item.nome} (${item.variation}) - R$ ${finalPrice.toFixed(2)} cada\n`;
-        });
-        message += `\n*Total do Pedido: R$ ${total.toFixed(2)}*`;
+function renderAbandonedCartsTable() {
+    const tbody = document.getElementById('abandoned-carts-body');
+    tbody.innerHTML = '';
+    if (abandonedCarts.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;">Nenhum carrinho abandonado.</td></tr>';
+        return;
+    }
+
+    abandonedCarts.sort((a, b) => new Date(b.date) - new Date(a.date)).forEach(cart => {
+        const row = tbody.insertRow();
+        const totalValue = cart.items.reduce((sum, item) => sum + (parseFloat(item.preco_original) * (1 + (resellerProductMargins[item.id] || 30) / 100) * item.quantity), 0);
+        let td;
+
+        td = row.insertCell();
+        td.dataset.label = "Data";
+        td.textContent = new Date(cart.date).toLocaleDateString('pt-BR');
+
+        td = row.insertCell();
+        td.dataset.label = "Cliente";
+        td.textContent = cart.customer.name;
+
+        td = row.insertCell();
+        td.dataset.label = "Telefone";
+        td.textContent = cart.customer.phone;
+
+        td = row.insertCell();
+        td.dataset.label = "Itens";
+        td.textContent = cart.items.reduce((sum, item) => sum + item.quantity, 0);
+
+        td = row.insertCell();
+        td.dataset.label = "Valor";
+        td.textContent = `R$ ${totalValue.toFixed(2)}`;
         
-        const phone = (resellerSettings.contactPhone || '').replace(/\D/g, '');
-        if (!phone) { showToast('O número de contato da revendedora não está configurado.', 'error'); return; }
-        
-        const whatsappUrl = `https://wa.me/55${phone}?text=${encodeURIComponent(message)}`;
-        window.open(whatsappUrl, '_blank');
+        td = row.insertCell();
+        td.dataset.label = "Ações";
+        td.className = "actions-cell";
+        const recoverButton = document.createElement('button');
+        recoverButton.className = 'btn btn-success';
+        recoverButton.style.padding = '0.25rem 0.5rem';
+        recoverButton.innerHTML = `<i data-feather="message-square"></i> Recuperar`;
+        recoverButton.onclick = () => recoverCart(cart.customer, cart.items);
+        td.appendChild(recoverButton);
+    });
+    feather.replace();
+}
 
-        cart = [];
-        updateCartCount();
-        closeModal('cart-modal');
-        showToast('Pedido enviado! Aguardando confirmação.', 'success');
-    }
-
-    // --- NOVAS FUNÇÕES PARA LANÇAMENTO DE VENDAS ---
-    function showNewSaleModal() {
-        currentSaleItems = [];
-        updateSaleItemsTable();
-        const productSelect = document.getElementById('sale-product-select');
-        productSelect.innerHTML = '<option value="">Selecione um produto...</option>';
-        const availableProducts = resellerProducts.filter(p => resellerActiveProductIds.includes(p.id));
-        availableProducts.forEach(p => {
-            productSelect.innerHTML += `<option value="${p.id}">${p.nome}</option>`;
-        });
-        updateSaleVariationSelect();
-        document.getElementById('new-sale-modal').classList.add('active');
-    }
-
-    function updateSaleVariationSelect() {
-        const productId = document.getElementById('sale-product-select').value;
-        const variationSelect = document.getElementById('sale-variation-select');
-        variationSelect.innerHTML = '';
-        if (!productId) return;
-
-        const product = resellerProducts.find(p => p.id == productId);
-        if (product && product.variacoes) {
-            product.variacoes.forEach(v => {
-                variationSelect.innerHTML += `<option value="${v.nome}">${v.nome}</option>`;
-            });
-        }
-    }
-
-    function addSaleItem() {
-        const productId = document.getElementById('sale-product-select').value;
-        const variation = document.getElementById('sale-variation-select').value;
-        const quantity = parseInt(document.getElementById('sale-quantity-input').value);
-
-        if (!productId || !variation || !quantity || quantity < 1) {
-            showToast('Por favor, preencha todos os campos.', 'error');
-            return;
-        }
-
-        const product = resellerProducts.find(p => p.id == productId);
-        const margin = resellerProductMargins[product.id] || 30;
-        const finalPrice = parseFloat(product.preco_original) * (1 + margin / 100);
-
-        currentSaleItems.push({
-            productId: product.id,
-            name: product.nome,
-            variation: variation,
-            quantity: quantity,
-            price: finalPrice,
-            subtotal: finalPrice * quantity
-        });
-
-        updateSaleItemsTable();
-    }
-
-    function updateSaleItemsTable() {
-        const tbody = document.getElementById('sale-items-body');
-        const totalEl = document.getElementById('sale-total');
-        tbody.innerHTML = '';
-        let total = 0;
-
-        currentSaleItems.forEach((item, index) => {
-            const row = tbody.insertRow();
-            row.innerHTML = `
-                <td>${item.name} (${item.variation})</td>
-                <td>${item.quantity}</td>
-                <td>R$ ${item.subtotal.toFixed(2)}</td>
-                <td class="actions-cell"><button class="btn btn-danger" style="padding: 0.25rem 0.5rem;" onclick="removeSaleItem(${index})"><i data-feather="trash-2"></i></button></td>
-            `;
-            total += item.subtotal;
-        });
-
-        totalEl.textContent = `R$ ${total.toFixed(2)}`;
-        feather.replace();
-    }
-
-    function removeSaleItem(index) {
-        currentSaleItems.splice(index, 1);
-        updateSaleItemsTable();
-    }
-
-    function saveSale() {
-        if (currentSaleItems.length === 0) {
-            showToast('Adicione pelo menos um item à venda.', 'error');
-            return;
-        }
-        
-        const total = currentSaleItems.reduce((sum, item) => sum + item.subtotal, 0);
-        const newSale = {
-            id: Date.now(),
-            date: new Date().toISOString().split('T')[0],
-            items: currentSaleItems,
-            total: total,
-            status: 'pago' // Vendas manuais são consideradas pagas
-        };
-
-        const reseller = mockResellers.find(r => r.id === 2);
-        if (reseller) {
-            reseller.sales.push(newSale);
-            localStorage.setItem('erpResellers', JSON.stringify(mockResellers));
-        }
-        
-        renderSalesHistory();
-        closeModal('new-sale-modal');
-        showToast('Venda salva com sucesso!', 'success');
-    }
-
-    function renderSalesHistory() {
-        const tbody = document.getElementById('sales-history-body');
-        const reseller = mockResellers.find(r => r.id === 2);
-        const sales = reseller ? reseller.sales : [];
-        
-        tbody.innerHTML = '';
-        if (sales.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;">Nenhuma venda lançada.</td></tr>';
-            return;
-        }
-
-        sales.sort((a, b) => new Date(b.date) - new Date(a.date)).forEach(sale => {
-            const row = tbody.insertRow();
-            let td;
-
-            td = row.insertCell();
-            td.dataset.label = "Data";
-            td.textContent = new Date(sale.date).toLocaleDateString('pt-BR');
-
-            td = row.insertCell();
-            td.dataset.label = "Itens";
-            td.textContent = sale.items.reduce((sum, item) => sum + item.quantity, 0);
-            
-            td = row.insertCell();
-            td.dataset.label = "Valor Total";
-            td.textContent = `R$ ${sale.total.toFixed(2)}`;
-
-            td = row.insertCell();
-            td.dataset.label = "Status";
-            td.innerHTML = `<span class="status-badge ${sale.status}">${sale.status}</span>`;
-            
-            td = row.insertCell();
-            td.dataset.label = "Ações";
-            td.className = "actions-cell";
-            if (sale.status === 'pendente') {
-                const payButton = document.createElement('button');
-                payButton.className = 'btn btn-success';
-                payButton.style.padding = '0.25rem 0.5rem';
-                payButton.innerHTML = `<i data-feather="check"></i> Pago`;
-                payButton.onclick = () => markSaleAsPaid(sale.id);
-                td.appendChild(payButton);
-            }
-        });
-        feather.replace();
-    }
+function recoverCart(customer, items) {
+    let message = `Olá ${customer.name}, vi que você se interessou por alguns produtos em meu catálogo. Gostaria de ajuda para finalizar seu pedido?`;
+    const phone = (customer.phone || '').replace(/\D/g, '');
+    if (!phone) { showToast('Número de telefone inválido.', 'error'); return; }
     
-    function markSaleAsPaid(saleId) {
-        const reseller = mockResellers.find(r => r.id === 2); // Simulação
-        if(reseller && reseller.sales) {
-            const sale = reseller.sales.find(s => s.id === saleId);
-            if (sale) {
-                sale.status = 'pago';
-                localStorage.setItem('erpResellers', JSON.stringify(mockResellers));
-                renderSalesHistory();
-                showToast('Venda marcada como paga!', 'success');
-            }
-        }
-    }
+    const whatsappUrl = `https://wa.me/55${phone}?text=${encodeURIComponent(message)}`;
+    window.open(whatsappUrl, '_blank');
+}
 
+function renderAbcCurve() {
+    const salesByProduct = {};
+    mockResellers.forEach(reseller => {
+        if (reseller.sales) {
+            const paidSales = reseller.sales.filter(s => s.status === 'pago');
+            paidSales.forEach(sale => {
+                sale.items.forEach(item => {
+                    const product = loadedProducts.find(p => p.id === item.productId);
+                    if (!product) return;
 
-    // --- NOVAS FUNÇÕES PARA CARRINHOS ABANDONADOS ---
-    function renderAbandonedCartsTable() {
-        const tbody = document.getElementById('abandoned-carts-body');
-        tbody.innerHTML = '';
-        if (abandonedCarts.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;">Nenhum carrinho abandonado.</td></tr>';
-            return;
-        }
-
-        abandonedCarts.sort((a, b) => new Date(b.date) - new Date(a.date)).forEach(cart => {
-            const row = tbody.insertRow();
-            const totalValue = cart.items.reduce((sum, item) => sum + (parseFloat(item.preco_original) * (1 + (resellerProductMargins[item.id] || 30) / 100) * item.quantity), 0);
-            let td;
-
-            td = row.insertCell();
-            td.dataset.label = "Data";
-            td.textContent = new Date(cart.date).toLocaleDateString('pt-BR');
-
-            td = row.insertCell();
-            td.dataset.label = "Cliente";
-            td.textContent = cart.customer.name;
-
-            td = row.insertCell();
-            td.dataset.label = "Telefone";
-            td.textContent = cart.customer.phone;
-
-            td = row.insertCell();
-            td.dataset.label = "Itens";
-            td.textContent = cart.items.reduce((sum, item) => sum + item.quantity, 0);
-
-            td = row.insertCell();
-            td.dataset.label = "Valor";
-            td.textContent = `R$ ${totalValue.toFixed(2)}`;
-            
-            td = row.insertCell();
-            td.dataset.label = "Ações";
-            td.className = "actions-cell";
-            const recoverButton = document.createElement('button');
-            recoverButton.className = 'btn btn-success';
-            recoverButton.style.padding = '0.25rem 0.5rem';
-            recoverButton.innerHTML = `<i data-feather="message-square"></i> Recuperar`;
-            recoverButton.onclick = () => recoverCart(cart.customer, cart.items);
-            td.appendChild(recoverButton);
-        });
-        feather.replace();
-    }
-
-    function recoverCart(customer, items) {
-        let message = `Olá ${customer.name}, vi que você se interessou por alguns produtos em meu catálogo. Gostaria de ajuda para finalizar seu pedido?`;
-        const phone = (customer.phone || '').replace(/\D/g, '');
-        if (!phone) { showToast('Número de telefone inválido.', 'error'); return; }
-        
-        const whatsappUrl = `https://wa.me/55${phone}?text=${encodeURIComponent(message)}`;
-        window.open(whatsappUrl, '_blank');
-    }
-
-    // --- NOVA FUNÇÃO PARA CURVA ABC ---
-    function renderAbcCurve() {
-        const salesByProduct = {};
-        mockResellers.forEach(reseller => {
-            if (reseller.sales) {
-                const paidSales = reseller.sales.filter(s => s.status === 'pago');
-                paidSales.forEach(sale => {
-                    sale.items.forEach(item => {
-                        const product = loadedProducts.find(p => p.id === item.productId);
-                        if (!product) return;
-
-                        if (!salesByProduct[item.productId]) {
-                            salesByProduct[item.productId] = { id: item.productId, name: product.nome, quantity: 0, revenue: 0 };
-                        }
-                        salesByProduct[item.productId].quantity += item.quantity;
-                        salesByProduct[item.productId].revenue += item.price * item.quantity;
-                    });
+                    if (!salesByProduct[item.productId]) {
+                        salesByProduct[item.productId] = { id: item.productId, name: product.nome, quantity: 0, revenue: 0 };
+                    }
+                    salesByProduct[item.productId].quantity += item.quantity;
+                    salesByProduct[item.productId].revenue += item.price * item.quantity;
                 });
-            }
-        });
-
-        const productArray = Object.values(salesByProduct);
-        productArray.sort((a, b) => b.revenue - a.revenue);
-
-        const totalRevenue = productArray.reduce((sum, p) => sum + p.revenue, 0);
-        
-        const curveA = [];
-        const curveB = [];
-        const curveC = [];
-        let cumulativeRevenue = 0;
-
-        productArray.forEach(p => {
-            cumulativeRevenue += p.revenue;
-            const percentage = totalRevenue > 0 ? (cumulativeRevenue / totalRevenue) * 100 : 0;
-            if (percentage <= 80) {
-                curveA.push(p);
-            } else if (percentage <= 95) {
-                curveB.push(p);
-            } else {
-                curveC.push(p);
-            }
-        });
-
-        const renderList = (products, containerId) => {
-            const container = document.getElementById(containerId);
-            if (products.length === 0) {
-                container.innerHTML = '<p class="text-light">Nenhum produto nesta categoria com base nas vendas atuais.</p>';
-                return;
-            }
-            let html = '<ul class="info-list">';
-            products.forEach(p => {
-                const percentageOfTotal = totalRevenue > 0 ? ((p.revenue / totalRevenue) * 100).toFixed(2) : 0;
-                html += `<li><span>${p.name}</span><strong>${p.quantity} vendidos (R$ ${p.revenue.toFixed(2)}) - ${percentageOfTotal}%</strong></li>`;
             });
-            html += '</ul>';
-            container.innerHTML = html;
-        };
+        }
+    });
 
-        renderList(curveA, 'curve-a-list');
-        renderList(curveB, 'curve-b-list');
-        renderList(curveC, 'curve-c-list');
-    }
+    const productArray = Object.values(salesByProduct);
+    productArray.sort((a, b) => b.revenue - a.revenue);
 
-    // --- NOVA FUNÇÃO PARA GERAR LINK DO CATÁLOGO ---
-    function generateAndCopyCatalogLink() {
-        const urlName = document.getElementById('catalog-url-name').value.trim().toLowerCase().replace(/[^a-z0-na-z0-9-]/g, '');
-        if (!urlName) {
-            showToast('Por favor, insira um nome para a URL da sua loja.', 'error');
+    const totalRevenue = productArray.reduce((sum, p) => sum + p.revenue, 0);
+    
+    const curveA = [];
+    const curveB = [];
+    const curveC = [];
+    let cumulativeRevenue = 0;
+
+    productArray.forEach(p => {
+        cumulativeRevenue += p.revenue;
+        const percentage = totalRevenue > 0 ? (cumulativeRevenue / totalRevenue) * 100 : 0;
+        if (percentage <= 80) {
+            curveA.push(p);
+        } else if (percentage <= 95) {
+            curveB.push(p);
+        } else {
+            curveC.push(p);
+        }
+    });
+
+    const renderList = (products, containerId) => {
+        const container = document.getElementById(containerId);
+        if (products.length === 0) {
+            container.innerHTML = '<p class="text-light">Nenhum produto nesta categoria com base nas vendas atuais.</p>';
             return;
         }
-        
-        const baseUrl = "https://c4shop.app"; // URL base do seu sistema
-        const finalUrl = `${baseUrl}/?loja=${urlName}`;
+        let html = '<ul class="info-list">';
+        products.forEach(p => {
+            const percentageOfTotal = totalRevenue > 0 ? ((p.revenue / totalRevenue) * 100).toFixed(2) : 0;
+            html += `<li><span>${p.name}</span><strong>${p.quantity} vendidos (R$ ${p.revenue.toFixed(2)}) - ${percentageOfTotal}%</strong></li>`;
+        });
+        html += '</ul>';
+        container.innerHTML = html;
+    };
 
-        // Lógica para copiar para a área de transferência
-        const textArea = document.createElement("textarea");
-        textArea.value = finalUrl;
-        document.body.appendChild(textArea);
-        textArea.select();
-        try {
-            document.execCommand('copy');
-            showToast('Link copiado para a área de transferência!', 'success');
-        } catch (err) {
-            showToast('Não foi possível copiar o link.', 'error');
-        }
-        document.body.removeChild(textArea);
+    renderList(curveA, 'curve-a-list');
+    renderList(curveB, 'curve-b-list');
+    renderList(curveC, 'curve-c-list');
+}
+
+function generateAndCopyCatalogLink() {
+    const urlName = document.getElementById('catalog-url-name').value.trim().toLowerCase().replace(/[^a-z0-na-z0-9-]/g, '');
+    if (!urlName) {
+        showToast('Por favor, insira um nome para a URL da sua loja.', 'error');
+        return;
     }
+    
+    const baseUrl = "https://c4shop.app"; 
+    const finalUrl = `${baseUrl}/?loja=${urlName}`;
 
-    </script>
-</body>
-</html>
+    const textArea = document.createElement("textarea");
+    textArea.value = finalUrl;
+    document.body.appendChild(textArea);
+    textArea.select();
+    try {
+        document.execCommand('copy');
+        showToast('Link copiado para a área de transferência!', 'success');
+    } catch (err) {
+        showToast('Não foi possível copiar o link.', 'error');
+    }
+    document.body.removeChild(textArea);
+}
