@@ -204,11 +204,38 @@ function appendProductsToCatalogGrid(products, clearGrid = false) {
     products.forEach(p => {
         const margin = resellerProductMargins[p.id] || 30;
         const finalPrice = parseFloat(p.preco_original) * (1 + margin / 100);
-        const card = document.createElement('div');
-        card.className = 'catalog-product-card';
-        card.innerHTML = `<img src="${proxyImageUrl(p.imagem)}" alt="${p.nome}" loading="lazy" width="300" height="300" onerror="this.src='https://placehold.co/300x300/e2e8f0/94a3b8?text=Imagem'"><div class="catalog-product-card-body"><h3>${p.nome}</h3><p class="price">R$ ${finalPrice.toFixed(2)}</p><button class="btn view-product-btn" data-product-id="${p.id}">Ver Detalhes</button></div>`;
         
-        card.querySelector('.view-product-btn').addEventListener('click', (e) => showProductDetailPage(e.currentTarget.dataset.productId));
+        // Cria o container principal do card
+        const card = document.createElement('div');
+        // Usa classes do Tailwind para um visual de card moderno
+        card.className = 'group relative bg-white border border-gray-200 rounded-lg flex flex-col overflow-hidden shadow-sm hover:shadow-lg transition-shadow duration-300';
+
+        card.innerHTML = `
+            <div class="aspect-w-3 aspect-h-4 bg-gray-200 sm:aspect-none sm:h-48">
+                <img src="${proxyImageUrl(p.imagem)}" alt="${p.nome}" loading="lazy" class="w-full h-full object-cover object-center sm:w-full sm:h-full group-hover:scale-105 transition-transform duration-300" onerror="this.src='https://placehold.co/300x300/e2e8f0/94a3b8?text=Imagem'">
+            </div>
+            <div class="flex-1 p-4 space-y-2 flex flex-col">
+                <h3 class="text-sm font-medium text-gray-900 flex-1">
+                    <a href="#" data-product-id="${p.id}">
+                        <span aria-hidden="true" class="absolute inset-0"></span>
+                        ${p.nome}
+                    </a>
+                </h3>
+                <p class="text-base font-bold text-gray-900">R$ ${finalPrice.toFixed(2)}</p>
+                <button class="mt-4 w-full bg-[var(--reseller-primary-color)] text-white font-semibold py-2 px-4 rounded-md hover:opacity-90 transition-opacity z-10 relative" data-product-id="${p.id}">
+                    Comprar
+                </button>
+            </div>
+        `;
+        
+        // Adiciona o evento de clique para todos os elementos clicáveis no card
+        card.querySelectorAll('[data-product-id]').forEach(el => {
+            el.addEventListener('click', (e) => {
+                e.preventDefault(); // Previne a navegação padrão do link
+                showProductDetailPage(e.currentTarget.dataset.productId)
+            });
+        });
+
         grid.appendChild(card);
     });
     feather.replace();
@@ -253,7 +280,6 @@ function showProductDetailPage(productId) {
     const margin = resellerProductMargins[product.id] || 30;
     const finalPrice = parseFloat(product.preco_original) * (1 + margin / 100);
 
-    // CORREÇÃO: A lógica para criar os botões e estrelas foi movida para cá
     const sizesHTML = product.variacoes.map(v => {
         const size = String(v.nome || '').replace(/Tamanho:\s*/i, '').trim();
         const isOutOfStock = v.quantidade <= 0;
