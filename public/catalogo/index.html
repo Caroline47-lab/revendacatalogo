@@ -5,20 +5,21 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Catálogo</title>
     
+    <!-- Otimização de Rede: Pré-conexão com domínios críticos -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link rel="preconnect" href="https://api.facilzap.app.br" crossorigin>
     <link rel="preconnect" href="https://arquivos.facilzap.app.br" crossorigin>
 
-    <!-- Otimização: Troca do CDN do Tailwind pelo arquivo de build gerado -->
-    <link href="../css/style.css" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
     
+    <!-- Otimização de Fontes: Adicionado &display=swap para evitar bloqueio de renderização -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     
+    <!-- Otimização de Scripts: Ícones carregados com defer -->
     <script src="https://unpkg.com/feather-icons" defer></script>
 
     <style>
-        /* Estilos base que não são do Tailwind podem permanecer aqui */
         :root {
             --primary-color: #DB1472;
             --secondary-color: #F8B81F;
@@ -34,17 +35,66 @@
             --reseller-primary-color: var(--primary-color);
             --reseller-secondary-color: var(--secondary-color);
         }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: var(--font-sans);
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            line-height: 1.5;
+            overflow-x: hidden;
+        }
+        
+        .view { display: none; }
+        .view.active { display: block; }
+
+        .btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 0.6rem 1.25rem; border-radius: 0.5rem; border: none; font-weight: 600; font-size: 0.9rem; cursor: pointer; transition: all 0.2s ease; }
+        .btn-success { background-color: var(--success-color); color: white; }
+        .btn-success:hover { opacity: 0.9; }
+        .cta-button { background-image: linear-gradient(to right, var(--reseller-primary-color), var(--reseller-secondary-color)); }
+
+        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: none; justify-content: center; align-items: center; z-index: 1000; }
+        .modal-overlay.active { display: flex; }
+        .modal-content { background: var(--card-bg); padding: 2rem; border-radius: var(--border-radius); width: 90%; max-width: 800px; box-shadow: 0 25px 50px -12px rgb(0 0 0 / 0.25); }
+        .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; }
+        .modal-header h3 { font-size: 1.25rem; }
+        .modal-close-btn { background: none; border: none; cursor: pointer; color: var(--text-light); }
+        .modal-footer { margin-top: 1.5rem; display: flex; justify-content: flex-end; gap: 0.75rem; }
+
+        #toast { position: fixed; bottom: -100px; left: 50%; transform: translateX(-50%); background-color: #333; color: white; padding: 1rem 1.5rem; border-radius: 0.5rem; transition: bottom 0.5s ease; z-index: 2000; box-shadow: var(--shadow); }
+        
+        .search-input { width: 100%; padding: 0.75rem 1rem; border: 1px solid var(--border-color); border-radius: 0.5rem; font-size: 0.9rem; background-color: var(--card-bg); }
+        .form-group { display: flex; flex-direction: column; }
+        .form-group label { font-weight: 600; margin-bottom: 0.5rem; font-size: 0.9rem; }
+
         .catalog-top-bar { animation: marquee 25s linear infinite; }
         @keyframes marquee { from { transform: translateX(0%); } to { transform: translateX(-50%); } }
-        .spinner { 
-            border: 4px solid rgba(0, 0, 0, 0.1); 
-            width: 36px; 
-            height: 36px; 
-            border-radius: 50%; 
-            border-left-color: var(--reseller-primary-color); 
-            animation: spin 1s ease infinite; 
-            margin: auto; 
+        
+        .filter-bubbles { display: flex; gap: 0.5rem; justify-content: center; flex-wrap: wrap; }
+        .filter-bubble { 
+            padding: 0.5rem 1rem;
+            min-width: 60px;
+            height: 60px;
+            border: 2px solid var(--reseller-secondary-color);
+            border-radius: 999px; 
+            cursor: pointer; 
+            font-weight: 600; 
+            font-size: 1rem;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background-color: white;
+            color: var(--reseller-secondary-color);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
         }
+        .filter-bubble.active { 
+            background-color: var(--reseller-secondary-color); 
+            color: white; 
+        }
+
+        .loading-indicator { text-align: center; padding: 2rem; }
+        .spinner { border: 4px solid rgba(0, 0, 0, 0.1); width: 36px; height: 36px; border-radius: 50%; border-left-color: var(--reseller-primary-color); animation: spin 1s ease infinite; margin: auto; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
     </style>
 </head>
@@ -79,11 +129,12 @@
                 <div class="max-w-7xl mx-auto px-4 py-8">
                      <div class="catalog-filters-container text-center mb-8">
                         <h3 class="text-xl font-bold text-[var(--reseller-primary-color)] mb-4">Filtre por Numeração</h3>
-                        <div id="size-filter-bubbles" class="flex gap-2 justify-center flex-wrap">
+                        <div id="size-filter-bubbles" class="filter-bubbles">
                         </div>
                     </div>
                     <div id="catalog-product-grid" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
                     </div>
+                    <!-- Otimização: Loader para o Infinite Scroll -->
                     <div id="infinite-scroll-loader" class="loading-indicator col-span-full" style="display: none;">
                         <div class="spinner"></div>
                     </div>
@@ -141,7 +192,7 @@
     </div>
     <div id="toast"></div>
 
-    <!-- Scripts JS carregados no final com defer -->
+    <!-- Otimização de Scripts: Adicionado 'defer' para carregamento não-bloqueante -->
     <script src="../js/servicos.js" defer></script>
     <script src="../js/catalogo.js" defer></script>
 </body>
