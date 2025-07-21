@@ -45,6 +45,7 @@
         .btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 0.6rem 1.25rem; border-radius: 0.5rem; border: none; font-weight: 600; font-size: 0.9rem; cursor: pointer; transition: all 0.2s ease; }
         .btn-success { background-color: var(--success-color); color: white; }
         .btn-success:hover { opacity: 0.9; }
+        .cta-button { background-image: linear-gradient(to right, var(--cor-primaria), var(--cor-secundaria)); }
 
         .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: none; justify-content: center; align-items: center; z-index: 1000; }
         .modal-overlay.active { display: flex; }
@@ -91,32 +92,7 @@
         .catalog-footer { text-align: center; padding: 2rem; background-color: #334155; color: white; }
         .catalog-footer a { color: var(--reseller-secondary-color); text-decoration: none; font-weight: 600; }
 
-        #product-detail-container { padding: 2rem 1rem; max-width: 1200px; margin: auto; }
-        .product-detail-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; }
-        .product-detail-images img { width: 100%; border-radius: var(--border-radius); box-shadow: var(--shadow); }
         .product-detail-info h1 { font-size: 2rem; font-weight: 700; margin-bottom: 0.5rem; }
-        .product-detail-tags { display: flex; gap: 0.5rem; margin-bottom: 1rem; }
-        .product-detail-tag { padding: 0.25rem 0.75rem; border-radius: 0.25rem; font-size: 0.75rem; font-weight: 700; color: white; }
-        .product-detail-tag.highlight { background-color: var(--reseller-primary-color); }
-        .product-detail-tag.launch { background-color: #8b5cf6; }
-        .product-detail-tag.promo { background-color: var(--reseller-secondary-color); color: #333; }
-        .product-detail-rating { display: flex; align-items: center; gap: 0.25rem; color: #f59e0b; margin-bottom: 1rem; }
-        .product-detail-price-container .price-from { text-decoration: line-through; color: var(--text-light); font-size: 1rem; margin-right: 0.5rem; }
-        .product-detail-price-container .price-to { font-size: 2rem; font-weight: 700; color: var(--reseller-primary-color); }
-        .size-options-container { margin-top: 1.5rem; margin-bottom: 1.5rem; }
-        .size-options-container > label { display: block; font-weight: 600; margin-bottom: 0.75rem; }
-        .size-grid { display: flex; flex-wrap: wrap; gap: 1rem; }
-        .size-option { text-align: center; }
-        .size-option .size-label { font-weight: 500; margin-bottom: 0.5rem; }
-        .quantity-stepper { display: flex; align-items: center; justify-content: center; border: 1px solid var(--border-color); border-radius: 999px; }
-        .quantity-stepper button { background: transparent; border: none; cursor: pointer; padding: 0.5rem; font-size: 1.2rem; line-height: 1; color: var(--text-color); }
-        .quantity-stepper input { width: 40px; text-align: center; border: none; background: transparent; font-size: 1rem; font-weight: 600; -moz-appearance: textfield; }
-        .quantity-stepper input::-webkit-outer-spin-button, .quantity-stepper input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
-        .size-option.disabled { opacity: 0.5; pointer-events: none; }
-        .size-option.disabled .size-label { text-decoration: line-through; }
-        .buy-button { width: 100%; padding: 1rem; font-size: 1.1rem; background-color: var(--reseller-primary-color); border-radius: 0.5rem; margin-bottom: 1.5rem; }
-        .product-info-icons { display: flex; justify-content: space-around; gap: 1rem; text-align: center; font-size: 0.8rem; color: var(--text-light); padding-top: 1.5rem; border-top: 1px solid var(--border-color); }
-        .product-info-icons div { display: flex; flex-direction: column; align-items: center; gap: 0.5rem; max-width: 100px; }
         .category-list-container { display: flex; flex-direction: column; gap: 0.5rem; }
         .category-list-container a { text-decoration: none; color: var(--text-color); padding: 0.75rem 1rem; border-radius: 0.5rem; font-weight: 500; transition: background-color 0.2s; }
         .category-list-container a:hover { background-color: #f1f5f9; }
