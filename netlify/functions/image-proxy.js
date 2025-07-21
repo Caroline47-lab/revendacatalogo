@@ -1,56 +1,64 @@
-exports.handler = async (event) => {
-    // 1. Validar parâmetro
-    const encodedUrl = event.queryStringParameters.url;
-    if (!encodedUrl) return { statusCode: 400, body: "URL ausente" };
+const fetch = require('node-fetch');
+const sharp = require('sharp');
 
-    // 2. Decodificar e corrigir URL
+exports.handler = async (event) => {
+    // 1. Validar parâmetros da query
+    const { url: encodedUrl, w, q, format } = event.queryStringParameters;
+    if (!encodedUrl) {
+        return { statusCode: 400, body: "Parâmetro 'url' da imagem ausente." };
+    }
+
+    // 2. Decodificar e validar a URL da imagem
     let imageUrl;
     try {
         imageUrl = decodeURIComponent(encodedUrl);
-        
-        // Correção de URLs malformadas
-        imageUrl = imageUrl
-            .replace(/%3A(\d+)F/g, '%3A%$1F') // Corrige dupla codificação
-            .replace('://produtos/', '://arquivos.facilzap.app.br/produtos/');
-        
-        // Forçar domínio correto se faltante
-        if (!imageUrl.includes('://')) {
-            imageUrl = `https://arquivos.facilzap.app.br/${imageUrl.replace(/^\//, '')}`;
+        // Garante que o domínio é o permitido
+        if (!new URL(imageUrl).hostname.endsWith('.facilzap.app.br')) {
+            return { statusCode: 403, body: "Domínio de imagem não permitido." };
         }
-        
-        const parsedUrl = new URL(imageUrl);
-        
-        // 3. Validar domínio
-        if (!parsedUrl.hostname.endsWith('.facilzap.app.br')) {
-            return { statusCode: 403, body: "Domínio bloqueado" };
+    } catch (error) {
+        return { statusCode: 400, body: "URL da imagem inválida." };
+    }
+
+    try {
+        // 3. Buscar a imagem original
+        const response = await fetch(imageUrl);
+        if (!response.ok) {
+            return { statusCode: response.status, body: response.statusText };
         }
-        
-        // 4. Buscar imagem
-        const response = await fetch(imageUrl, {
-            headers: { 'User-Agent': 'Mozilla/5.0' }
-        });
-        
-        // ... (processamento da imagem) ...
-        
+        const imageBuffer = await response.buffer();
+
+        // 4. Otimizar a imagem com Sharp
+        const width = w ? parseInt(w, 10) : null; // Largura desejada
+        const quality = q ? parseInt(q, 10) : 75; // Qualidade (padrão 75)
+        const outputFormat = format || 'webp'; // Formato (padrão webp)
+
+        let transformer = sharp(imageBuffer);
+
+        if (width) {
+            transformer = transformer.resize({ width });
+        }
+
+        transformer = transformer[outputFormat]({ quality });
+
+        const optimizedImageBuffer = await transformer.toBuffer();
+
+        // 5. Retornar a imagem otimizada
         return {
             statusCode: 200,
             headers: {
-                'Content-Type': response.headers.get('content-type'),
-                'Access-Control-Allow-Origin': 'https://cjotarasteirinhas.com.br'
+                'Content-Type': `image/${outputFormat}`,
+                'Cache-Control': 'public, max-age=31536000' // Cache de 1 ano no navegador
             },
-            body: Buffer.from(await response.arrayBuffer()).toString('base64'),
-            isBase64Encoded: true
+            body: optimizedImageBuffer.toString('base64'),
+            isBase64Encoded: true,
         };
-        
+
     } catch (error) {
+        console.error("Erro no processamento da imagem:", error);
         return {
             statusCode: 500,
-            body: JSON.stringify({
-                error: "Erro no processamento",
-                originalUrl: encodedUrl,
-                processedUrl: imageUrl,
-                message: error.message
-            })
+            body: JSON.stringify({ error: "Falha ao otimizar a imagem." })
         };
     }
 };
