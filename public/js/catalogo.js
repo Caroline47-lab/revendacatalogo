@@ -225,7 +225,6 @@ function generateRatingStars(rating = 4.8, reviewCount = 89) {
         starsHTML += '<i data-feather="star" class="w-4 h-4 text-amber-500 fill-current"></i>';
     }
     if (halfStar) {
-        // Usando uma estrela cheia para simplicidade visual, como no design original
         starsHTML += '<i data-feather="star" class="w-4 h-4 text-amber-500 fill-current"></i>';
     }
     for(let i = 0; i < emptyStars; i++) {
@@ -255,7 +254,7 @@ function showProductDetailPage(productId) {
     const finalPrice = parseFloat(product.preco_original) * (1 + margin / 100);
     const productTags = resellerProductTags[productId] || [];
 
-    const thumbnailsHTML = (product.imagens_adicionais && product.imagens_adicionais.length > 0 ? product.imagens_adicionais : [product.imagem]).slice(0, 4).map((imgUrl, index) => `
+    const thumbnailsHTML = (product.imagens_adicionais && product.imagens_adicionais.length > 1 ? product.imagens_adicionais : [product.imagem]).slice(0, 4).map((imgUrl, index) => `
         <img src="${proxyImageUrl(imgUrl).replace('600x600', '80x80')}" alt="Thumbnail ${index + 1}" class="thumbnail w-16 h-16 md:w-20 md:h-20 object-cover rounded-lg cursor-pointer border-2 ${index === 0 ? 'border-pink-500 active' : 'border-transparent'}" onclick="changeImage(this, '${proxyImageUrl(imgUrl)}')">
     `).join('');
 
@@ -267,7 +266,6 @@ function showProductDetailPage(productId) {
         return `<span class="product-detail-tag ${tagClass}">${tag.toUpperCase()}</span>`;
     }).join('');
 
-    // CORREÇÃO: Garante que os botões de tamanho sejam criados corretamente
     const sizesHTML = product.variacoes.map(v => {
         const size = String(v.nome || '').replace(/Tamanho:\s*/i, '').trim();
         const isOutOfStock = v.quantidade <= 0;
@@ -278,11 +276,8 @@ function showProductDetailPage(productId) {
         <div class="container mx-auto p-4 lg:p-8">
             <button class="btn mb-4" id="back-to-catalog-btn" style="background-color: var(--cor-primaria); color: white;"><i data-feather="arrow-left"></i> Voltar ao catálogo</button>
             <main class="grid grid-cols-1 lg:grid-cols-2 lg:gap-16">
-                <section class="flex flex-col-reverse md:flex-row gap-4">
-                    <div class="flex md:flex-col gap-3 justify-center">${thumbnailsHTML}</div>
-                    <div class="flex-1">
-                        <img id="main-product-image" src="${proxyImageUrl(product.imagem)}" alt="${product.nome}" class="w-full h-auto object-cover rounded-xl shadow-lg">
-                    </div>
+                <section>
+                     <img id="main-product-image" src="${proxyImageUrl(product.imagem)}" alt="${product.nome}" class="w-full h-auto object-cover rounded-xl shadow-lg">
                 </section>
                 <section class="mt-8 lg:mt-0">
                     <h1 class="text-2xl lg:text-3xl font-bold text-slate-900 leading-tight mb-2">${product.nome}</h1>
@@ -296,7 +291,7 @@ function showProductDetailPage(productId) {
                     <div class="mb-6">
                         <div class="flex justify-between items-center mb-2">
                             <label class="text-base font-semibold text-slate-800">Selecione a Numeração:</label>
-                            <a href="#" class="text-sm font-medium" style="color: var(--cor-primaria);"><i data-feather="ruler" class="w-4 h-4 inline-block -mt-1"></i> Tabela de medidas</a>
+                            <a href="#" class="text-sm font-medium" style="color: var(--cor-primaria);"><i data-feather="tool" class="w-4 h-4 inline-block -mt-1"></i> Tabela de medidas</a>
                         </div>
                         <div class="grid grid-cols-4 gap-2">${sizesHTML}</div>
                     </div>
