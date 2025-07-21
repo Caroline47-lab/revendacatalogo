@@ -15,14 +15,15 @@ let resellerSettings = {};
 let cart = [];
 let currentCustomer = null;
 let pendingCartAction = null;
+let selectedSize = ''; // Variável para guardar o tamanho selecionado
 
 // --- INICIALIZAÇÃO DO CATÁLOGO ---
 document.addEventListener('DOMContentLoaded', () => {
-    // CORREÇÃO: A verificação agora é feita no elemento principal que sempre existe.
     if (document.getElementById('catalog-preview-view')) {
         loadLocalDataForCatalog();
         loadAllPublishedProducts().then(() => {
             renderCatalogPreview();
+            renderSizeFilters(); // Adicionado para renderizar os filtros de tamanho
         });
         feather.replace();
     }
@@ -30,9 +31,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
 // --- LÓGICA DO CATÁLOGO ---
 
-/**
- * Carrega os dados salvos no localStorage que são relevantes para o catálogo.
- */
 function loadLocalDataForCatalog() {
     const savedPublished = localStorage.getItem('erpPublished');
     if (savedPublished) {
@@ -52,9 +50,6 @@ function loadLocalDataForCatalog() {
     if (savedSettings) resellerSettings = JSON.parse(savedSettings);
 }
 
-/**
- * Busca na API todos os produtos que foram marcados como publicados pelo admin.
- */
 async function loadAllPublishedProducts() {
     resellerProducts = []; 
     let currentPage = 1;
@@ -89,49 +84,48 @@ async function loadAllPublishedProducts() {
     }
 }
 
+function renderSizeFilters() {
+    const allVariations = resellerProducts
+        .flatMap(p => p.variacoes.map(v => (v.nome || '').replace(/Tamanho:\s*/i, '').trim()))
+        .filter(v => v && !isNaN(v)); // Filtra apenas os que são números
 
-function renderCatalogPreview(searchTerm = '', categoryFilter = '') {
+    const uniqueSizes = [...new Set(allVariations)].sort((a, b) => a - b);
+
+    const container = document.getElementById('size-filter-bubbles');
+    if (!container) return;
+    
+    container.innerHTML = ''; // Limpa filtros antigos
+
+    const allButton = document.createElement('button');
+    allButton.className = 'filter-bubble active';
+    allButton.textContent = 'Todos';
+    allButton.addEventListener('click', () => {
+        selectedSize = '';
+        document.querySelectorAll('.filter-bubble').forEach(b => b.classList.remove('active'));
+        allButton.classList.add('active');
+        renderCatalogPreview(document.getElementById('catalog-search-input').value, '', selectedSize);
+    });
+    container.appendChild(allButton);
+
+    uniqueSizes.forEach(size => {
+        const bubble = document.createElement('button');
+        bubble.className = 'filter-bubble';
+        bubble.textContent = size;
+        bubble.dataset.size = size;
+        bubble.addEventListener('click', () => {
+            selectedSize = size;
+            document.querySelectorAll('.filter-bubble').forEach(b => b.classList.remove('active'));
+            bubble.classList.add('active');
+            renderCatalogPreview(document.getElementById('catalog-search-input').value, '', selectedSize);
+        });
+        container.appendChild(bubble);
+    });
+}
+
+
+function renderCatalogPreview(searchTerm = '', categoryFilter = '', sizeFilter = '') {
     const catalogView = document.getElementById('catalog-preview-view');
-    // Preenche o HTML inicial do catálogo
-    catalogView.innerHTML = `
-        <div id="catalog-wrapper">
-            <div class="catalog-top-bar" id="catalog-top-bar-container"></div>
-            <div class="catalog-header-container">
-                <div class="catalog-gradient-bar">
-                    <button id="catalog-menu-toggle"><i data-feather="menu"></i></button>
-                    <div class="header-search-wrapper">
-                        <input type="text" id="catalog-search-input" placeholder="o que você procura?..." value="${searchTerm}">
-                        <button id="catalog-search-btn"><i data-feather="search" style="width: 20px; height: 20px;"></i></button>
-                    </div>
-                    <a href="#" id="cart-button" class="catalog-cart-icon">
-                        <i data-feather="shopping-cart"></i>
-                        <span id="cart-count" class="cart-count" style="display: none;">0</span>
-                    </a>
-                </div>
-                <div class="catalog-banner-area" id="catalog-banner">BANNER AQUI</div>
-                <div class="catalog-logo-container">
-                    <img id="catalog-logo" src="https://placehold.co/180x180/e2e8f0/cccccc?text=" alt="Logo da loja">
-                </div>
-            </div>
-            <main id="catalog-main-container">
-                <div class="catalog-content-body">
-                    <div id="catalog-main-content">
-                        <div id="catalog-product-grid" class="catalog-grid"></div>
-                    </div>
-                </div>
-            </main>
-            <footer class="catalog-footer">
-                <h2 id="catalog-brand-name-footer" style="font-size: 1.5rem; font-weight: 700; margin-bottom: 0.5rem;">Sua Marca</h2>
-                <p id="catalog-description" style="max-width: 600px; margin: 0 auto 1rem;">Descrição da sua loja aqui.</p>
-                <div style="margin-top: 1rem;">
-                    <a id="catalog-instagram-link" href="#" target="_blank" style="margin-right: 1.5rem;"><i data-feather="instagram" style="display: inline-block; vertical-align: middle; margin-right: 0.5rem;"></i>Instagram</a>
-                    <a id="catalog-whatsapp-link" href="#" target="_blank"><i data-feather="message-circle" style="display: inline-block; vertical-align: middle; margin-right: 0.5rem;"></i>WhatsApp</a>
-                </div>
-            </footer>
-        </div>
-        <div id="product-detail-wrapper"></div>
-    `;
-
+    
     const settings = resellerSettings;
     document.documentElement.style.setProperty('--reseller-primary-color', settings.primaryColor || '#DB1472');
     document.documentElement.style.setProperty('--reseller-secondary-color', settings.secondaryColor || '#F8B81F');
@@ -142,7 +136,7 @@ function renderCatalogPreview(searchTerm = '', categoryFilter = '') {
         const contentHTML = messages.map(msg => `<span>${msg}</span>`).join('');
         topBarContainer.innerHTML = `<div class="top-bar-content">${contentHTML}${contentHTML}</div>`;
     } else {
-        topBarContainer.innerHTML = '';
+        topBarContainer.style.display = 'none';
     }
 
     const bannerArea = catalogView.querySelector('#catalog-banner');
@@ -162,6 +156,11 @@ function renderCatalogPreview(searchTerm = '', categoryFilter = '') {
     
     if (searchTerm) activeCatalogProducts = activeCatalogProducts.filter(p => p.nome.toLowerCase().includes(searchTerm));
     if (categoryFilter) activeCatalogProducts = activeCatalogProducts.filter(p => p.categoria_nome === categoryFilter);
+    if (sizeFilter) {
+        activeCatalogProducts = activeCatalogProducts.filter(p => 
+            p.variacoes.some(v => (v.nome || '').replace(/Tamanho:\s*/i, '').trim() === sizeFilter)
+        );
+    }
 
     const grid = catalogView.querySelector('#catalog-product-grid');
     grid.innerHTML = '';
@@ -194,7 +193,7 @@ function renderCatalogPreview(searchTerm = '', categoryFilter = '') {
             link.addEventListener('click', e => {
                 e.preventDefault();
                 const category = e.target.dataset.category;
-                renderCatalogPreview(searchTerm, category);
+                renderCatalogPreview(searchTerm, category, selectedSize);
                 closeModal('category-modal');
             });
         });
@@ -208,7 +207,7 @@ function renderCatalogPreview(searchTerm = '', categoryFilter = '') {
     
     const searchInput = catalogView.querySelector('#catalog-search-input');
     const searchBtn = catalogView.querySelector('#catalog-search-btn');
-    const performSearch = () => renderCatalogPreview(searchInput.value.toLowerCase(), categoryFilter);
+    const performSearch = () => renderCatalogPreview(searchInput.value.toLowerCase(), categoryFilter, selectedSize);
     
     searchBtn.addEventListener('click', performSearch);
     searchInput.addEventListener('keyup', (e) => { if (e.key === 'Enter') performSearch(); });
