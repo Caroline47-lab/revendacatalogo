@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sistema de Gestão</title>
+    <title>Painel Administrativo - Sistema de Gestão</title>
     
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -11,7 +11,7 @@
     
     <script src="https://unpkg.com/feather-icons"></script>
 
-    <!-- O CSS continua aqui, pois é usado por todos os painéis neste arquivo -->
+    <!-- O CSS é o mesmo do arquivo original, pois define o estilo base para os painéis -->
     <style>
         :root {
             --primary-color: #DB1472;
@@ -42,18 +42,11 @@
         .view { display: none; }
         .view.active { display: block; }
 
-        #landing-view.active { display: flex; align-items: center; justify-content: center; min-height: 100vh; }
-        .landing-box { text-align: center; background-color: var(--card-bg); padding: 3rem; border-radius: var(--border-radius); box-shadow: var(--shadow); max-width: 450px; width: 90%; }
-        .landing-box h1 { font-size: 1.875rem; font-weight: 700; color: var(--text-color); margin-bottom: 0.5rem; }
-        .landing-box p { color: var(--text-light); margin-bottom: 2rem; }
-        .landing-box .btn-group { display: flex; flex-direction: column; gap: 1rem; }
-        .landing-box .btn { text-decoration: none; text-align: center; }
-
         .app-container { display: flex; min-height: 100vh; position: relative; }
         .sidebar { width: 250px; background-color: var(--card-bg); border-right: 1px solid var(--border-color); padding: 2rem 1rem; display: flex; flex-direction: column; transition: transform 0.3s ease-in-out; z-index: 1100; }
         .sidebar-header { font-size: 1.5rem; font-weight: 700; color: var(--primary-color); margin-bottom: 2rem; text-align: center; }
         .nav-menu { list-style: none; flex-grow: 1; }
-        .nav-item a { display: flex; align-items: center; gap: 0.75rem; padding: 0.75rem 1rem; border-radius: 0.5rem; text-decoration: none; color: var(--text-light); font-weight: 500; transition: background-color 0.2s, color 0.2s; }
+        .nav-item a { display: flex; align-items: center; gap: 0.75rem; padding: 0.75rem 1rem; border-radius: 0.5rem; text-decoration: none; color: var(--text-light); font-weight: 500; transition: background-color 0.2s, color 0.2s; cursor: pointer; }
         .nav-item a:hover { background-color: #f1f5f9; color: var(--text-color); }
         .nav-item a.active { background-color: var(--primary-color); color: white; }
         .sidebar-footer { font-size: 0.8rem; color: #94a3b8; text-align: center; margin-top: 1rem; }
@@ -67,7 +60,7 @@
         .page-header h1 { font-size: 1.75rem; font-weight: 700; }
         
         .mobile-header-controls { display: none; }
-        #menu-toggle { background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 0.5rem; padding: 0.5rem; }
+        #menu-toggle-empresa { background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 0.5rem; padding: 0.5rem; cursor: pointer; }
 
         .btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 0.6rem 1.25rem; border-radius: 0.5rem; border: none; font-weight: 600; font-size: 0.9rem; cursor: pointer; transition: all 0.2s ease; }
         .btn:disabled { background-color: #cbd5e1; cursor: not-allowed; }
@@ -129,152 +122,52 @@
         .stock-badge.out-of-stock { background-color: #fee2e2; color: #dc2626; }
 
         .page-controls { margin-bottom: 1.5rem; display: flex; justify-content: flex-end; }
-        .search-input, .form-group select { width: 100%; max-width: 400px; padding: 0.75rem 1rem; border: 1px solid var(--border-color); border-radius: 0.5rem; font-size: 0.9rem; background-color: var(--card-bg); transition: border-color 0.2s, box-shadow 0.2s; }
-        .search-input:focus, .form-group select:focus { outline: none; border-color: var(--primary-color); box-shadow: 0 0 0 2px rgba(219, 20, 114, 0.2); }
+        .search-input { width: 100%; max-width: 400px; padding: 0.75rem 1rem; border: 1px solid var(--border-color); border-radius: 0.5rem; font-size: 0.9rem; background-color: var(--card-bg); transition: border-color 0.2s, box-shadow 0.2s; }
+        .search-input:focus { outline: none; border-color: var(--primary-color); box-shadow: 0 0 0 2px rgba(219, 20, 114, 0.2); }
         
         .variacao_nome { font-weight: 600; color: var(--primary-color); background-color: #fce7f3; padding: 0.2rem 0.6rem; border-radius: 0.375rem; display: inline-block; }
-        .placeholder-card { background-color: var(--card-bg); padding: 4rem 2rem; border-radius: var(--border-radius); box-shadow: var(--shadow); text-align: center; color: var(--text-light); }
-
-        .settings-section { background-color: var(--card-bg); padding: 1.5rem; border-radius: var(--border-radius); box-shadow: var(--shadow); margin-bottom: 2rem; }
-        .settings-section h2 { font-size: 1.25rem; font-weight: 700; margin-bottom: 1.5rem; border-bottom: 1px solid var(--border-color); padding-bottom: 1rem; }
-        .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1.5rem; }
-        .form-group { display: flex; flex-direction: column; }
-        .form-group label { font-weight: 600; margin-bottom: 0.5rem; font-size: 0.9rem; }
-        .form-group input[type="text"], .form-group input[type="tel"], .form-group input[type="number"], .form-group input[type="date"], .form-group textarea, .form-group input[type="color"] { width: 100%; padding: 0.75rem; border: 1px solid var(--border-color); border-radius: 0.5rem; font-size: 0.9rem; }
-        .form-group input[type="color"] { padding: 0.25rem; height: 48px; }
-        .form-group textarea { min-height: 100px; resize: vertical; }
-        .logo-preview { width: 100px; height: 100px; border-radius: 50%; object-fit: cover; border: 2px solid var(--border-color); margin-top: 1rem; }
-        .banner-preview { display: flex; gap: 1rem; background-color: #f1f5f9; border: 2px dashed var(--border-color); padding: 1rem; border-radius: var(--border-radius); min-height: 150px; align-items: center; justify-content: center; }
-        .banner-preview img { max-width: 100%; max-height: 120px; object-fit: cover; border-radius: 0.5rem; }
         
-        .loading-indicator {
-            text-align: center;
-            padding: 2rem;
-            display: none; 
-        }
-        .loading-indicator.visible {
-            display: block;
-        }
-        .spinner {
-            border: 4px solid rgba(0, 0, 0, 0.1);
-            width: 36px;
-            height: 36px;
-            border-radius: 50%;
-            border-left-color: var(--primary-color);
-            animation: spin 1s ease infinite;
-            margin: auto;
-        }
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
+        .loading-indicator { text-align: center; padding: 2rem; display: none; }
+        .loading-indicator.visible { display: block; }
+        .spinner { border: 4px solid rgba(0, 0, 0, 0.1); width: 36px; height: 36px; border-radius: 50%; border-left-color: var(--primary-color); animation: spin 1s ease infinite; margin: auto; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
         
-        .pagination-controls {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            gap: 1rem;
-            margin-top: 1.5rem;
-        }
-        .pagination-controls .page-info {
-            font-weight: 600;
-        }
+        .pagination-controls { display: flex; justify-content: center; align-items: center; gap: 1rem; margin-top: 1.5rem; }
+        .pagination-controls .page-info { font-weight: 600; }
 
         @media (max-width: 768px) {
-            .sidebar {
-                position: fixed;
-                top: 0;
-                left: 0;
-                height: 100%;
-                transform: translateX(-100%);
-            }
-            .sidebar.open {
-                transform: translateX(0);
-                box-shadow: 5px 0 15px rgba(0,0,0,0.1);
-            }
-            .main-content {
-                padding: 1rem;
-                width: 100%;
-            }
-            .mobile-header-controls {
-                display: flex;
-                align-items: center;
-                gap: 1rem;
-            }
-            .page-header h1 {
-                font-size: 1.5rem;
-            }
-            
-            .product-table thead {
-                display: none;
-            }
-            .product-table, .product-table tbody, .product-table tr, .product-table td {
-                display: block;
-                width: 100%;
-            }
-            .product-table tr {
-                margin-bottom: 1rem;
-                border: 1px solid var(--border-color);
-                border-radius: var(--border-radius);
-                overflow: hidden;
-            }
-            .product-table td {
-                text-align: right;
-                padding-left: 50%;
-                position: relative;
-                border-bottom: 1px solid var(--border-color);
-            }
-            .product-table tr td:last-child {
-                border-bottom: none;
-            }
-            .product-table td:before {
-                content: attr(data-label);
-                position: absolute;
-                left: 0.75rem;
-                width: 45%;
-                padding-right: 1rem;
-                text-align: left;
-                font-weight: 600;
-                color: var(--text-color);
-            }
-            .product-table .actions-cell {
-                justify-content: flex-end;
-            }
+            .sidebar { position: fixed; top: 0; left: 0; height: 100%; transform: translateX(-100%); }
+            .sidebar.open { transform: translateX(0); box-shadow: 5px 0 15px rgba(0,0,0,0.1); }
+            .main-content { padding: 1rem; width: 100%; }
+            .mobile-header-controls { display: flex; align-items: center; gap: 1rem; }
+            .page-header h1 { font-size: 1.5rem; }
+            .product-table thead { display: none; }
+            .product-table, .product-table tbody, .product-table tr, .product-table td { display: block; width: 100%; }
+            .product-table tr { margin-bottom: 1rem; border: 1px solid var(--border-color); border-radius: var(--border-radius); overflow: hidden; }
+            .product-table td { text-align: right; padding-left: 50%; position: relative; border-bottom: 1px solid var(--border-color); }
+            .product-table tr td:last-child { border-bottom: none; }
+            .product-table td:before { content: attr(data-label); position: absolute; left: 0.75rem; width: 45%; padding-right: 1rem; text-align: left; font-weight: 600; color: var(--text-color); }
+            .product-table .actions-cell { justify-content: flex-end; }
         }
     </style>
 </head>
 <body>
 
-    <!-- VISÃO DA LANDING PAGE -->
-    <div id="landing-view" class="view active">
-        <div class="landing-box">
-            <h1>Bem-vindo(a) ao Sistema</h1>
-            <p>Selecione o painel que deseja acessar.</p>
-            <div class="btn-group">
-                <button id="show-empresa-panel" class="btn btn-primary">Acessar Painel da Empresa</button>
-                <button id="show-revendedor-panel" class="btn btn-secondary">Acessar Painel do Revendedor</button>
-            </div>
-        </div>
-    </div>
-
     <!-- VISÃO DO PAINEL DA EMPRESA -->
-    <div id="empresa-view" class="view">
+    <div id="empresa-view" class="view active">
         <div class="app-container">
             <aside class="sidebar">
                 <div class="sidebar-header">ERP CJOTA</div>
                 <ul class="nav-menu" id="empresa-nav">
-                    <li class="nav-item"><a href="#" class="nav-link active" data-page="dashboard"><i data-feather="home"></i> Visão Geral</a></li>
-                    <li class="nav-item"><a href="#" class="nav-link" data-page="products"><i data-feather="package"></i> Produtos</a></li>
-                    <li class="nav-item"><a href="#" class="nav-link" data-page="categories"><i data-feather="grid"></i> Categorias</a></li>
-                    <li class="nav-item"><a href="#" class="nav-link" data-page="abc-curve"><i data-feather="trending-up"></i> Curva ABC</a></li>
-                    <li class="nav-item"><a href="#" class="nav-link" data-page="catalog"><i data-feather="book-open"></i> Catálogo Revenda</a></li>
-                    <li class="nav-item"><a href="#" class="nav-link" data-page="resellers"><i data-feather="users"></i> Gerenciar Revendedoras</a></li>
-                    <li class="nav-item"><a href="#" class="nav-link" data-page="sync"><i data-feather="refresh-cw"></i> Sincronização</a></li>
+                    <li class="nav-item"><a class="nav-link active" data-page="dashboard"><i data-feather="home"></i> Visão Geral</a></li>
+                    <li class="nav-item"><a class="nav-link" data-page="products"><i data-feather="package"></i> Produtos</a></li>
+                    <li class="nav-item"><a class="nav-link" data-page="categories"><i data-feather="grid"></i> Categorias</a></li>
+                    <li class="nav-item"><a class="nav-link" data-page="abc-curve"><i data-feather="trending-up"></i> Curva ABC</a></li>
+                    <li class="nav-item"><a class="nav-link" data-page="catalog"><i data-feather="book-open"></i> Catálogo Revenda</a></li>
+                    <li class="nav-item"><a class="nav-link" data-page="resellers"><i data-feather="users"></i> Gerenciar Revendedoras</a></li>
+                    <li class="nav-item"><a class="nav-link" data-page="sync"><i data-feather="refresh-cw"></i> Sincronização</a></li>
                 </ul>
                 <div class="sidebar-footer">
-                    <a href="#" id="back-to-landing-empresa" class="btn btn-secondary" style="width: 100%; margin-bottom: 1rem;">
-                        <i data-feather="arrow-left"></i> Voltar
-                    </a>
                     <p>&copy; 2025 - ERP CJOTA</p>
                 </div>
             </aside>
@@ -294,7 +187,6 @@
                     </div>
                 </section>
                 <section id="products" class="page">
-                    <div class="page-header"><h1>Todos os Produtos</h1></div>
                     <div class="page-controls"><input type="text" id="product-search-input" class="search-input" placeholder="Buscar por nome ou SKU..."></div>
                     <div class="table-container">
                         <table class="product-table">
@@ -305,14 +197,13 @@
                     <div id="product-list-loader" class="loading-indicator">
                         <div class="spinner"></div>
                     </div>
-                    <div id="pagination-controls" class="pagination-controls">
+                    <div class="pagination-controls">
                         <button id="prev-page-btn" class="btn btn-secondary"><i data-feather="arrow-left"></i> Anterior</button>
                         <span id="page-info" class="page-info">Página 1</span>
                         <button id="next-page-btn" class="btn btn-secondary">Próxima <i data-feather="arrow-right"></i></button>
                     </div>
                 </section>
                  <section id="categories" class="page">
-                    <div class="page-header"><h1>Gerenciar Categorias</h1></div>
                     <div class="table-container">
                         <table class="product-table">
                             <thead><tr><th>Nome da Categoria</th><th>Publicar no Catálogo</th></tr></thead>
@@ -321,22 +212,20 @@
                     </div>
                 </section>
                 <section id="abc-curve" class="page">
-                    <div class="page-header"><h1>Curva ABC de Produtos</h1></div>
                     <div class="settings-section">
-                        <h2>Curva A <span style="font-size: 0.9rem; color: var(--text-light); font-weight: 500;">(Produtos mais importantes - Top 80% do Faturamento)</span></h2>
+                        <h2>Curva A <span style="font-size: 0.9rem; color: var(--text-light); font-weight: 500;">(Produtos mais importantes)</span></h2>
                         <div id="curve-a-list"></div>
                     </div>
                     <div class="settings-section">
-                        <h2>Curva B <span style="font-size: 0.9rem; color: var(--text-light); font-weight: 500;">(Produtos intermediários - Próximos 15% do Faturamento)</span></h2>
+                        <h2>Curva B <span style="font-size: 0.9rem; color: var(--text-light); font-weight: 500;">(Produtos intermediários)</span></h2>
                         <div id="curve-b-list"></div>
                     </div>
                     <div class="settings-section">
-                        <h2>Curva C <span style="font-size: 0.9rem; color: var(--text-light); font-weight: 500;">(Produtos com menor giro - Últimos 5% do Faturamento)</span></h2>
+                        <h2>Curva C <span style="font-size: 0.9rem; color: var(--text-light); font-weight: 500;">(Produtos com menor giro)</span></h2>
                         <div id="curve-c-list"></div>
                     </div>
                 </section>
                 <section id="catalog" class="page">
-                     <div class="page-header"><h1>Catálogo para Revendedoras</h1></div>
                     <div class="table-container">
                         <table class="product-table">
                             <thead><tr><th>Imagem</th><th>Nome</th><th>Preço</th><th>Variações Disponíveis</th></tr></thead>
@@ -345,7 +234,6 @@
                     </div>
                 </section>
                 <section id="resellers" class="page">
-                    <div class="page-header"><h1>Gerenciar Revendedoras</h1></div>
                     <div class="table-container">
                         <table class="product-table">
                             <thead><tr><th>Nome</th><th>Documento</th><th>Telefone</th><th>Status</th><th>Ações</th></tr></thead>
@@ -354,12 +242,11 @@
                     </div>
                 </section>
                 <section id="sync" class="page">
-                    <div class="page-header"><h1>Sincronização com FacilZap</h1></div>
                     <div class="stat-card">
                         <p>A sincronização agora é feita de forma automática ao carregar a lista de produtos. Use o botão abaixo para forçar uma recarga completa, limpando os dados atuais.</p>
                         <div style="margin-top: 1.5rem; display: flex; gap: 1rem; flex-wrap: wrap;">
-                            <button class="btn btn-primary" onclick="resetAndReloadProducts()"><i data-feather="refresh-cw"></i> Recarregar Produtos</button>
-                            <button class="btn btn-secondary" onclick="testApiConnection()">Testar Conexão</button>
+                            <button id="reload-products-btn" class="btn btn-primary"><i data-feather="refresh-cw"></i> Recarregar Produtos</button>
+                            <button id="test-connection-btn" class="btn btn-secondary">Testar Conexão</button>
                         </div>
                         <p id="last-sync-time" style="margin-top: 1rem; color: var(--text-light); font-size: 0.9rem;">Última sincronização: Nunca</p>
                     </div>
@@ -367,152 +254,24 @@
             </main>
         </div>
     </div>
-
-    <!-- VISÃO DO PAINEL DA REVENDEDORA -->
-    <div id="revendedor-view" class="view">
-        <div class="app-container">
-            <aside class="sidebar">
-                <div class="sidebar-header">Painel Revenda</div>
-                <ul class="nav-menu" id="revendedor-nav">
-                    <li class="nav-item"><a href="#" class="nav-link active" data-page="reseller-products"><i data-feather="tag"></i> Produtos</a></li>
-                    <li class="nav-item"><a href="#" class="nav-link" data-page="reseller-promotions"><i data-feather="gift"></i> Promoções</a></li>
-                    <li class="nav-item"><a href="#" class="nav-link" data-page="reseller-sales"><i data-feather="dollar-sign"></i> Vendas</a></li>
-                    <li class="nav-item"><a href="#" class="nav-link" data-page="abandoned-carts"><i data-feather="shopping-cart"></i> Carrinhos Abandonados</a></li>
-                    <li class="nav-item"><a href="#" class="nav-link" data-page="reseller-settings"><i data-feather="settings"></i> Configurações</a></li>
-                    <li class="nav-item" style="border-top: 1px solid var(--border-color); margin-top: 1rem; padding-top: 1rem;"><a href="#" id="view-catalog-btn" class="nav-link" style="color: var(--primary-color);"><i data-feather="eye"></i> Ver Catálogo</a></li>
-                </ul>
-                <div class="sidebar-footer">
-                    <a href="#" id="back-to-landing-revendedor" class="btn btn-secondary" style="width: 100%; margin-bottom: 1rem;">
-                        <i data-feather="arrow-left"></i> Voltar
-                    </a>
-                    <p>&copy; 2025 - Catálogo de Revenda</p>
-                </div>
-            </aside>
-            <main class="main-content">
-                 <div class="page-header">
-                    <div class="mobile-header-controls">
-                        <button id="menu-toggle-revendedor"><i data-feather="menu"></i></button>
-                    </div>
-                    <h1 id="revendedor-page-title">Meus Produtos</h1>
-                </div>
-                <section id="reseller-products" class="page active">
-                    <div class="page-controls" style="background-color: var(--card-bg); padding: 1rem; border-radius: var(--border-radius); margin-bottom: 1.5rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
-                        <h3 style="font-size: 1.1rem; font-weight: 600;">Gerenciar Preços</h3>
-                        <div style="display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap;">
-                            <input type="number" id="mass-margin-input" class="search-input" placeholder="Margem de Lucro (%)" style="width: 180px;">
-                            <button id="apply-mass-margin" class="btn btn-primary">Aplicar em Massa</button>
-                        </div>
-                    </div>
-                    <div class="table-container">
-                        <table class="product-table">
-                            <thead><tr><th>Imagem</th><th>Nome</th><th>Preço Base</th><th>Sua Margem (%)</th><th>Preço Final</th><th>Ativar no Catálogo</th><th>Ações</th></tr></thead>
-                            <tbody id="reseller-products-table-body"></tbody>
-                        </table>
-                    </div>
-                    <div id="reseller-product-list-loader" class="loading-indicator">
-                        <div class="spinner"></div>
-                    </div>
-                </section>
-                <section id="reseller-promotions" class="page">
-                    <div class="settings-section"><h2><i data-feather="scissors" style="margin-right: 0.5rem;"></i>Cupom de Desconto</h2><div class="form-grid"><div class="form-group"><label for="coupon-code">Código do Cupom</label><input type="text" id="coupon-code" placeholder="EX: PROMO10"></div><div class="form-group"><label for="coupon-type">Tipo</label><select id="coupon-type" class="search-input"><option value="percentage">Percentual (%)</option><option value="fixed">Fixo (R$)</option></select></div><div class="form-group"><label for="coupon-value">Valor do Desconto</label><input type="number" id="coupon-value" placeholder="10"></div><div class="form-group" style="justify-content: flex-end;"><button class="btn btn-success">Criar Cupom</button></div></div></div>
-                    <div class="settings-section"><h2><i data-feather="shopping-bag" style="margin-right: 0.5rem;"></i>Leve Mais, Pague Menos</h2><div class="form-grid"><div class="form-group"><label for="buy-x">Leve (Quantidade)</label><input type="number" id="buy-x" placeholder="3"></div><div class="form-group"><label for="pay-y">Pague (Quantidade)</label><input type="number" id="pay-y" placeholder="2"></div><div class="form-group"><label for="buy-pay-product">Aplicar ao Produto</label><select id="buy-pay-product" class="search-input"><option>Selecione um produto...</option></select></div><div class="form-group" style="justify-content: flex-end;"><button class="btn btn-success">Criar Oferta</button></div></div></div>
-                </section>
-                <section id="reseller-sales" class="page">
-                    <div class="page-header">
-                        <h1>Minhas Vendas</h1>
-                        <button class="btn btn-success" onclick="showNewSaleModal()"><i data-feather="plus"></i> Lançar Nova Venda</button>
-                    </div>
-                    <div class="table-container">
-                        <table class="product-table">
-                            <thead><tr><th>Data</th><th>Itens</th><th>Valor Total</th><th>Status</th><th>Ações</th></tr></thead>
-                            <tbody id="sales-history-body"></tbody>
-                        </table>
-                    </div>
-                </section>
-                <section id="abandoned-carts" class="page">
-                    <div class="page-header">
-                        <h1>Carrinhos Abandonados</h1>
-                    </div>
-                    <div class="table-container">
-                        <table class="product-table">
-                            <thead><tr><th>Data</th><th>Cliente</th><th>Telefone</th><th>Itens</th><th>Valor</th><th>Ações</th></tr></thead>
-                            <tbody id="abandoned-carts-body"></tbody>
-                        </table>
-                    </div>
-                </section>
-                <section id="reseller-settings" class="page">
-                    <div class="settings-section"><h2>Identidade Visual</h2><div class="form-grid"><div class="form-group"><label for="logo-upload">Logo da Marca</label><input type="file" id="logo-upload" accept="image/*"><img id="logo-preview" class="logo-preview" src="https://placehold.co/100x100/e2e8f0/94a3b8?text=Logo" alt="Prévia da logo"></div><div class="form-group"><label for="brand-name-input">Nome da Marca</label><input type="text" id="brand-name-input" placeholder="Ex: Maria Modas"></div><div class="form-group"><label for="primary-color-input">Cor Primária</label><input type="color" id="primary-color-input" value="#DB1472"></div><div class="form-group"><label for="secondary-color-input">Cor de Destaque</label><input type="color" id="secondary-color-input" value="#F8B81F"></div></div></div>
-                    <div class="settings-section"><h2>Informações do Catálogo</h2><div class="form-grid"><div class="form-group"><label for="contact-phone-input">Contato (WhatsApp)</label><input type="tel" id="contact-phone-input" placeholder="(XX) 9XXXX-XXXX"></div><div class="form-group"><label for="instagram-input">Instagram</label><input type="text" id="instagram-input" placeholder="@seunome"></div></div><div class="form-group" style="margin-top: 1.5rem;"><label for="description-textarea">Descrição Curta</label><textarea id="description-textarea" placeholder="Fale um pouco sobre sua loja..."></textarea></div></div>
-                    <div class="settings-section"><h2>Link do Catálogo</h2><div class="form-grid" style="grid-template-columns: 2fr 1fr; align-items: flex-end;"><div class="form-group"><label for="catalog-url-name">Nome da Loja na URL</label><input type="text" id="catalog-url-name" placeholder="ex: joana-modas"></div><button class="btn btn-primary" id="generate-link-btn">Gerar e Copiar Link</button></div></div>
-                    <div class="settings-section"><h2>Banners do Catálogo</h2><p style="color: var(--text-light); margin-bottom: 1rem;">Envie imagens para os banners que aparecerão no topo do seu catálogo.</p><div class="banner-option"><h3 style="font-weight: 600; margin-bottom: 0.5rem;">Banner Principal (Desktop e Mobile)</h3><div class="form-grid"><div class="form-group"><label>Imagem para Desktop (1900x400px)</label><input type="file" class="banner-upload" data-banner-id="desktop-main" accept="image/*"><div class="banner-preview mt-2"><img id="banner-preview-desktop-main" src="https://placehold.co/600x200/e2e8f0/94a3b8?text=Banner+Desktop" alt="Prévia Banner Desktop"></div></div><div class="form-group"><label>Imagem para Mobile (700x800px)</label><input type="file" class="banner-upload" data-banner-id="mobile-main" accept="image/*"><div class="banner-preview mt-2"><img id="banner-preview-mobile-main" src="https://placehold.co/300x200/e2e8f0/94a3b8?text=Banner+Mobile" alt="Prévia Banner Mobile"></div></div></div></div></div>
-                    <div class="settings-section"><h2>Mensagens da Barra Superior</h2><div class="form-grid"><div class="form-group"><label for="top-bar-msg-1">Mensagem 1</label><input type="text" id="top-bar-msg-1"></div><div class="form-group"><label for="top-bar-msg-2">Mensagem 2</label><input type="text" id="top-bar-msg-2"></div><div class="form-group"><label for="top-bar-msg-3">Mensagem 3</label><input type="text" id="top-bar-msg-3"></div></div></div>
-                    <div class="modal-footer" style="justify-content: flex-start;"><button id="save-settings-btn" class="btn btn-success"><i data-feather="save"></i> Salvar Configurações</button></div>
-                </section>
-            </main>
-        </div>
-    </div>
     
-    <!-- MODAIS (COMPARTILHADOS PELOS PAINÉIS) -->
+    <!-- MODAIS -->
     <div id="product-details-modal" class="modal-overlay">
-        <div class="modal-content"><div class="modal-header"><h3 id="modal-product-name"></h3><button class="modal-close-btn" onclick="closeModal('product-details-modal')"><i data-feather="x"></i></button></div><div class="modal-body-grid"><div class="modal-image-container"><img id="modal-main-image" src="" alt="Imagem do Produto"></div><div class="modal-details-container"><table class="product-table"><thead><tr><th>Variação</th><th>Estoque</th></tr></thead><tbody id="modal-variations-tbody"></tbody></table></div></div></div>
+        <div class="modal-content"><div class="modal-header"><h3 id="modal-product-name"></h3><button class="modal-close-btn"><i data-feather="x"></i></button></div><div class="modal-body-grid"><div class="modal-image-container"><img id="modal-main-image" src="" alt="Imagem do Produto"></div><div class="modal-details-container"><table class="product-table"><thead><tr><th>Variação</th><th>Estoque</th></tr></thead><tbody id="modal-variations-tbody"></tbody></table></div></div></div>
     </div>
     <div id="reseller-details-modal" class="modal-overlay">
         <div class="modal-content">
             <div class="modal-header">
                 <h3 id="modal-reseller-name">Detalhes da Revendedora</h3>
-                <button class="modal-close-btn" onclick="closeModal('reseller-details-modal')"><i data-feather="x"></i></button>
+                <button class="modal-close-btn"><i data-feather="x"></i></button>
             </div>
             <div id="reseller-dashboard-content"></div>
         </div>
     </div>
-    <div id="reseller-product-edit-modal" class="modal-overlay">
-        <div class="modal-content"><div class="modal-header"><h3 id="modal-reseller-product-name">Editar Margem</h3><button class="modal-close-btn" onclick="closeModal('reseller-product-edit-modal')"><i data-feather="x"></i></button></div><div class="modal-body"><p style="margin-bottom: 1rem; color: var(--text-light);">Defina sua margem de lucro para este produto.</p><label for="reseller-margin-input" style="font-weight: 600;">Margem de Lucro (%)</label><input type="number" id="reseller-margin-input" class="search-input" style="width: 100%; margin-top: 0.5rem;" placeholder="Ex: 30"></div><div class="modal-footer"><button id="save-reseller-margin-btn" class="btn btn-success">Salvar</button></div></div>
-    </div>
-    <div id="reseller-tags-modal" class="modal-overlay">
-        <div class="modal-content">
-            <div class="modal-header"><h3 id="modal-tags-product-name">Editar Tags</h3><button class="modal-close-btn" onclick="closeModal('reseller-tags-modal')"><i data-feather="x"></i></button></div>
-            <div class="modal-body">
-                <p style="margin-bottom: 1rem; color: var(--text-light);">Selecione as tags para este produto.</p>
-                <div id="tags-selection-container" class="tag-selection-grid"></div>
-            </div>
-            <div class="modal-footer"><button id="save-reseller-tags-btn" class="btn btn-success">Salvar Tags</button></div>
-        </div>
-    </div>
-    <div id="new-sale-modal" class="modal-overlay">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h3>Lançar Nova Venda</h3>
-                <button class="modal-close-btn" onclick="closeModal('new-sale-modal')"><i data-feather="x"></i></button>
-            </div>
-            <div class="form-grid" style="grid-template-columns: 2fr 1fr 1fr auto; align-items: flex-end;">
-                <div class="form-group">
-                    <label for="sale-product-select">Produto</label>
-                    <select id="sale-product-select" class="search-input"></select>
-                </div>
-                <div class="form-group">
-                    <label for="sale-variation-select">Variação</label>
-                    <select id="sale-variation-select" class="search-input"></select>
-                </div>
-                <div class="form-group">
-                    <label for="sale-quantity-input">Qtd.</label>
-                    <input type="number" id="sale-quantity-input" class="search-input" value="1" min="1">
-                </div>
-                <button class="btn btn-primary" id="add-sale-item-btn" style="height: 48px;"><i data-feather="plus"></i></button>
-            </div>
-            <div class="table-container" style="margin-top: 1.5rem;">
-                <table class="product-table">
-                    <thead><tr><th>Produto</th><th>Qtd.</th><th>Subtotal</th><th></th></tr></thead>
-                    <tbody id="sale-items-body"></tbody>
-                </table>
-            </div>
-            <div class="modal-footer">
-                <h3 style="margin-right: auto;">Total: <span id="sale-total">R$ 0,00</span></h3>
-                <button class="btn btn-success" id="save-sale-btn">Salvar Venda</button>
-            </div>
-        </div>
-    </div>
+    
     <div id="toast"></div>
 
+    <!-- SCRIPTS -->
     <script src="js/servicos.js"></script>
     <script src="js/painel-admin.js"></script>
 </body>
