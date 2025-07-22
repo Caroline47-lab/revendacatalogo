@@ -126,6 +126,7 @@
         .promo-card-title { font-size: 1.1rem; font-weight: 700; flex-grow: 1; }
         .promo-card-desc { color: var(--text-light); font-size: 0.9rem; margin-bottom: 1.5rem; flex-grow: 1; }
         .promo-card-footer { margin-top: auto; }
+        .placeholder-card { text-align: center; padding: 2rem; border: 2px dashed var(--border-color); border-radius: var(--border-radius); color: var(--text-light); }
 
         @media (max-width: 768px) {
             .sidebar { position: fixed; top: 0; left: 0; height: 100%; transform: translateX(-100%); }
@@ -155,7 +156,11 @@
                     <li class="nav-item"><a class="nav-link" data-page="reseller-showcase"><i data-feather="star"></i> Organizar Vitrine</a></li>
                     <li class="nav-item"><a class="nav-link" data-page="reseller-descriptions"><i data-feather="file-text"></i> Descrições</a></li>
                     <li class="nav-item"><a class="nav-link" data-page="reseller-sales"><i data-feather="dollar-sign"></i> Vendas</a></li>
-                    <li class="nav-item"><a class="nav-link" data-page="reseller-appearance"><i data-feather="layout"></i> Aparência</a></li>
+                    <li class="nav-item"><a class="nav-link" data-page="reseller-appearance"><i data-feather="layout"></i> Aparência e Temas</a></li>
+                    <!-- NOVOS MENUS -->
+                    <li class="nav-item"><a class="nav-link" data-page="reseller-payments"><i data-feather="credit-card"></i> Pagamentos</a></li>
+                    <li class="nav-item"><a class="nav-link" data-page="reseller-shipping"><i data-feather="truck"></i> Envios</a></li>
+                    <!-- FIM NOVOS MENUS -->
                     <li class="nav-item" style="border-top: 1px solid var(--border-color); margin-top: 1rem; padding-top: 1rem;"><a href="catalogo/index.html" target="_blank" id="view-catalog-btn" class="nav-link" style="color: var(--primary-color);"><i data-feather="eye"></i> Ver Catálogo</a></li>
                 </ul>
                 <div class="sidebar-footer">
@@ -259,7 +264,6 @@
                 </section>
 
                 <section id="reseller-descriptions" class="page">
-                    <!-- NOVO: Seção para Modelos de Descrição -->
                     <div class="settings-section">
                         <div style="display: flex; justify-content: space-between; align-items: center;">
                             <h2><i data-feather="file-text"></i> Modelos de Descrição</h2>
@@ -268,7 +272,6 @@
                         <p style="color: var(--text-light); margin-top: -1rem; margin-bottom: 1.5rem;">Crie descrições padrão para aplicar em vários produtos de uma só vez.</p>
                         <div id="description-models-list" class="table-container"></div>
                     </div>
-
                     <div class="settings-section">
                         <div style="display: flex; justify-content: space-between; align-items: center;">
                             <h2><i data-feather="sliders"></i> Modelos de Tabela de Medidas</h2>
@@ -277,7 +280,6 @@
                         <p style="color: var(--text-light); margin-top: -1rem; margin-bottom: 1.5rem;">Crie modelos de tabelas (Ex: Rasteirinhas, Bolsas) e depois associe a produtos.</p>
                         <div id="sizing-charts-list" class="table-container"></div>
                     </div>
-                    
                     <div class="settings-section">
                         <h2><i data-feather="edit"></i> Status das Descrições dos Produtos</h2>
                         <p style="color: var(--text-light); margin-top: -1rem; margin-bottom: 1.5rem;">Veja o status atual e edite individualmente as descrições de cada produto.</p>
@@ -293,13 +295,33 @@
                 <section id="reseller-sales" class="page">
                      <div class="settings-section">
                         <h2><i data-feather="dollar-sign"></i> Vendas e Pedidos</h2>
-                        <p style="color: var(--text-light); margin-top: -1rem; margin-bottom: 1.5rem;">Acompanhe os pedidos recebidos através do seu catálogo.</p>
-                        <div class="placeholder-card" style="text-align: center; padding: 2rem; border: 2px dashed var(--border-color); border-radius: var(--border-radius);">
-                            <p>Funcionalidade em desenvolvimento.</p>
-                        </div>
+                        <p class="placeholder-card">Em breve, o módulo de Vendas e Pedidos será implantado aqui.</p>
                     </div>
                 </section>
+
+                <!-- NOVAS PÁGINAS -->
+                <section id="reseller-payments" class="page">
+                    <div class="settings-section">
+                        <h2><i data-feather="credit-card"></i> Meios de Pagamento</h2>
+                        <p class="placeholder-card">Em breve, o módulo para configurar seus meios de pagamento será implantado aqui.</p>
+                    </div>
+                </section>
+                <section id="reseller-shipping" class="page">
+                     <div class="settings-section">
+                        <h2><i data-feather="truck"></i> Meios de Envio</h2>
+                        <p class="placeholder-card">Em breve, o módulo para configurar seus meios de envio será implantado aqui.</p>
+                    </div>
+                </section>
+                <!-- FIM DAS NOVAS PÁGINAS -->
+
                 <section id="reseller-appearance" class="page">
+                    <div class="settings-section">
+                        <h2><i data-feather="grid"></i> Galeria de Temas</h2>
+                        <p style="color: var(--text-light); margin-top: -1rem; margin-bottom: 1.5rem;">Escolha um tema base para sua loja. Você poderá personalizar cores e imagens depois.</p>
+                        <div class="placeholder-card">
+                            <p>Em breve, a galeria de temas para o seu catálogo estará disponível aqui.</p>
+                        </div>
+                    </div>
                     <div class="settings-section">
                         <h2><i data-feather="user"></i> Identidade da Loja</h2>
                         <div class="form-grid">
@@ -373,46 +395,8 @@
     <div id="product-description-modal" class="modal-overlay"><div class="modal-content"><div class="modal-header"><h3 id="product-description-modal-title">Editar Descrição</h3><button class="modal-close-btn"><i data-feather="x"></i></button></div><div class="form-group"><label for="product-description-textarea">Descrição do Produto</label><textarea id="product-description-textarea" class="form-group textarea" placeholder="Descreva os detalhes, materiais e diferenciais do produto..."></textarea></div><div class="form-group"><label for="product-sizing-chart-select">Associar Tabela de Medidas</label><select id="product-sizing-chart-select"><option value="">Nenhuma</option></select></div><div class="modal-footer"><button id="save-product-description-btn" class="btn btn-success">Salvar Alterações</button></div></div></div>
     <div id="sizing-chart-modal" class="modal-overlay"><div class="modal-content" style="max-width: 800px;"><div class="modal-header"><h3 id="sizing-chart-modal-title">Criar/Editar Tabela de Medidas</h3><button class="modal-close-btn"><i data-feather="x"></i></button></div><div class="form-group"><label for="sizing-chart-name">Nome do Modelo (Ex: Rasteirinhas, Bolsas)</label><input type="text" id="sizing-chart-name" placeholder="Ex: Tabela de Rasteirinhas"></div><div id="sizing-chart-editor" style="margin-top: 1.5rem;"></div><div style="margin-top: 1rem; display: flex; gap: 1rem;"><button id="add-sizing-chart-row-btn" class="btn btn-secondary"><i data-feather="plus"></i> Adicionar Linha (Tamanho)</button><button id="add-sizing-chart-col-btn" class="btn btn-secondary"><i data-feather="plus"></i> Adicionar Coluna (Medida)</button></div><div class="modal-footer"><button id="save-sizing-chart-btn" class="btn btn-success">Salvar Modelo</button></div></div></div>
     <div id="showcase-product-modal" class="modal-overlay"><div class="modal-content" style="max-width: 800px;"><div class="modal-header"><h3 id="showcase-modal-title">Gerenciar Produtos</h3><button class="modal-close-btn"><i data-feather="x"></i></button></div><div class="form-group"><input type="text" id="showcase-product-search" class="search-input" placeholder="Buscar produtos para adicionar..."></div><div id="showcase-product-list" style="max-height: 400px; overflow-y: auto; border: 1px solid var(--border-color); border-radius: var(--border-radius); padding: 0.5rem;"></div><div class="modal-footer"><button id="save-showcase-selection-btn" class="btn btn-success">Salvar Seleção</button></div></div></div>
-
-    <!-- NOVO: Modal para Modelos de Descrição -->
-    <div id="description-model-modal" class="modal-overlay">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h3 id="description-model-modal-title">Criar/Editar Modelo de Descrição</h3>
-                <button class="modal-close-btn"><i data-feather="x"></i></button>
-            </div>
-            <div class="form-group">
-                <label for="description-model-name">Nome do Modelo (Ex: Descrição Rasteirinhas)</label>
-                <input type="text" id="description-model-name" placeholder="Ex: Descrição Padrão para Rasteirinhas">
-            </div>
-            <div class="form-group">
-                <label for="description-model-content">Conteúdo da Descrição</label>
-                <textarea id="description-model-content" class="form-group textarea" placeholder="Descreva os detalhes, materiais e diferenciais do produto..."></textarea>
-            </div>
-            <div class="modal-footer">
-                <button id="save-description-model-btn" class="btn btn-success">Salvar Modelo</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- NOVO: Modal Genérico para Associação em Massa -->
-    <div id="associate-products-modal" class="modal-overlay">
-        <div class="modal-content" style="max-width: 800px;">
-            <div class="modal-header">
-                <h3 id="associate-modal-title">Associar Modelo a Produtos</h3>
-                <button class="modal-close-btn"><i data-feather="x"></i></button>
-            </div>
-            <div class="form-group">
-                <input type="text" id="associate-product-search" class="search-input" placeholder="Buscar produtos para associar...">
-            </div>
-            <div id="associate-product-list" style="max-height: 400px; overflow-y: auto; border: 1px solid var(--border-color); border-radius: var(--border-radius); padding: 0.5rem;">
-                <!-- A lista de produtos com checkboxes será renderizada aqui pelo JS -->
-            </div>
-            <div class="modal-footer">
-                <button id="save-association-btn" class="btn btn-success">Salvar Associação</button>
-            </div>
-        </div>
-    </div>
+    <div id="description-model-modal" class="modal-overlay"><div class="modal-content"><div class="modal-header"><h3 id="description-model-modal-title">Criar/Editar Modelo de Descrição</h3><button class="modal-close-btn"><i data-feather="x"></i></button></div><div class="form-group"><label for="description-model-name">Nome do Modelo (Ex: Descrição Rasteirinhas)</label><input type="text" id="description-model-name" placeholder="Ex: Descrição Padrão para Rasteirinhas"></div><div class="form-group"><label for="description-model-content">Conteúdo da Descrição</label><textarea id="description-model-content" class="form-group textarea" placeholder="Descreva os detalhes, materiais e diferenciais do produto..."></textarea></div><div class="modal-footer"><button id="save-description-model-btn" class="btn btn-success">Salvar Modelo</button></div></div></div>
+    <div id="associate-products-modal" class="modal-overlay"><div class="modal-content" style="max-width: 800px;"><div class="modal-header"><h3 id="associate-modal-title">Associar Modelo a Produtos</h3><button class="modal-close-btn"><i data-feather="x"></i></button></div><div class="form-group"><input type="text" id="associate-product-search" class="search-input" placeholder="Buscar produtos para associar..."></div><div id="associate-product-list" style="max-height: 400px; overflow-y: auto; border: 1px solid var(--border-color); border-radius: var(--border-radius); padding: 0.5rem;"></div><div class="modal-footer"><button id="save-association-btn" class="btn btn-success">Salvar Associação</button></div></div></div>
 
     <div id="toast"></div>
 
