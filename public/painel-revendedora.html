@@ -107,7 +107,7 @@
         .form-group input[type="color"] { padding: 0.25rem; height: 48px; }
         .form-group textarea { min-height: 120px; resize: vertical; }
         .logo-preview { width: 100px; height: 100px; border-radius: 50%; object-fit: cover; border: 2px solid var(--border-color); margin-top: 1rem; }
-        .banner-preview { display: flex; gap: 1rem; background-color: #f1f5f9; border: 2px dashed var(--border-color); padding: 1rem; border-radius: var(--border-radius); min-height: 150px; align-items: center; justify-content: center; }
+        .banner-preview { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1rem; background-color: #f1f5f9; border: 2px dashed var(--border-color); padding: 1rem; border-radius: var(--border-radius); min-height: 150px; }
         .banner-preview img { max-width: 100%; max-height: 120px; object-fit: cover; border-radius: 0.5rem; }
         
         .loading-indicator { text-align: center; padding: 2rem; display: none; }
@@ -173,7 +173,7 @@
                     <h1 id="revendedor-page-title">Meus Produtos</h1>
                 </div>
                 <section id="reseller-products" class="page active">
-                    <div class="page-controls" style="background: var(--card-bg); padding: 1rem; border-radius: var(--border-radius); box-shadow: var(--shadow); display: flex; gap: 1rem; align-items: center;">
+                    <div class="page-controls" style="background: var(--card-bg); padding: 1rem; border-radius: var(--border-radius); box-shadow: var(--shadow); display: flex; gap: 1rem; align-items: center; flex-wrap: wrap;">
                         <div class="form-group" style="flex-grow: 1; margin-bottom: 0;">
                             <label for="mass-margin-input" style="margin-bottom: 0.25rem;">Aplicar margem em massa (%):</label>
                             <input type="number" id="mass-margin-input" class="search-input" placeholder="Ex: 40">
@@ -193,41 +193,15 @@
                 
                 <section id="reseller-promotions" class="page">
                     <div class="promo-grid">
-                        <!-- Card de Promoção: Flash Sale -->
-                        <div class="promo-card">
-                            <div class="promo-card-header">
-                                <i data-feather="zap" class="promo-card-icon"></i>
-                                <h3 class="promo-card-title">Flash Sale (Oferta Relâmpago)</h3>
-                            </div>
-                            <p class="promo-card-desc">Crie uma oferta com grande desconto para um produto específico por tempo limitado.</p>
-                            <div class="promo-card-footer">
-                                <button class="btn btn-primary w-full" data-modal-target="flash-sale-modal">Configurar</button>
-                            </div>
-                        </div>
-
-                        <!-- Card de Promoção: Frete Grátis -->
-                        <div class="promo-card">
-                            <div class="promo-card-header">
-                                <i data-feather="truck" class="promo-card-icon"></i>
-                                <h3 class="promo-card-title">Frete Grátis</h3>
-                            </div>
-                            <p class="promo-card-desc">Ofereça frete grátis para compras acima de um determinado valor para incentivar pedidos maiores.</p>
-                            <div class="promo-card-footer">
-                                <button class="btn btn-primary w-full" data-modal-target="free-shipping-modal">Configurar</button>
-                            </div>
-                        </div>
-
-                        <!-- Card de Promoção: Cupom de Primeira Compra -->
-                        <div class="promo-card">
-                            <div class="promo-card-header">
-                                <i data-feather="award" class="promo-card-icon"></i>
-                                <h3 class="promo-card-title">Cupom de Primeira Compra</h3>
-                            </div>
-                            <p class="promo-card-desc">Atraia novos clientes oferecendo um cupom de desconto exclusivo para a primeira compra.</p>
-                            <div class="promo-card-footer">
-                                <button class="btn btn-primary w-full" data-modal-target="first-purchase-modal">Configurar</button>
-                            </div>
-                        </div>
+                        <div class="promo-card"><div class="promo-card-header"><i data-feather="zap" class="promo-card-icon"></i><h3 class="promo-card-title">Flash Sale</h3></div><p class="promo-card-desc">Oferta com grande desconto para um produto por tempo limitado.</p><div class="promo-card-footer"><button class="btn btn-primary w-full" data-modal-target="flash-sale-modal">Configurar</button></div></div>
+                        <div class="promo-card"><div class="promo-card-header"><i data-feather="clock" class="promo-card-icon"></i><h3 class="promo-card-title">Oferta por Tempo Limitado</h3></div><p class="promo-card-desc">Adicione um cronômetro de contagem regressiva a um produto.</p><div class="promo-card-footer"><button class="btn btn-primary w-full" data-modal-target="time-limit-modal">Configurar</button></div></div>
+                        <div class="promo-card"><div class="promo-card-header"><i data-feather="package" class="promo-card-icon"></i><h3 class="promo-card-title">Leve Mais, Pague Menos</h3></div><p class="promo-card-desc">Ex: Leve 3, Pague 2. Incentive a compra de mais unidades.</p><div class="promo-card-footer"><button class="btn btn-primary w-full" data-modal-target="buy-more-pay-less-modal">Configurar</button></div></div>
+                        <div class="promo-card"><div class="promo-card-header"><i data-feather="trending-up" class="promo-card-icon"></i><h3 class="promo-card-title">Desconto Progressivo</h3></div><p class="promo-card-desc">Aumente o desconto conforme o valor do carrinho aumenta.</p><div class="promo-card-footer"><button class="btn btn-primary w-full" data-modal-target="progressive-discount-modal">Configurar</button></div></div>
+                        <div class="promo-card"><div class="promo-card-header"><i data-feather="truck" class="promo-card-icon"></i><h3 class="promo-card-title">Frete Grátis</h3></div><p class="promo-card-desc">Ofereça frete grátis para compras acima de um valor.</p><div class="promo-card-footer"><button class="btn btn-primary w-full" data-modal-target="free-shipping-modal">Configurar</button></div></div>
+                        <div class="promo-card"><div class="promo-card-header"><i data-feather="award" class="promo-card-icon"></i><h3 class="promo-card-title">Cupom de Primeira Compra</h3></div><p class="promo-card-desc">Atraia novos clientes com um cupom de desconto exclusivo.</p><div class="promo-card-footer"><button class="btn btn-primary w-full" data-modal-target="first-purchase-modal">Configurar</button></div></div>
+                        <div class="promo-card"><div class="promo-card-header"><i data-feather="star" class="promo-card-icon"></i><h3 class="promo-card-title">Cupom para Clientes VIP</h3></div><p class="promo-card-desc">Crie um cupom especial para seus clientes mais fiéis.</p><div class="promo-card-footer"><button class="btn btn-primary w-full" data-modal-target="vip-customer-modal">Configurar</button></div></div>
+                        <div class="promo-card"><div class="promo-card-header"><i data-feather="tag" class="promo-card-icon"></i><h3 class="promo-card-title">Liquidação Sazonal</h3></div><p class="promo-card-desc">Crie uma grande promoção com data de início e fim.</p><div class="promo-card-footer"><button class="btn btn-primary w-full" data-modal-target="seasonal-sale-modal">Configurar</button></div></div>
+                        <div class="promo-card"><div class="promo-card-header"><i data-feather="alert-triangle" class="promo-card-icon"></i><h3 class="promo-card-title">Alerta de Estoque Limitado</h3></div><p class="promo-card-desc">Mostre um aviso quando o estoque de um produto estiver baixo.</p><div class="promo-card-footer"><button class="btn btn-primary w-full" data-modal-target="stock-limit-modal">Configurar</button></div></div>
                     </div>
                 </section>
 
@@ -248,24 +222,15 @@
                             <button id="add-sizing-chart-btn" class="btn btn-success"><i data-feather="plus"></i> Criar Novo Modelo</button>
                         </div>
                         <p style="color: var(--text-light); margin-top: -1rem; margin-bottom: 1.5rem;">Crie modelos de tabelas (Ex: Rasteirinhas, Bolsas) e depois associe a cada produto.</p>
-                        <div id="sizing-charts-list" class="table-container">
-                        </div>
+                        <div id="sizing-charts-list" class="table-container"></div>
                     </div>
                     <div class="settings-section">
                         <h2><i data-feather="edit"></i> Descrições dos Produtos</h2>
                         <p style="color: var(--text-light); margin-top: -1rem; margin-bottom: 1.5rem;">Clique em "Editar" para adicionar uma descrição e associar uma tabela de medidas a cada produto.</p>
                         <div class="table-container">
                             <table class="product-table">
-                                <thead>
-                                    <tr>
-                                        <th>Produto</th>
-                                        <th>Descrição</th>
-                                        <th>Tabela de Medidas</th>
-                                        <th>Ações</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="product-description-list-body">
-                                </tbody>
+                                <thead><tr><th>Produto</th><th>Descrição</th><th>Tabela de Medidas</th><th>Ações</th></tr></thead>
+                                <tbody id="product-description-list-body"></tbody>
                             </table>
                         </div>
                     </div>
@@ -284,34 +249,55 @@
                     <div class="settings-section">
                         <h2><i data-feather="user"></i> Identidade da Loja</h2>
                         <div class="form-grid">
-                            <div class="form-group">
-                                <label for="brand-name-input">Nome da sua Loja</label>
-                                <input type="text" id="brand-name-input" placeholder="Ex: Sapatos da Ana">
-                            </div>
-                            <div class="form-group">
-                                <label for="contact-phone-input">Seu WhatsApp para Contato</label>
-                                <input type="text" id="contact-phone-input" placeholder="(XX) 99999-9999">
-                            </div>
+                            <div class="form-group"><label for="brand-name-input">Nome da sua Loja</label><input type="text" id="brand-name-input" placeholder="Ex: Sapatos da Ana"></div>
+                            <div class="form-group"><label for="contact-phone-input">Seu WhatsApp para Contato</label><input type="text" id="contact-phone-input" placeholder="(XX) 99999-9999"></div>
+                            <div class="form-group"><label for="instagram-input">Seu Instagram</label><input type="text" id="instagram-input" placeholder="@seulogin"></div>
+                        </div>
+                    </div>
+                    <div class="settings-section">
+                        <h2><i data-feather="message-square"></i> Mensagens do Catálogo</h2>
+                        <div class="form-grid">
+                            <div class="form-group"><label for="top-bar-msg1-input">Mensagem 1 (Barra do Topo)</label><input type="text" id="top-bar-msg1-input" placeholder="Ex: FRETE GRÁTIS ACIMA DE R$299"></div>
+                            <div class="form-group"><label for="top-bar-msg2-input">Mensagem 2</label><input type="text" id="top-bar-msg2-input" placeholder="Ex: USE O CUPOM BEMVINDA10"></div>
+                            <div class="form-group"><label for="top-bar-msg3-input">Mensagem 3</label><input type="text" id="top-bar-msg3-input" placeholder="Ex: PARCELE EM ATÉ 6X SEM JUROS"></div>
                         </div>
                     </div>
                      <div class="settings-section">
                         <h2><i data-feather="image"></i> Imagens e Cores</h2>
-                        <div class="form-grid">
+                        <div class="form-grid" style="grid-template-columns: 1fr 1fr;">
                             <div class="form-group">
                                 <label>Logo da Loja</label>
                                 <input type="file" id="logo-upload" accept="image/*" class="search-input">
                                 <img id="logo-preview" src="https://placehold.co/100x100/e2e8f0/cccccc?text=Logo" alt="Prévia do logo" class="logo-preview">
                             </div>
                             <div class="form-group">
-                                <label>Cor Principal</label>
-                                <input type="color" id="primary-color-input" value="#DB1472">
+                                <label>Cores</label>
+                                <div style="display: flex; gap: 1rem;">
+                                    <div class="form-group"><label for="primary-color-input">Principal</label><input type="color" id="primary-color-input" value="#DB1472"></div>
+                                    <div class="form-group"><label for="secondary-color-input">Secundária</label><input type="color" id="secondary-color-input" value="#F8B81F"></div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="form-grid" style="margin-top: 1.5rem;">
+                            <div class="form-group">
+                                <label>Banner Principal (Desktop)</label>
+                                <div class="banner-preview" id="banner-preview-desktop-main"><input type="file" id="banner-desktop-main-upload" data-banner-id="desktop-main" accept="image/*" class="search-input banner-upload"></div>
+                            </div>
+                            <div class="form-group">
+                                <label>Banner Principal (Mobile)</label>
+                                <div class="banner-preview" id="banner-preview-mobile-main"><input type="file" id="banner-mobile-main-upload" data-banner-id="mobile-main" accept="image/*" class="search-input banner-upload"></div>
                             </div>
                         </div>
                     </div>
                     <div class="settings-section">
-                        <div style="display: flex; justify-content: flex-end;">
-                            <button id="save-settings-btn" class="btn btn-success"><i data-feather="save"></i> Salvar Aparência</button>
+                        <h2><i data-feather="link"></i> URL da Loja</h2>
+                        <div class="form-grid">
+                            <div class="form-group"><label for="catalog-url-name">Nome para a URL</label><input type="text" id="catalog-url-name" placeholder="Ex: sapatos-da-ana"></div>
                         </div>
+                        <div class="modal-footer" style="margin-top:0"><button id="generate-link-btn" class="btn btn-secondary">Copiar Link do Catálogo</button></div>
+                    </div>
+                    <div class="settings-section" style="display: flex; justify-content: flex-end;">
+                        <button id="save-settings-btn" class="btn btn-success"><i data-feather="save"></i> Salvar Todas as Configurações de Aparência</button>
                     </div>
                 </section>
             </main>
@@ -319,110 +305,19 @@
     </div>
     
     <!-- MODAIS -->
-    <div id="reseller-product-edit-modal" class="modal-overlay">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h3 id="modal-reseller-product-name">Editar Margem</h3>
-                <button class="modal-close-btn"><i data-feather="x"></i></button>
-            </div>
-            <div class="form-group">
-                <label for="reseller-margin-input">Sua Margem de Lucro (%)</label>
-                <input type="number" id="reseller-margin-input" placeholder="Ex: 40">
-            </div>
-            <div class="modal-footer">
-                <button id="save-reseller-margin-btn" class="btn btn-success">Salvar Margem</button>
-            </div>
-        </div>
-    </div>
-
-    <div id="reseller-tags-modal" class="modal-overlay">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h3 id="modal-tags-product-name">Editar Tags</h3>
-                <button class="modal-close-btn"><i data-feather="x"></i></button>
-            </div>
-            <div class="form-group">
-                <label>Selecione as tags para este produto:</label>
-                <div id="tags-selection-container" class="tag-selection-grid">
-                    <!-- Tags serão inseridas pelo JS -->
-                </div>
-            </div>
-            <div class="modal-footer">
-                <button id="save-reseller-tags-btn" class="btn btn-success">Salvar Tags</button>
-            </div>
-        </div>
-    </div>
-
-    <div id="flash-sale-modal" class="modal-overlay">
-        <div class="modal-content">
-            <div class="modal-header"><h3>Configurar Flash Sale</h3><button class="modal-close-btn"><i data-feather="x"></i></button></div>
-            <div class="form-group"><label for="flash-sale-product">Produto em Oferta</label><select id="flash-sale-product"></select></div>
-            <div class="form-group"><label for="flash-sale-discount">Percentual de Desconto (%)</label><input type="number" id="flash-sale-discount" placeholder="Ex: 25"></div>
-            <div class="form-group"><label for="flash-sale-end-date">Data de Término</label><input type="date" id="flash-sale-end-date"></div>
-            <div class="modal-footer"><button id="save-flash-sale-btn" class="btn btn-success">Salvar Flash Sale</button></div>
-        </div>
-    </div>
-
-    <div id="free-shipping-modal" class="modal-overlay">
-        <div class="modal-content">
-            <div class="modal-header"><h3>Configurar Frete Grátis</h3><button class="modal-close-btn"><i data-feather="x"></i></button></div>
-            <div class="form-group"><label for="free-shipping-min-value">Valor Mínimo para Frete Grátis (R$)</label><input type="number" id="free-shipping-min-value" placeholder="Ex: 299.90"></div>
-            <div class="modal-footer"><button id="save-free-shipping-btn" class="btn btn-success">Salvar Configuração</button></div>
-        </div>
-    </div>
-
-    <div id="first-purchase-modal" class="modal-overlay">
-        <div class="modal-content">
-            <div class="modal-header"><h3>Cupom de Primeira Compra</h3><button class="modal-close-btn"><i data-feather="x"></i></button></div>
-            <div class="form-group"><label for="first-purchase-code">Código do Cupom</label><input type="text" id="first-purchase-code" value="BEMVINDA10"></div>
-            <div class="form-group"><label for="first-purchase-discount">Percentual de Desconto (%)</label><input type="number" id="first-purchase-discount" value="10"></div>
-            <div class="modal-footer"><button id="save-first-purchase-btn" class="btn btn-success">Salvar Cupom</button></div>
-        </div>
-    </div>
-
-    <div id="product-description-modal" class="modal-overlay">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h3 id="product-description-modal-title">Editar Descrição</h3>
-                <button class="modal-close-btn"><i data-feather="x"></i></button>
-            </div>
-            <div class="form-group">
-                <label for="product-description-textarea">Descrição do Produto</label>
-                <textarea id="product-description-textarea" class="form-group textarea" placeholder="Descreva os detalhes, materiais e diferenciais do produto..."></textarea>
-            </div>
-            <div class="form-group">
-                <label for="product-sizing-chart-select">Associar Tabela de Medidas</label>
-                <select id="product-sizing-chart-select">
-                    <option value="">Nenhuma</option>
-                </select>
-            </div>
-            <div class="modal-footer">
-                <button id="save-product-description-btn" class="btn btn-success">Salvar Alterações</button>
-            </div>
-        </div>
-    </div>
-
-    <div id="sizing-chart-modal" class="modal-overlay">
-        <div class="modal-content" style="max-width: 800px;">
-            <div class="modal-header">
-                <h3 id="sizing-chart-modal-title">Criar/Editar Tabela de Medidas</h3>
-                <button class="modal-close-btn"><i data-feather="x"></i></button>
-            </div>
-            <div class="form-group">
-                <label for="sizing-chart-name">Nome do Modelo (Ex: Rasteirinhas, Bolsas)</label>
-                <input type="text" id="sizing-chart-name" placeholder="Ex: Tabela de Rasteirinhas">
-            </div>
-            <div id="sizing-chart-editor" style="margin-top: 1.5rem;">
-            </div>
-            <div style="margin-top: 1rem; display: flex; gap: 1rem;">
-                 <button id="add-sizing-chart-row-btn" class="btn btn-secondary"><i data-feather="plus"></i> Adicionar Linha (Tamanho)</button>
-                 <button id="add-sizing-chart-col-btn" class="btn btn-secondary"><i data-feather="plus"></i> Adicionar Coluna (Medida)</button>
-            </div>
-            <div class="modal-footer">
-                <button id="save-sizing-chart-btn" class="btn btn-success">Salvar Modelo</button>
-            </div>
-        </div>
-    </div>
+    <div id="reseller-product-edit-modal" class="modal-overlay"><div class="modal-content"><div class="modal-header"><h3 id="modal-reseller-product-name">Editar Margem</h3><button class="modal-close-btn"><i data-feather="x"></i></button></div><div class="form-group"><label for="reseller-margin-input">Sua Margem de Lucro (%)</label><input type="number" id="reseller-margin-input" placeholder="Ex: 40"></div><div class="modal-footer"><button id="save-reseller-margin-btn" class="btn btn-success">Salvar Margem</button></div></div></div>
+    <div id="reseller-tags-modal" class="modal-overlay"><div class="modal-content"><div class="modal-header"><h3 id="modal-tags-product-name">Editar Tags</h3><button class="modal-close-btn"><i data-feather="x"></i></button></div><div class="form-group"><label>Selecione as tags para este produto:</label><div id="tags-selection-container" class="tag-selection-grid"></div></div><div class="modal-footer"><button id="save-reseller-tags-btn" class="btn btn-success">Salvar Tags</button></div></div></div>
+    <div id="flash-sale-modal" class="modal-overlay"><div class="modal-content"><div class="modal-header"><h3>Configurar Flash Sale</h3><button class="modal-close-btn"><i data-feather="x"></i></button></div><div class="form-group"><label for="flash-sale-product">Produto em Oferta</label><select id="flash-sale-product"></select></div><div class="form-group"><label for="flash-sale-discount">Percentual de Desconto (%)</label><input type="number" id="flash-sale-discount" placeholder="Ex: 25"></div><div class="form-group"><label for="flash-sale-end-date">Data de Término</label><input type="date" id="flash-sale-end-date"></div><div class="modal-footer"><button id="save-flash-sale-btn" class="btn btn-success">Salvar Flash Sale</button></div></div></div>
+    <div id="time-limit-modal" class="modal-overlay"><div class="modal-content"><div class="modal-header"><h3>Configurar Oferta por Tempo Limitado</h3><button class="modal-close-btn"><i data-feather="x"></i></button></div><div class="form-group"><label for="time-limit-target">Público-alvo</label><select id="time-limit-target"><option value="all">Todos os visitantes</option><option value="new">Novos visitantes</option></select></div><div class="form-group"><label for="time-limit-discount">Desconto (%)</label><input type="number" id="time-limit-discount" placeholder="15"></div><div class="form-group"><label for="time-limit-duration">Duração (minutos)</label><input type="number" id="time-limit-duration" placeholder="30"></div><div class="modal-footer"><button id="save-time-limit-btn" class="btn btn-success">Salvar Oferta</button></div></div></div>
+    <div id="buy-more-pay-less-modal" class="modal-overlay"><div class="modal-content"><div class="modal-header"><h3>Configurar Leve Mais, Pague Menos</h3><button class="modal-close-btn"><i data-feather="x"></i></button></div><div class="form-group"><label for="bmpl-product">Selecione o Produto</label><select id="bmpl-product"></select></div><div class="form-grid"><div class="form-group"><label for="bmpl-buy-qty">Leve (Qtd.)</label><input type="number" id="bmpl-buy-qty" placeholder="3"></div><div class="form-group"><label for="bmpl-pay-qty">Pague (Qtd.)</label><input type="number" id="bmpl-pay-qty" placeholder="2"></div></div><div class="modal-footer"><button id="save-bmpl-btn" class="btn btn-success">Salvar Oferta</button></div></div></div>
+    <div id="progressive-discount-modal" class="modal-overlay"><div class="modal-content"><div class="modal-header"><h3>Configurar Desconto Progressivo</h3><button class="modal-close-btn"><i data-feather="x"></i></button></div><p>Ex: Acima de R$200, 5% OFF. Acima de R$400, 10% OFF.</p><div class="form-grid"><div class="form-group"><label for="prog-discount-value1">Acima de (R$)</label><input type="number" id="prog-discount-value1" placeholder="200"></div><div class="form-group"><label for="prog-discount-percent1">Desconto (%)</label><input type="number" id="prog-discount-percent1" placeholder="5"></div></div><div class="form-grid"><div class="form-group"><label for="prog-discount-value2">Acima de (R$)</label><input type="number" id="prog-discount-value2" placeholder="400"></div><div class="form-group"><label for="prog-discount-percent2">Desconto (%)</label><input type="number" id="prog-discount-percent2" placeholder="10"></div></div><div class="modal-footer"><button id="save-prog-discount-btn" class="btn btn-success">Salvar Descontos</button></div></div></div>
+    <div id="free-shipping-modal" class="modal-overlay"><div class="modal-content"><div class="modal-header"><h3>Configurar Frete Grátis</h3><button class="modal-close-btn"><i data-feather="x"></i></button></div><div class="form-group"><label for="free-shipping-min-value">Valor Mínimo para Frete Grátis (R$)</label><input type="number" id="free-shipping-min-value" placeholder="Ex: 299.90"></div><div class="modal-footer"><button id="save-free-shipping-btn" class="btn btn-success">Salvar Configuração</button></div></div></div>
+    <div id="first-purchase-modal" class="modal-overlay"><div class="modal-content"><div class="modal-header"><h3>Cupom de Primeira Compra</h3><button class="modal-close-btn"><i data-feather="x"></i></button></div><div class="form-group"><label for="first-purchase-code">Código do Cupom</label><input type="text" id="first-purchase-code" value="BEMVINDA10"></div><div class="form-group"><label for="first-purchase-discount">Percentual de Desconto (%)</label><input type="number" id="first-purchase-discount" value="10"></div><div class="modal-footer"><button id="save-first-purchase-btn" class="btn btn-success">Salvar Cupom</button></div></div></div>
+    <div id="vip-customer-modal" class="modal-overlay"><div class="modal-content"><div class="modal-header"><h3>Cupom para Clientes VIP</h3><button class="modal-close-btn"><i data-feather="x"></i></button></div><div class="form-group"><label for="vip-code">Código do Cupom VIP</label><input type="text" id="vip-code" placeholder="VIP15"></div><div class="form-group"><label for="vip-discount">Percentual de Desconto (%)</label><input type="number" id="vip-discount" placeholder="15"></div><div class="modal-footer"><button id="save-vip-btn" class="btn btn-success">Salvar Cupom VIP</button></div></div></div>
+    <div id="seasonal-sale-modal" class="modal-overlay"><div class="modal-content"><div class="modal-header"><h3>Configurar Liquidação Sazonal</h3><button class="modal-close-btn"><i data-feather="x"></i></button></div><div class="form-group"><label for="seasonal-name">Nome da Campanha</label><input type="text" id="seasonal-name" placeholder="Ex: Liquida de Inverno"></div><div class="form-group"><label for="seasonal-discount">Desconto Geral (%)</label><input type="number" id="seasonal-discount" placeholder="50"></div><div class="form-grid"><div class="form-group"><label for="seasonal-start-date">Data de Início</label><input type="date" id="seasonal-start-date"></div><div class="form-group"><label for="seasonal-end-date">Data de Término</label><input type="date" id="seasonal-end-date"></div></div><div class="modal-footer"><button id="save-seasonal-btn" class="btn btn-success">Salvar Liquidação</button></div></div></div>
+    <div id="stock-limit-modal" class="modal-overlay"><div class="modal-content"><div class="modal-header"><h3>Configurar Alerta de Estoque</h3><button class="modal-close-btn"><i data-feather="x"></i></button></div><div class="form-group"><label for="stock-limit-threshold">Avisar quando estoque for menor que</label><input type="number" id="stock-limit-threshold" placeholder="5"></div><div class="form-group"><label for="stock-limit-message">Mensagem a ser exibida</label><input type="text" id="stock-limit-message" value="ÚLTIMAS PEÇAS!"></div><div class="modal-footer"><button id="save-stock-limit-btn" class="btn btn-success">Salvar Alerta</button></div></div></div>
+    <div id="product-description-modal" class="modal-overlay"><div class="modal-content"><div class="modal-header"><h3 id="product-description-modal-title">Editar Descrição</h3><button class="modal-close-btn"><i data-feather="x"></i></button></div><div class="form-group"><label for="product-description-textarea">Descrição do Produto</label><textarea id="product-description-textarea" class="form-group textarea" placeholder="Descreva os detalhes, materiais e diferenciais do produto..."></textarea></div><div class="form-group"><label for="product-sizing-chart-select">Associar Tabela de Medidas</label><select id="product-sizing-chart-select"><option value="">Nenhuma</option></select></div><div class="modal-footer"><button id="save-product-description-btn" class="btn btn-success">Salvar Alterações</button></div></div></div>
+    <div id="sizing-chart-modal" class="modal-overlay"><div class="modal-content" style="max-width: 800px;"><div class="modal-header"><h3 id="sizing-chart-modal-title">Criar/Editar Tabela de Medidas</h3><button class="modal-close-btn"><i data-feather="x"></i></button></div><div class="form-group"><label for="sizing-chart-name">Nome do Modelo (Ex: Rasteirinhas, Bolsas)</label><input type="text" id="sizing-chart-name" placeholder="Ex: Tabela de Rasteirinhas"></div><div id="sizing-chart-editor" style="margin-top: 1.5rem;"></div><div style="margin-top: 1rem; display: flex; gap: 1rem;"><button id="add-sizing-chart-row-btn" class="btn btn-secondary"><i data-feather="plus"></i> Adicionar Linha (Tamanho)</button><button id="add-sizing-chart-col-btn" class="btn btn-secondary"><i data-feather="plus"></i> Adicionar Coluna (Medida)</button></div><div class="modal-footer"><button id="save-sizing-chart-btn" class="btn btn-success">Salvar Modelo</button></div></div></div>
     
     <div id="toast"></div>
 
