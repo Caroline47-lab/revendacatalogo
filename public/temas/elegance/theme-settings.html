@@ -1,1 +1,349 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Configurações do Tema Elegance</title>
+    
+    <!-- Fonte Poppins para um toque de elegância -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Ícones Feather -->
+    <script src="https://unpkg.com/feather-icons"></script>
 
+    <style>
+        /* Estilos baseados no painel-revendedora.html para consistência */
+        :root {
+            --primary-color: #DB1472;
+            --secondary-color: #F8B81F;
+            --text-color: #334155;
+            --text-light: #64748b;
+            --bg-color: #f8fafc;
+            --card-bg: #ffffff;
+            --border-color: #e2e8f0;
+            --success-color: #10b981;
+            --shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+            --border-radius: 0.75rem;
+        }
+
+        #theme-customization-container {
+            font-family: 'Poppins', sans-serif;
+            background-color: transparent;
+        }
+
+        .customization-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+        .customization-header h2 {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--text-color);
+        }
+        .btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 0.6rem 1.25rem; border-radius: 0.5rem; border: none; font-weight: 600; font-size: 0.9rem; cursor: pointer; transition: all 0.2s ease; text-decoration: none; }
+        .btn-secondary { background-color: #334155; color: white; }
+        .btn-secondary:hover:not(:disabled) { opacity: 0.9; }
+
+        .tabs-container {
+            display: flex; flex-wrap: wrap; border-bottom: 1px solid var(--border-color); margin-bottom: 1.5rem;
+        }
+        .tab-button {
+            flex-grow: 1; padding: 1rem; border: none; background-color: transparent; font-weight: 600; font-size: 0.95rem; cursor: pointer; color: var(--text-light); border-bottom: 3px solid transparent; transition: all 0.2s ease-in-out; font-family: 'Poppins', sans-serif; text-align: center;
+        }
+        .tab-button:hover { background-color: #fdf2f8; color: var(--text-color); }
+        .tab-button.active { color: var(--primary-color); border-bottom-color: var(--primary-color); }
+        .tab-pane { display: none; animation: fadeIn 0.4s ease-in-out; }
+        .tab-pane.active { display: block; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        .settings-card {
+            background-color: var(--card-bg); padding: 1.5rem; border-radius: var(--border-radius); box-shadow: var(--shadow); margin-bottom: 1.5rem; border: 1px solid var(--border-color);
+        }
+        .settings-card h3 {
+            font-size: 1.2rem; font-weight: 700; display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.5rem; color: var(--text-color);
+        }
+        .settings-card h3 i { color: var(--primary-color); }
+        .settings-card > p {
+            color: var(--text-light); margin-bottom: 1.5rem; font-size: 0.9rem; padding-left: 2.25rem;
+        }
+        
+        .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1.5rem; }
+        .form-group { display: flex; flex-direction: column; }
+        .form-group label { font-weight: 600; margin-bottom: 0.5rem; font-size: 0.9rem; color: var(--text-color); }
+        .form-group .recommendation { font-size: 0.8rem; color: var(--text-light); font-weight: 400; }
+        .form-group input[type="text"], .form-group input[type="email"], .form-group input[type="number"], .form-group input[type="file"], .form-group select {
+            width: 100%; padding: 0.75rem 1rem; border: 1px solid var(--border-color); border-radius: 0.5rem; font-size: 0.9rem; background-color: var(--card-bg); transition: border-color 0.2s, box-shadow 0.2s; font-family: 'Poppins', sans-serif;
+        }
+        .form-group input[type="file"] { padding: 0.5rem; }
+        .form-group input:focus, .form-group select:focus { outline: none; border-color: var(--primary-color); box-shadow: 0 0 0 2px rgba(219, 20, 114, 0.2); }
+        .form-group input[type="color"] { padding: 0; border: 1px solid var(--border-color); border-radius: 0.5rem; height: 48px; width: 100%; cursor: pointer; }
+        
+        .logo-preview-container { display: flex; flex-direction: column; align-items: center; gap: 1rem; margin-top: 1rem; }
+        .logo-preview { width: 150px; height: 150px; object-fit: contain; border: 2px dashed var(--border-color); border-radius: var(--border-radius); padding: 0.5rem; background-color: #f8fafc; }
+        
+        .toggle-switch { position: relative; display: inline-block; width: 44px; height: 24px; }
+        .toggle-switch input { opacity: 0; width: 0; height: 0; }
+        .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #ccc; transition: .4s; border-radius: 34px; }
+        .slider:before { position: absolute; content: ""; height: 16px; width: 16px; left: 4px; bottom: 4px; background-color: white; transition: .4s; border-radius: 50%; }
+        input:checked + .slider { background-color: var(--primary-color); }
+        input:checked + .slider:before { transform: translateX(20px); }
+
+        .placeholder-card { text-align: center; padding: 2rem; border: 2px dashed var(--border-color); border-radius: var(--border-radius); color: var(--text-light); }
+    </style>
+</head>
+<body>
+    <div id="theme-customization-container">
+        
+        <div class="customization-header">
+            <h2>Personalizando o Tema Elegance</h2>
+            <button id="preview-theme-btn" class="btn btn-secondary"><i data-feather="eye"></i> Pré-visualizar Alterações</button>
+        </div>
+
+        <div class="tabs-container">
+            <button class="tab-button active" data-tab="header">Cabeçalho</button>
+            <button class="tab-button" data-tab="navigation">Menu e Navegação</button>
+            <button class="tab-button" data-tab="body">Corpo da Loja</button>
+            <button class="tab-button" data-tab="products">Produtos</button>
+            <button class="tab-button" data-tab="footer">Rodapé</button>
+            <button class="tab-button" data-tab="general">Geral e Pop-ups</button>
+        </div>
+
+        <div id="theme-elegance-tab-content">
+            <div class="tab-pane active" id="tab-pane-header">
+                <div class="settings-card">
+                    <h3><i data-feather="message-square"></i> Barra de Mensagens Rotativa</h3>
+                    <p>Crie uma faixa no topo do site com até três mensagens. Ideal para anunciar promoções, cupons ou frete grátis.</p>
+                    <div class="form-group">
+                        <label>Ativar Barra de Mensagem</label>
+                        <label class="toggle-switch" style="width: fit-content;"><input type="checkbox" id="elegance-topbar-active" checked><span class="slider"></span></label>
+                    </div>
+                    <div class="form-grid" style="margin-top: 1.5rem;">
+                        <input type="text" id="elegance-topbar-text1" placeholder="Mensagem 1: Ex: Frete grátis acima de R$200">
+                        <input type="text" id="elegance-topbar-text2" placeholder="Mensagem 2: Ex: Use o cupom BEMVINDA10">
+                        <input type="text" id="elegance-topbar-text3" placeholder="Mensagem 3: Ex: Parcele em até 6x sem juros">
+                    </div>
+                    <div class="form-grid" style="margin-top: 1.5rem; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));">
+                        <div class="form-group"><label for="elegance-topbar-bg-color">Cor do Fundo</label><input type="color" id="elegance-topbar-bg-color" value="#334155"></div>
+                        <div class="form-group"><label for="elegance-topbar-text-color">Cor do Texto</label><input type="color" id="elegance-topbar-text-color" value="#ffffff"></div>
+                    </div>
+                </div>
+                <div class="settings-card">
+                    <h3><i data-feather="image"></i> Logo da Loja</h3>
+                    <p>Faça o upload da sua marca. Use imagens com fundo transparente (PNG) para um visual mais profissional.</p>
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label for="elegance-logo-desktop-upload">Logo (Desktop) <span class="recommendation">Recomendado: 320x80 pixels</span></label>
+                            <input type="file" id="elegance-logo-desktop-upload" accept="image/*">
+                            <div class="logo-preview-container"><img src="https://placehold.co/150x150/f8fafc/cbd5e1?text=Preview" id="elegance-logo-desktop-preview" class="logo-preview"></div>
+                        </div>
+                        <div class="form-group">
+                            <label for="elegance-logo-mobile-upload">Logo (Celular) <span class="recommendation">Recomendado: 120x120 pixels</span></label>
+                            <input type="file" id="elegance-logo-mobile-upload" accept="image/*">
+                            <div class="logo-preview-container"><img src="https://placehold.co/150x150/f8fafc/cbd5e1?text=Preview" id="elegance-logo-mobile-preview" class="logo-preview"></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="settings-card">
+                    <h3><i data-feather="palette"></i> Cores e Ícones do Cabeçalho</h3>
+                    <p>Defina a paleta de cores principal do cabeçalho e o estilo dos ícones.</p>
+                     <div class="form-grid" style="grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));">
+                        <div class="form-group"><label>Fundo do Cabeçalho</label><input type="color" id="elegance-header-bg" value="#ffffff"></div>
+                        <div class="form-group"><label>Fundo do Menu (Mobile)</label><input type="color" id="elegance-header-menu-bg" value="#ffffff"></div>
+                        <div class="form-group"><label>Cor dos Títulos</label><input type="color" id="elegance-header-title-color" value="#334155"></div>
+                        <div class="form-group"><label>Cor dos Ícones</label><input type="color" id="elegance-header-icon-color" value="#64748b"></div>
+                    </div>
+                     <div class="form-group" style="margin-top: 1.5rem;">
+                        <label>Usar ícone de Sacola de compras?</label>
+                        <p style="font-size: 0.85rem; color: var(--text-light); margin-bottom: 0.5rem; padding-left: 0;">Ative para substituir o ícone de carrinho por um ícone de sacola.</p>
+                        <label class="toggle-switch"><input type="checkbox" id="elegance-cart-icon-bag"><span class="slider"></span></label>
+                    </div>
+                </div>
+            </div>
+
+            <div class="tab-pane" id="tab-pane-navigation">
+                <div class="settings-card">
+                    <h3><i data-feather="menu"></i> Layout e Estilo do Menu de Navegação</h3>
+                    <p>Personalize a aparência e o comportamento do menu principal do seu catálogo (visível apenas em computadores).</p>
+                    <div class="form-group">
+                        <label>Alinhamento dos Links</label>
+                        <div style="display: flex; flex-wrap: wrap; gap: 1.5rem; margin-top: 0.5rem;">
+                            <label style="display: flex; align-items: center; gap: 0.5rem;"><input type="radio" name="menu-align" value="flex-start" checked> Esquerda</label>
+                            <label style="display: flex; align-items: center; gap: 0.5rem;"><input type="radio" name="menu-align" value="center"> Centro</label>
+                            <label style="display: flex; align-items: center; gap: 0.5rem;"><input type="radio" name="menu-align" value="flex-end"> Direita</label>
+                        </div>
+                    </div>
+                    <div class="form-grid" style="margin-top: 1.5rem; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));">
+                        <div class="form-group">
+                            <label for="elegance-menu-link-color">Cor dos Links</label>
+                            <input type="color" id="elegance-menu-link-color" value="#334155">
+                        </div>
+                        <div class="form-group">
+                            <label for="elegance-menu-link-hover-color">Cor dos Links (Hover)</label>
+                            <input type="color" id="elegance-menu-link-hover-color" value="#DB1472">
+                        </div>
+                    </div>
+                    <div class="form-group" style="margin-top: 1.5rem;">
+                        <label>Menu Fixo ao Rolar (Sticky)</label>
+                        <p style="font-size: 0.85rem; color: var(--text-light); margin-bottom: 0.5rem; padding-left: 0;">
+                            Ative para manter o menu visível no topo da tela enquanto o cliente rola a página.
+                        </p>
+                        <label class="toggle-switch"><input type="checkbox" id="elegance-menu-sticky"><span class="slider"></span></label>
+                    </div>
+                </div>
+            </div>
+
+            <div class="tab-pane" id="tab-pane-body">
+                <div class="settings-card">
+                    <h3><i data-feather="image"></i> Banner Principal</h3>
+                    <p>A imagem principal que aparece no topo da sua loja. Use imagens diferentes para uma melhor visualização em computadores e celulares.</p>
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label for="elegance-banner-desktop-upload">Banner (Desktop) <span class="recommendation">Recomendado: 1920x600 pixels</span></label>
+                            <input type="file" id="elegance-banner-desktop-upload" accept="image/*">
+                        </div>
+                        <div class="form-group">
+                            <label for="elegance-banner-mobile-upload">Banner (Celular) <span class="recommendation">Recomendado: 800x1000 pixels</span></label>
+                            <input type="file" id="elegance-banner-mobile-upload" accept="image/*">
+                        </div>
+                    </div>
+                </div>
+                <div class="settings-card">
+                    <h3><i data-feather="layout"></i> Cores e Estilos do Corpo</h3>
+                    <p>Personalize as cores de fundo da sua loja e dos títulos de cada seção.</p>
+                    <div class="form-grid" style="grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));">
+                        <div class="form-group">
+                            <label for="elegance-body-bg-color">Cor de Fundo da Loja</label>
+                            <input type="color" id="elegance-body-bg-color" value="#FFFFFF">
+                        </div>
+                        <div class="form-group">
+                            <label for="elegance-section-title-color">Cor dos Títulos de Seção</label>
+                            <input type="color" id="elegance-section-title-color" value="#334155">
+                        </div>
+                    </div>
+                </div>
+                <div class="settings-card">
+                    <h3><i data-feather="grid"></i> Estilo dos Cards de Produto</h3>
+                    <p>Defina a aparência dos cards que exibem seus produtos na vitrine.</p>
+                    <div class="form-grid" style="grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));">
+                         <div class="form-group">
+                            <label>Sombra nos Cards</label>
+                            <label class="toggle-switch" style="width: fit-content;"><input type="checkbox" id="elegance-card-shadow" checked><span class="slider"></span></label>
+                        </div>
+                        <div class="form-group">
+                            <label for="elegance-card-radius">Bordas Arredondadas</label>
+                            <select id="elegance-card-radius">
+                                <option value="0.25rem">Pequeno</option>
+                                <option value="0.75rem" selected>Médio</option>
+                                <option value="1.5rem">Grande</option>
+                                <option value="9999px">Totalmente Redondo</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="tab-pane" id="tab-pane-products"><div class="settings-card"><p class="placeholder-card">Configurações de Produtos em breve.</p></div></div>
+            <div class="tab-pane" id="tab-pane-footer"><div class="settings-card"><p class="placeholder-card">Configurações do Rodapé em breve.</p></div></div>
+            <div class="tab-pane" id="tab-pane-general"><div class="settings-card"><p class="placeholder-card">Configurações Gerais e de Pop-ups em breve.</p></div></div>
+        </div>
+    </div>
+    <script>
+        feather.replace();
+
+        // Lógica das Abas
+        const tabsContainer = document.querySelector('.tabs-container');
+        const tabPanes = document.querySelectorAll('.tab-pane');
+        tabsContainer.addEventListener('click', (e) => {
+            if (e.target.classList.contains('tab-button')) {
+                tabsContainer.querySelectorAll('.tab-button').forEach(btn => btn.classList.remove('active'));
+                tabPanes.forEach(pane => pane.classList.remove('active'));
+                e.target.classList.add('active');
+                const tabId = e.target.dataset.tab;
+                document.getElementById(`tab-pane-${tabId}`).classList.add('active');
+            }
+        });
+
+        // Lógica da Pré-visualização da Logo
+        function setupLogoPreview(inputId, previewId) {
+            const input = document.getElementById(inputId);
+            const preview = document.getElementById(previewId);
+            input.addEventListener('change', (event) => {
+                const file = event.target.files[0];
+                if (file) {
+                    const reader = new FileReader();
+                    reader.onload = function(e) { preview.src = e.target.result; }
+                    reader.readAsDataURL(file);
+                }
+            });
+        }
+        setupLogoPreview('elegance-logo-desktop-upload', 'elegance-logo-desktop-preview');
+        setupLogoPreview('elegance-logo-mobile-upload', 'elegance-logo-mobile-preview');
+        
+        // Lógica do Botão de Pré-visualizar Alterações
+        const previewBtn = document.getElementById('preview-theme-btn');
+        previewBtn.addEventListener('click', () => {
+            const getBase64FromInput = (inputId) => {
+                return new Promise((resolve) => {
+                    const input = document.getElementById(inputId);
+                    if (input.files && input.files[0]) {
+                        const reader = new FileReader();
+                        reader.onload = () => resolve(reader.result);
+                        reader.onerror = () => resolve(null);
+                        reader.readAsDataURL(input.files[0]);
+                    } else {
+                        resolve(null);
+                    }
+                });
+            };
+
+            Promise.all([
+                getBase64FromInput('elegance-logo-desktop-upload'),
+                getBase64FromInput('elegance-logo-mobile-upload'),
+                getBase64FromInput('elegance-banner-desktop-upload'),
+                getBase64FromInput('elegance-banner-mobile-upload')
+            ]).then(([logoDesktopBase64, logoMobileBase64, bannerDesktopBase64, bannerMobileBase64]) => {
+                const settings = {
+                    // Cabeçalho
+                    topbarActive: document.getElementById('elegance-topbar-active').checked,
+                    topbarText1: document.getElementById('elegance-topbar-text1').value,
+                    topbarText2: document.getElementById('elegance-topbar-text2').value,
+                    topbarText3: document.getElementById('elegance-topbar-text3').value,
+                    topbarBgColor: document.getElementById('elegance-topbar-bg-color').value,
+                    topbarTextColor: document.getElementById('elegance-topbar-text-color').value,
+                    headerBg: document.getElementById('elegance-header-bg').value,
+                    headerMenuBg: document.getElementById('elegance-header-menu-bg').value,
+                    headerTitleColor: document.getElementById('elegance-header-title-color').value,
+                    headerIconColor: document.getElementById('elegance-header-icon-color').value,
+                    useBagIcon: document.getElementById('elegance-cart-icon-bag').checked,
+                    logoDesktop: logoDesktopBase64,
+                    logoMobile: logoMobileBase64,
+                    // Menu e Navegação
+                    menuAlignment: document.querySelector('input[name="menu-align"]:checked').value,
+                    menuLinkColor: document.getElementById('elegance-menu-link-color').value,
+                    menuLinkHoverColor: document.getElementById('elegance-menu-link-hover-color').value,
+                    menuIsSticky: document.getElementById('elegance-menu-sticky').checked,
+                    // Corpo da Loja
+                    bannerDesktop: bannerDesktopBase64,
+                    bannerMobile: bannerMobileBase64,
+                    bodyBgColor: document.getElementById('elegance-body-bg-color').value,
+                    sectionTitleColor: document.getElementById('elegance-section-title-color').value,
+                    cardHasShadow: document.getElementById('elegance-card-shadow').checked,
+                    cardBorderRadius: document.getElementById('elegance-card-radius').value,
+                };
+
+                localStorage.setItem('theme_preview_settings', JSON.stringify(settings));
+
+                const catalogUrl = 'catalogo/index.html';
+                window.open(`${catalogUrl}?theme=elegance&preview=true`, '_blank');
+            });
+        });
+
+    </script>
+</body>
+</html>
