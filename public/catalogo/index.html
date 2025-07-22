@@ -14,13 +14,11 @@
     
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     
-    <!-- Link dinâmico para o CSS do tema -->
     <link rel="stylesheet" id="theme-style" href="">
 
     <script src="https://unpkg.com/feather-icons" defer></script>
 
     <style>
-        /* Estilos globais que não mudam com o tema */
         :root {
             --primary-color: #DB1472;
             --secondary-color: #F8B81F;
@@ -36,49 +34,18 @@
             --reseller-primary-color: var(--primary-color);
             --reseller-secondary-color: var(--secondary-color);
         }
-
-        * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
             font-family: var(--font-sans);
             background-color: var(--bg-color);
             color: var(--text-color);
-            line-height: 1.5;
-            overflow-x: hidden;
         }
-        
-        .view { display: none; }
-        .view.active { display: block; }
-
-        .btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 0.6rem 1.25rem; border-radius: 0.5rem; border: none; font-weight: 600; font-size: 0.9rem; cursor: pointer; transition: all 0.2s ease; }
-        .btn-success { background-color: var(--success-color); color: white; }
-        .btn-success:hover { opacity: 0.9; }
-
-        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: none; justify-content: center; align-items: center; z-index: 1000; }
-        .modal-overlay.active { display: flex; }
-        .modal-content { background: var(--card-bg); padding: 2rem; border-radius: var(--border-radius); width: 90%; max-width: 800px; box-shadow: 0 25px 50px -12px rgb(0 0 0 / 0.25); }
-        .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; }
-        .modal-header h3 { font-size: 1.25rem; }
-        .modal-close-btn { background: none; border: none; cursor: pointer; color: var(--text-light); }
-        .modal-footer { margin-top: 1.5rem; display: flex; justify-content: flex-end; gap: 0.75rem; }
-
-        #toast { position: fixed; bottom: -100px; left: 50%; transform: translateX(-50%); background-color: #333; color: white; padding: 1rem 1.5rem; border-radius: 0.5rem; transition: bottom 0.5s ease; z-index: 2000; box-shadow: var(--shadow); }
-        
-        .search-input { width: 100%; padding: 0.75rem 1rem; border: 1px solid var(--border-color); border-radius: 0.5rem; font-size: 0.9rem; background-color: var(--card-bg); }
-        .form-group { display: flex; flex-direction: column; }
-        .form-group label { font-weight: 600; margin-bottom: 0.5rem; font-size: 0.9rem; }
-
-        .loading-indicator { text-align: center; padding: 2rem; }
-        .spinner { border: 4px solid rgba(0, 0, 0, 0.1); width: 36px; height: 36px; border-radius: 50%; border-left-color: var(--reseller-primary-color); animation: spin 1s ease infinite; margin: auto; }
-        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
     </style>
-    <!-- Script para carregar o tema dinamicamente -->
     <script>
         (function() {
             const urlParams = new URLSearchParams(window.location.search);
-            const themeId = urlParams.get('theme') || localStorage.getItem('active_theme') || 'basic';
+            const themeId = urlParams.get('theme') || localStorage.getItem('resellerActiveTheme') || 'basic';
 
-            const themeStyle = document.getElementById('theme-style');
-            themeStyle.setAttribute('href', `../temas/${themeId}/theme.css`);
+            document.getElementById('theme-style').setAttribute('href', `../temas/${themeId}/theme.css`);
 
             const themeScript = document.createElement('script');
             themeScript.id = 'theme-script';
@@ -90,23 +57,20 @@
 </head>
 <body>
 
-    <!-- O CONTEÚDO DO TEMA SERÁ INJETADO AQUI PELO THEME.JS -->
-    <div id="theme-root"></div>
+    <div id="theme-root">
+        <div class="loading-indicator" style="display: flex; justify-content: center; align-items: center; height: 100vh;">
+            <div class="spinner" style="border-left-color: var(--primary-color);"></div>
+        </div>
+    </div>
     
-    <!-- MODAIS E OUTROS ELEMENTOS GLOBAIS QUE NÃO MUDAM -->
-    <div id="cart-modal" class="modal-overlay">
-        <!-- Conteúdo do modal do carrinho -->
-    </div>
-    <div id="category-modal" class="modal-overlay">
-        <!-- Conteúdo do modal de categorias -->
-    </div>
-    <div id="customer-info-modal" class="modal-overlay">
-        <!-- Conteúdo do modal de informações do cliente -->
-    </div>
+    <!-- MODAIS E OUTROS ELEMENTOS GLOBAIS -->
+    <div id="cart-modal" class="modal-overlay"></div>
+    <div id="category-modal" class="modal-overlay"></div>
+    <div id="customer-info-modal" class="modal-overlay"></div>
     <div id="toast"></div>
 
     <!-- Scripts globais do sistema -->
     <script src="../js/servicos.js" defer></script>
-    <script src="../js/catalogo.js" defer></script>
+    <!-- O catalogo.js agora é carregado pelo theme.js -->
 </body>
 </html>
