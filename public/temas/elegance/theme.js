@@ -67,5 +67,11 @@ function buildEleganceLayout() {
 }
 
 function applyPreviewSettings() {
-    // ... (código existente para aplicar as configurações)
+    const settingsJSON = localStorage.getItem('theme_preview_settings');
+    if (!settingsJSON) return;
+
+    const settings = JSON.parse(settingsJSON);
+
+    // Aplica todas as configurações de preview...
+    // (O código completo para aplicar as configurações de cores, logos, etc. vai aqui)
 }
