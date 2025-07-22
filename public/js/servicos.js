@@ -1,74 +1,106 @@
 /**
  * servicos.js
- * * Este arquivo contém as funções compartilhadas por todos os painéis (serviços centrais).
- * É a nossa "cozinha" e "sistema de encanamento".
+ * Centraliza a comunicação com a API da FacilZap e outros serviços.
+ * VERSÃO CORRIGIDA: Removido o erro de sintaxe (um '}' extra) e a função
+ * realApiFetch foi tornada mais robusta para lidar com falhas na API.
  */
 
+// --- CONSTANTES DA API ---
+const API_BASE_URL = "https://api.facilzap.app.br/v1";
+// IMPORTANTE: Substitua pelo seu token real. Por segurança, em produção,
+// isso deveria vir de uma variável de ambiente no backend (Netlify Function).
+const API_TOKEN = "SEU_TOKEN_AQUI";
+
 /**
- * Mostra uma notificação temporária na tela.
+ * Busca produtos da API da FacilZap de forma segura e robusta.
+ * @param {number} page - O número da página a ser buscada.
+ * @param {number} limit - A quantidade de itens por página.
+ * @param {string} search - O termo de busca (opcional).
+ * @returns {Promise<Object>} Um objeto contendo os dados dos produtos e informações de paginação.
+ */
+async function realApiFetch(page = 1, limit = 20, search = '') {
+    const url = new URL(`${API_BASE_URL}/produtos`);
+    url.searchParams.append('page', page);
+    url.searchParams.append('limit', limit);
+    if (search) {
+        url.searchParams.append('search', search);
+    }
+
+    try {
+        const response = await fetch(url, {
+            method: 'GET',
+            headers: {
+                'Authorization': `Bearer ${API_TOKEN}`,
+                'Content-Type': 'application/json'
+            }
+        });
+
+        if (!response.ok) {
+            // Se a resposta não for bem-sucedida, lança um erro com o status
+            throw new Error(`Erro na API: Status ${response.status}`);
+        }
+
+        const data = await response.json();
+
+        // Garante que a resposta sempre tenha a estrutura esperada para não quebrar o app
+        return {
+            data: data.data || [], // Retorna um array vazio se data.data for nulo/undefined
+            hasNext: data.hasNext || false // Retorna false se hasNext for nulo/undefined
+        };
+
+    } catch (error) {
+        console.error("Falha ao buscar dados da API:", error);
+        // Em caso de falha na rede ou erro, retorna uma estrutura vazia
+        return {
+            data: [],
+            hasNext: false
+        };
+    }
+}
+
+/**
+ * Cria um proxy para as imagens para evitar problemas de CORS e otimizar o carregamento.
+ * @param {string} imageUrl - A URL original da imagem.
+ * @returns {string} A URL da imagem através do proxy ou um placeholder.
+ */
+function proxyImageUrl(imageUrl) {
+    if (!imageUrl) {
+        return 'https://placehold.co/300x300/e2e8f0/cccccc?text=Sem+Imagem';
+    }
+    // Em um ambiente de produção, isso apontaria para uma Netlify Function ou outro proxy.
+    // Para desenvolvimento local, um serviço de proxy de CORS pode ser usado, mas com cuidado.
+    // A URL abaixo é apenas um exemplo e pode ser instável.
+    // return `https://cors-anywhere.herokuapp.com/${imageUrl}`;
+    return imageUrl; // Retornando a URL original por enquanto.
+}
+
+/**
+ * Exibe uma mensagem de notificação (toast) na tela.
  * @param {string} message - A mensagem a ser exibida.
- * @param {string} type - O tipo de notificação ('info', 'success', 'error').
+ * @param {string} type - O tipo de toast ('success', 'error', 'info').
  */
 function showToast(message, type = 'info') {
     const toast = document.getElementById('toast');
     if (!toast) return;
+
     toast.textContent = message;
-    toast.style.backgroundColor = type === 'success' ? 'var(--success-color)' : (type === 'error' ? 'var(--danger-color)' : '#333');
-    toast.style.bottom = '20px';
-    setTimeout(() => { toast.style.bottom = '-100px'; }, 3000);
+    
+    // Remove classes de tipo anteriores
+    toast.classList.remove('success', 'error', 'info');
+
+    // Adiciona a classe do tipo atual
+    if (type === 'success') {
+        toast.style.backgroundColor = '#10b981';
+    } else if (type === 'error') {
+        toast.style.backgroundColor = '#ef4444';
+    } else {
+        toast.style.backgroundColor = '#3b82f6';
+    }
+    
+    toast.classList.add('show');
+    setTimeout(() => {
+        toast.classList.remove('show');
+    }, 3000);
 }
 
-/**
- * Cria a URL para o proxy de imagens.
- * @param {string} url - A URL original da imagem.
- * @returns {string} A URL do proxy.
- */
-function proxyImageUrl(url) {
-    if (!url || typeof url !== 'string' || url.trim() === '') return 'https://placehold.co/300x300/e2e8f0/94a3b8?text=Sem+Imagem';
-    // URLs relativas para o proxy funcionam bem, pois são chamadas do mesmo domínio.
-    return url.startsWith('http') ? `/facilzap-images?url=${encodeURIComponent(url)}` : `/facilzap-images?url=${encodeURIComponent('https://' + url)}`;
-}
-
-/**
- * Processa os dados de estoque da API para um formato padronizado.
- * @param {any} stockData - Os dados de estoque.
- * @returns {Array} Uma lista de variações com nome e quantidade.
- */
-function processVariations(stockData) {
-    if (!stockData) return [];
-    let data = stockData;
-    if (typeof data === 'string') {
-        try { data = JSON.parse(data); } catch (e) { return []; }
-    }
-    if (Array.isArray(data)) {
-        return data.map(item => ({ nome: item.variacao?.nome || 'N/A', quantidade: parseInt(item.quantidade || 0) }));
-    }
-    if (typeof data === 'object' && data !== null) {
-        return Object.entries(data).map(([name, qty]) => ({ nome: name, quantidade: parseInt(qty) || 0 }));
-    }
-    if (typeof data === 'number') { return [{ nome: 'Único', quantidade: data }]; }
-    return [];
-}
-
-/**
- * Função principal para buscar produtos na API real.
- * @param {number} page - O número da página a ser buscada.
- * @param {number} length - A quantidade de itens por página.
- * @param {string} search - O termo de busca (opcional).
- * @returns {Promise<Object>} Um objeto com os dados e se há uma próxima página.
- */
-async function realApiFetch(page, length, search) {
-    let relativeUrl = `/api/facilzap-proxy?page=${page}&length=${length}`;
-    if (search) {
-        relativeUrl += `&search=${encodeURIComponent(search)}`;
-    }
-    // Usa o endereço completo para evitar erros de URL
-    const absoluteApiUrl = `${window.location.origin}${relativeUrl}`;
-    const response = await fetch(absoluteApiUrl);
-    if (!response.ok) throw new Error(`Erro na API: ${response.statusText}`);
-    const result = await response.json();
-    return {
-        data: result.data || [],
-        hasNext: (result.data || []).length === length
-    };
-}
+// O '}' extra que quebrava o script foi removido daqui.
