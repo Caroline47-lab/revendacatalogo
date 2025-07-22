@@ -1,9 +1,8 @@
 /**
  * painel-revendedora.js
- * * VERSÃO COM LÓGICA DE SELEÇÃO DE TEMAS
- * - Adicionada a lógica para a nova galeria de temas na página de Aparência.
- * - A escolha do tema agora é salva e carregada corretamente.
- * - A interface da galeria é atualizada para refletir o tema ativo.
+ * * VERSÃO COM CARREGAMENTO DINÂMICO DE TEMA
+ * - Ao selecionar um tema, a interface de personalização é carregada dinamicamente.
+ * - A função loadThemeCustomizationUI busca e injeta o HTML e os scripts do tema.
  */
 
 // --- VARIÁVEIS GLOBAIS ---
@@ -22,7 +21,7 @@ let currentEditingShowcaseId = null;
 let resellerDescriptionModels = [];
 let currentAssociationType = null;
 let currentModelIdToAssociate = null;
-let resellerActiveTheme = 'basic'; // NOVO: Tema ativo, com 'basic' como padrão
+let resellerActiveTheme = 'basic';
 
 const availableTags = ['Lançamento', 'Promoção', 'Mais Vendido', 'Últimas Peças'];
 
@@ -35,6 +34,9 @@ document.addEventListener('DOMContentLoaded', async () => {
             setupEventListeners();
             setupMobileMenu();
             await loadAllPublishedProducts();
+            if (document.querySelector('#reseller-appearance').classList.contains('active')) {
+                setupAppearancePage();
+            }
             if (typeof feather !== 'undefined') {
                 feather.replace();
             }
@@ -50,12 +52,9 @@ function setupEventListeners() {
     setupNavigation();
 
     document.getElementById('apply-mass-margin')?.addEventListener('click', applyMassMargin);
-    document.getElementById('save-settings-btn')?.addEventListener('click', saveAppearanceSettings);
+    document.getElementById('save-settings-btn')?.addEventListener('click', saveAllSettings);
     document.getElementById('generate-link-btn')?.addEventListener('click', generateAndCopyCatalogLink);
-    document.getElementById('logo-upload')?.addEventListener('change', (e) => handleImageUpload(e, 'logo-preview', 'logoUrl'));
-    document.querySelectorAll('.banner-upload').forEach(input => {
-        input.addEventListener('change', (e) => handleImageUpload(e, `banner-preview-${e.target.dataset.bannerId}`, `banner-${e.target.dataset.bannerId}`));
-    });
+    
     document.querySelectorAll('[data-modal-target]').forEach(button => {
         button.addEventListener('click', () => {
             const modalId = button.getAttribute('data-modal-target');
@@ -111,7 +110,7 @@ function setupNavigation() {
         if (targetPage) targetPage.classList.add('active');
         
         if(pageId === 'reseller-products') renderResellerProductsTable();
-        if(pageId === 'reseller-appearance') setupAppearancePage(); // ATUALIZADO
+        if(pageId === 'reseller-appearance') setupAppearancePage();
         if(pageId === 'reseller-promotions') setupPromotionsPage();
         if(pageId === 'reseller-descriptions') setupDescriptionsPage();
         if(pageId === 'reseller-showcase') setupShowcasePage();
@@ -125,13 +124,13 @@ function setupDynamicEventListeners() {
     if (!mainContent) return;
 
     mainContent.addEventListener('click', (e) => {
-        const target = e.target.closest('button, .theme-card'); // Adicionado .theme-card
+        const target = e.target.closest('button, .theme-card');
         if (!target) return;
 
         const { 
             productId, chartId, showcaseId, 
             descModelId, associateChartId, associateDescId,
-            themeId // NOVO
+            themeId
         } = target.dataset;
 
         if (target.matches('.edit-margin-btn')) showResellerProductEditModal(productId);
@@ -144,7 +143,7 @@ function setupDynamicEventListeners() {
         if (associateChartId) openAssociationModal(associateChartId, 'sizingChart');
         if (associateDescId) openAssociationModal(associateDescId, 'description');
         if (showcaseId) openShowcaseModal(showcaseId);
-        if (themeId) selectTheme(themeId); // NOVO
+        if (themeId) selectTheme(themeId);
     });
 
     mainContent.addEventListener('change', (e) => {
@@ -209,7 +208,6 @@ function loadLocalDataForReseller() {
     if (savedShowcase) resellerShowcase = JSON.parse(savedShowcase);
     const savedDescModels = localStorage.getItem('resellerDescriptionModels');
     if(savedDescModels) resellerDescriptionModels = JSON.parse(savedDescModels);
-    // NOVO: Carrega o tema ativo
     const savedTheme = localStorage.getItem('resellerActiveTheme');
     if(savedTheme) resellerActiveTheme = savedTheme;
 }
@@ -251,12 +249,79 @@ async function loadAllPublishedProducts() {
     }
 }
 
-// --- LÓGICA DE APARÊNCIA E TEMAS (NOVO) ---
+// --- LÓGICA DE APARÊNCIA E TEMAS (ATUALIZADA) ---
 
 function setupAppearancePage() {
     loadIdentitySettings();
     updateThemeGallery();
-    // A lógica de personalização do tema será adicionada aqui no futuro
+    loadThemeCustomizationUI(resellerActiveTheme); // Carrega a personalização do tema ativo
+}
+
+function selectTheme(themeId) {
+    resellerActiveTheme = themeId;
+    updateThemeGallery();
+    loadThemeCustomizationUI(themeId); // Carrega a nova interface de personalização
+    showToast(`Tema "${themeId}" selecionado. Personalize abaixo.`, 'success');
+}
+
+function updateThemeGallery() {
+    const themeCards = document.querySelectorAll('.theme-card');
+    themeCards.forEach(card => {
+        card.classList.toggle('active', card.dataset.themeId === resellerActiveTheme);
+    });
+}
+
+async function loadThemeCustomizationUI(themeId) {
+    const contentArea = document.getElementById('theme-customization-content-area');
+    if (!contentArea) return;
+
+    contentArea.innerHTML = '<div class="loading-indicator visible"><div class="spinner"></div></div>';
+
+    try {
+        const response = await fetch(`temas/${themeId}/theme-settings.html`);
+        if (!response.ok) throw new Error(`Configurações para o tema "${themeId}" não encontradas.`);
+        
+        const html = await response.text();
+        
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(html, 'text/html');
+        
+        contentArea.innerHTML = doc.body.innerHTML;
+        const styles = doc.head.querySelectorAll('style, link[rel="stylesheet"]');
+        styles.forEach(style => document.head.appendChild(style.cloneNode(true)));
+
+        const scripts = doc.body.querySelectorAll('script');
+        scripts.forEach(script => {
+            const newScript = document.createElement('script');
+            if (script.src) {
+                newScript.src = script.src;
+                newScript.defer = true; 
+            } else {
+                newScript.textContent = script.innerHTML;
+            }
+            document.body.appendChild(newScript);
+        });
+
+    } catch (error) {
+        console.error(error);
+        contentArea.innerHTML = `<div class="placeholder-card">${error.message}</div>`;
+        showToast(error.message, 'error');
+    }
+}
+
+function saveAllSettings() {
+    resellerSettings = {
+        ...resellerSettings,
+        brandName: document.getElementById('brand-name-input').value,
+        contactPhone: document.getElementById('contact-phone-input').value,
+        instagram: document.getElementById('instagram-input').value,
+        catalogUrlName: document.getElementById('catalog-url-name').value.trim().toLowerCase().replace(/[^a-z0-9-]/g, ''),
+    };
+    localStorage.setItem('resellerSettings', JSON.stringify(resellerSettings));
+    
+    localStorage.setItem('resellerActiveTheme', resellerActiveTheme);
+
+    showToast('Configurações gerais salvas com sucesso!', 'success');
 }
 
 function loadIdentitySettings() {
@@ -264,50 +329,10 @@ function loadIdentitySettings() {
     document.getElementById('brand-name-input').value = settings.brandName || '';
     document.getElementById('contact-phone-input').value = settings.contactPhone || '';
     document.getElementById('instagram-input').value = settings.instagram || '';
-    document.getElementById('logo-preview').src = settings.logoUrl || 'https://placehold.co/100x100/e2e8f0/cccccc?text=Logo';
     document.getElementById('catalog-url-name').value = settings.catalogUrlName || '';
-    // Carregar outras configurações de personalização aqui...
 }
 
-function selectTheme(themeId) {
-    resellerActiveTheme = themeId;
-    updateThemeGallery();
-    showToast(`Tema "${themeId}" ativado!`, 'success');
-    // No futuro, aqui também carregaremos as configurações padrão do tema
-}
-
-function updateThemeGallery() {
-    const themeCards = document.querySelectorAll('.theme-card');
-    themeCards.forEach(card => {
-        if (card.dataset.themeId === resellerActiveTheme) {
-            card.classList.add('active');
-        } else {
-            card.classList.remove('active');
-        }
-    });
-}
-
-function saveAppearanceSettings() {
-    // Salva as configurações de identidade
-    resellerSettings = {
-        ...resellerSettings, // Mantém configurações de banner, etc.
-        brandName: document.getElementById('brand-name-input').value,
-        contactPhone: document.getElementById('contact-phone-input').value,
-        instagram: document.getElementById('instagram-input').value,
-        logoUrl: document.getElementById('logo-preview').src,
-        catalogUrlName: document.getElementById('catalog-url-name').value.trim().toLowerCase().replace(/[^a-z0-9-]/g, ''),
-        // Salva outras configurações de personalização aqui...
-    };
-    localStorage.setItem('resellerSettings', JSON.stringify(resellerSettings));
-    
-    // Salva o tema ativo
-    localStorage.setItem('resellerActiveTheme', resellerActiveTheme);
-
-    showToast('Configurações de aparência salvas!', 'success');
-}
-
-
-// --- DEMAIS FUNÇÕES (PROMOÇÕES, VITRINE, DESCRIÇÕES, ETC.) ---
+// --- DEMAIS FUNÇÕES (PRODUTOS, PROMOÇÕES, VITRINE, DESCRIÇÕES, ETC.) ---
 
 function renderResellerProductsTable() {
     const tbody = document.getElementById('reseller-products-table-body');
@@ -341,7 +366,7 @@ function renderResellerProductsTable() {
 }
 
 function setupPromotionsPage() {
-    // ...código existente...
+    // ...código futuro...
 }
 
 function setupShowcasePage() {
@@ -781,20 +806,6 @@ function applyMassMargin() {
     localStorage.setItem('resellerMargins', JSON.stringify(resellerProductMargins));
     renderResellerProductsTable();
     showToast(`Margem de ${newMargin}% aplicada a todos os produtos!`, 'success');
-}
-
-function handleImageUpload(event, previewElementId, settingsKey) {
-    const file = event.target.files[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = (e) => {
-        const previewElement = document.getElementById(previewElementId);
-        if (previewElement && previewElement.tagName === 'IMG') {
-            previewElement.src = e.target.result;
-        }
-        resellerSettings[settingsKey] = e.target.result;
-    };
-    reader.readAsDataURL(file);
 }
 
 function generateAndCopyCatalogLink() {
