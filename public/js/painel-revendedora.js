@@ -1,12 +1,3 @@
-/**
- * painel-revendedora.js
- * * VERSÃO CORRIGIDA E ESTABILIZADA
- * - Corrigido o bug crítico que impedia o funcionamento de todos os botões e o carregamento dos produtos.
- * - A função de inicialização de eventos foi reescrita para garantir que todos os botões sejam funcionais.
- * - Implementada a delegação de eventos para as tabelas dinâmicas, garantindo que os botões de ação sempre funcionem.
- * - Implementadas todas as funções auxiliares que estavam faltando.
- */
-
 // --- VARIÁVEIS GLOBAIS ---
 let resellerProducts = [];
 let publishedProductIds = [];
@@ -48,15 +39,17 @@ function proxyImageUrl(url) {
         return 'https://placehold.co/40x40/e2e8f0/94a3b8?text=S/Img';
     }
     const encodedUrl = encodeURIComponent(url);
-    return `/facilzap-images?url=${encodedUrl}`;
+    // Ajuste para usar o caminho relativo correto para o proxy
+    return `../facilzap-images?url=${encodedUrl}`;
 }
+
 
 /**
  * Função principal para buscar produtos na API.
  */
 async function realApiFetch(page, length, search = '') {
     // ATENÇÃO: A URL do proxy é definida no arquivo netlify.toml e deve ser /api/
-    let relativeUrl = `/api/facilzap-proxy?page=${page}&length=${length}`;
+    let relativeUrl = `../api/facilzap-proxy?page=${page}&length=${length}`;
     if (search) {
         relativeUrl += `&search=${encodeURIComponent(search)}`;
     }
