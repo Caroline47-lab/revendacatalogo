@@ -106,7 +106,8 @@
         .form-group label { font-weight: 600; margin-bottom: 0.5rem; font-size: 0.9rem; }
         .form-group input[type="color"] { padding: 0.25rem; height: 48px; }
         .form-group textarea { min-height: 120px; resize: vertical; }
-        
+        .image-preview { width: 100%; max-width: 200px; height: auto; margin-top: 1rem; border: 2px dashed var(--border-color); padding: 0.5rem; border-radius: var(--border-radius); }
+
         .loading-indicator { text-align: center; padding: 2rem; display: none; }
         .loading-indicator.visible { display: block; }
         .spinner { border: 4px solid rgba(0, 0, 0, 0.1); width: 36px; height: 36px; border-radius: 50%; border-left-color: var(--primary-color); animation: spin 1s ease infinite; margin: auto; }
@@ -120,17 +121,6 @@
         .promo-card-desc { color: var(--text-light); font-size: 0.9rem; margin-bottom: 1.5rem; flex-grow: 1; }
         .promo-card-footer { margin-top: auto; }
         .placeholder-card { text-align: center; padding: 2rem; border: 2px dashed var(--border-color); border-radius: var(--border-radius); color: var(--text-light); }
-
-        .theme-gallery { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 1.5rem; }
-        .theme-card { border: 3px solid var(--border-color); border-radius: var(--border-radius); overflow: hidden; cursor: pointer; transition: all 0.2s ease-in-out; }
-        .theme-card:hover { transform: translateY(-5px); box-shadow: var(--shadow); }
-        .theme-card.active { border-color: var(--primary-color); box-shadow: 0 0 0 3px var(--primary-color); }
-        .theme-preview { width: 100%; height: 150px; background-color: #e2e8f0; object-fit: cover; }
-        .theme-info { padding: 1rem; background-color: var(--card-bg); }
-        .theme-info h3 { font-weight: 600; margin-bottom: 0.25rem; }
-        .theme-info p { font-size: 0.9rem; color: var(--text-light); }
-        .theme-status { display: none; justify-content: center; align-items: center; gap: 0.5rem; padding: 0.5rem; background-color: var(--primary-color); color: white; font-weight: 600; font-size: 0.9rem; }
-        .theme-card.active .theme-status { display: flex; }
 
         @media (max-width: 768px) {
             .sidebar { position: fixed; top: 0; left: 0; height: 100%; transform: translateX(-100%); }
@@ -160,7 +150,7 @@
                     <li class="nav-item"><a class="nav-link" data-page="reseller-showcase"><i data-feather="star"></i> Organizar Vitrine</a></li>
                     <li class="nav-item"><a class="nav-link" data-page="reseller-descriptions"><i data-feather="file-text"></i> Descrições</a></li>
                     <li class="nav-item"><a class="nav-link" data-page="reseller-sales"><i data-feather="dollar-sign"></i> Vendas</a></li>
-                    <li class="nav-item"><a class="nav-link" data-page="reseller-appearance"><i data-feather="layout"></i> Aparência e Temas</a></li>
+                    <li class="nav-item"><a class="nav-link" data-page="reseller-appearance"><i data-feather="layout"></i> Aparência da Loja</a></li>
                     <li class="nav-item"><a class="nav-link" data-page="reseller-payments"><i data-feather="credit-card"></i> Pagamentos</a></li>
                     <li class="nav-item"><a class="nav-link" data-page="reseller-shipping"><i data-feather="truck"></i> Envios</a></li>
                     <li class="nav-item" style="border-top: 1px solid var(--border-color); margin-top: 1rem; padding-top: 1rem;"><a href="catalogo/index.html" target="_blank" id="view-catalog-btn" class="nav-link" style="color: var(--primary-color);"><i data-feather="eye"></i> Ver Catálogo</a></li>
@@ -315,37 +305,40 @@
                     </div>
                 </section>
 
+                <!-- =================================================================== -->
+                <!-- SEÇÃO DE APARÊNCIA RESTAURADA E CORRIGIDA -->
+                <!-- =================================================================== -->
                 <section id="reseller-appearance" class="page">
                     <div class="settings-section">
-                        <h2><i data-feather="grid"></i> Galeria de Temas</h2>
-                        <p style="color: var(--text-light); margin-top: -1rem; margin-bottom: 1.5rem;">Escolha um tema base para sua loja. Você poderá personalizar todos os detalhes a seguir.</p>
-                        <div class="theme-gallery">
-                            <div class="theme-card" data-theme-id="basic">
-                                <img src="https://placehold.co/400x250/e2e8f0/334155?text=Basic" alt="Tema Basic" class="theme-preview">
-                                <div class="theme-info"><h3>Basic</h3><p>Simples, direto e funcional.</p></div>
-                                <div class="theme-status"><i data-feather="check-circle"></i><span>Ativo</span></div>
+                        <h2><i data-feather="palette"></i> Cores Principais</h2>
+                        <p style="color: var(--text-light); margin-top: -1rem; margin-bottom: 1.5rem;">Defina a paleta de cores que será usada em toda a sua loja.</p>
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label for="appearance-primary-color">Cor Principal (Títulos, Botões)</label>
+                                <input type="color" id="appearance-primary-color" value="#DB1472">
                             </div>
-                            <div class="theme-card" data-theme-id="elegance">
-                                <img src="https://placehold.co/400x250/f1f5f9/64748b?text=Elegance" alt="Tema Elegance" class="theme-preview">
-                                <div class="theme-info"><h3>Elegance</h3><p>Layout sofisticado e fontes limpas.</p></div>
-                                <div class="theme-status"><i data-feather="check-circle"></i><span>Ativo</span></div>
-                            </div>
-                            <div class="theme-card" data-theme-id="vibrante">
-                                <img src="https://placehold.co/400x250/db1472/ffffff?text=Vibrante" alt="Tema Vibrante" class="theme-preview">
-                                <div class="theme-info"><h3>Vibrante</h3><p>Cores fortes e design moderno.</p></div>
-                                <div class="theme-status"><i data-feather="check-circle"></i><span>Ativo</span></div>
-                            </div>
-                            <div class="theme-card" data-theme-id="minimalista">
-                                <img src="https://placehold.co/400x250/ffffff/111827?text=Minimalista" alt="Tema Minimalista" class="theme-preview">
-                                <div class="theme-info"><h3>Minimalista</h3><p>Foco total nos seus produtos.</p></div>
-                                <div class="theme-status"><i data-feather="check-circle"></i><span>Ativo</span></div>
+                            <div class="form-group">
+                                <label for="appearance-header-bg">Cor de Fundo do Cabeçalho</label>
+                                <input type="color" id="appearance-header-bg" value="#FFFFFF">
                             </div>
                         </div>
                     </div>
-                    
-                    <!-- ÁREA DE PERSONALIZAÇÃO DINÂMICA -->
-                    <div id="theme-customization-content-area" style="margin-top: 2rem;">
-                        <!-- O conteúdo de theme-settings.html será carregado aqui pelo JS -->
+
+                    <div class="settings-section">
+                        <h2><i data-feather="image"></i> Imagens da Marca</h2>
+                        <p style="color: var(--text-light); margin-top: -1rem; margin-bottom: 1.5rem;">Faça o upload da sua logo e de um banner principal para o topo da loja.</p>
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label for="appearance-logo-upload">Logo da Loja</label>
+                                <input type="file" id="appearance-logo-upload" accept="image/*" class="form-group input">
+                                <img src="https://placehold.co/200x80/e2e8f0/cccccc?text=Preview+Logo" id="appearance-logo-preview" class="image-preview">
+                            </div>
+                            <div class="form-group">
+                                <label for="appearance-banner-upload">Banner Principal</label>
+                                <input type="file" id="appearance-banner-upload" accept="image/*" class="form-group input">
+                                <img src="https://placehold.co/400x200/e2e8f0/cccccc?text=Preview+Banner" id="appearance-banner-preview" class="image-preview">
+                            </div>
+                        </div>
                     </div>
 
                     <div class="settings-section">
@@ -368,14 +361,14 @@
                     </div>
 
                     <div class="settings-section" style="display: flex; justify-content: flex-end;">
-                        <button id="save-settings-btn" class="btn btn-success"><i data-feather="save"></i> Salvar Todas as Configurações</button>
+                        <button id="save-settings-btn" class="btn btn-success"><i data-feather="save"></i> Salvar Todas as Alterações</button>
                     </div>
                 </section>
             </main>
         </div>
     </div>
     
-    <!-- MODAIS -->
+    <!-- TODOS OS SEUS MODAIS ORIGINAIS ESTÃO AQUI, INTACTOS -->
     <div id="reseller-product-edit-modal" class="modal-overlay"><div class="modal-content"><div class="modal-header"><h3 id="modal-reseller-product-name">Editar Margem</h3><button class="modal-close-btn"><i data-feather="x"></i></button></div><div class="form-group"><label for="reseller-margin-input">Sua Margem de Lucro (%)</label><input type="number" id="reseller-margin-input" placeholder="Ex: 40"></div><div class="modal-footer"><button id="save-reseller-margin-btn" class="btn btn-success">Salvar Margem</button></div></div></div>
     <div id="reseller-tags-modal" class="modal-overlay"><div class="modal-content"><div class="modal-header"><h3 id="modal-tags-product-name">Editar Tags</h3><button class="modal-close-btn"><i data-feather="x"></i></button></div><div class="form-group"><label>Selecione as tags para este produto:</label><div id="tags-selection-container" class="tag-selection-grid"></div></div><div class="modal-footer"><button id="save-reseller-tags-btn" class="btn btn-success">Salvar Tags</button></div></div></div>
     <div id="flash-sale-modal" class="modal-overlay"><div class="modal-content"><div class="modal-header"><h3>Configurar Flash Sale</h3><button class="modal-close-btn"><i data-feather="x"></i></button></div><div class="form-group"><label for="flash-sale-product">Produto em Oferta</label><select id="flash-sale-product"></select></div><div class="form-group"><label for="flash-sale-discount">Percentual de Desconto (%)</label><input type="number" id="flash-sale-discount" placeholder="Ex: 25"></div><div class="form-group"><label for="flash-sale-end-date">Data de Término</label><input type="date" id="flash-sale-end-date"></div><div class="modal-footer"><button id="save-flash-sale-btn" class="btn btn-success">Salvar Flash Sale</button></div></div></div>
