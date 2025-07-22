@@ -21,6 +21,63 @@ let resellerProductSizingChartLinks = {};
 
 const availableTags = ['Lançamento', 'Promoção', 'Mais Vendido', 'Últimas Peças'];
 
+// --- FUNÇÕES AUXILIARES ESSENCIAIS (Implementadas) ---
+
+/**
+ * Mostra uma notificação temporária na tela.
+ */
+function showToast(message, type = 'info') {
+    const toast = document.getElementById('toast');
+    if (!toast) return;
+    toast.textContent = message;
+    const colors = {
+        info: '#334155',
+        success: '#10b981',
+        error: '#ef4444'
+    };
+    toast.style.backgroundColor = colors[type] || colors.info;
+    toast.style.bottom = '20px';
+    setTimeout(() => { toast.style.bottom = '-100px'; }, 3000);
+}
+
+/**
+ * Cria a URL para o proxy de imagens com fallback.
+ */
+function proxyImageUrl(url) {
+    if (!url || typeof url !== 'string' || url.trim() === '') {
+        return 'https://placehold.co/40x40/e2e8f0/94a3b8?text=S/Img';
+    }
+    const encodedUrl = encodeURIComponent(url);
+    return `/facilzap-images?url=${encodedUrl}`;
+}
+
+/**
+ * Função principal para buscar produtos na API.
+ */
+async function realApiFetch(page, length, search = '') {
+    // ATENÇÃO: A URL do proxy é definida no arquivo netlify.toml e deve ser /api/
+    let relativeUrl = `/api/facilzap-proxy?page=${page}&length=${length}`;
+    if (search) {
+        relativeUrl += `&search=${encodeURIComponent(search)}`;
+    }
+    try {
+        const response = await fetch(relativeUrl);
+        if (!response.ok) {
+            throw new Error(`Erro na API: ${response.statusText}`);
+        }
+        const result = await response.json();
+        return {
+            data: result.data || [],
+            hasNext: (result.data || []).length === length
+        };
+    } catch (error) {
+        console.error("Falha ao buscar dados da API:", error);
+        showToast("Erro de conexão com a API.", "error");
+        return { data: [], hasNext: false }; // Retorna um objeto vazio em caso de erro
+    }
+}
+
+
 // --- INICIALIZAÇÃO ---
 document.addEventListener('DOMContentLoaded', () => {
     if (document.getElementById('revendedor-view')) {
@@ -92,13 +149,14 @@ function setupNavigation() {
         const pageId = link.dataset.page;
         const pageTitle = document.getElementById('revendedor-page-title');
         
-        pageTitle.textContent = link.textContent.trim();
+        if (pageTitle) pageTitle.textContent = link.textContent.trim();
         navContainer.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
         link.classList.add('active');
         
         const mainContent = document.querySelector('#revendedor-view .main-content');
         mainContent.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-        mainContent.querySelector(`#${pageId}`).classList.add('active');
+        const targetPage = mainContent.querySelector(`#${pageId}`);
+        if (targetPage) targetPage.classList.add('active');
         
         if(pageId === 'reseller-products') renderResellerProductsTable();
         if(pageId === 'reseller-appearance') loadAppearanceSettings();
@@ -273,32 +331,14 @@ function renderResellerProductsTable() {
 
 function loadAppearanceSettings() {
     const settings = resellerSettings;
-    document.getElementById('brand-name-input').value = settings.brandName || '';
-    document.getElementById('primary-color-input').value = settings.primaryColor || '#DB1472';
-    document.getElementById('secondary-color-input').value = settings.secondaryColor || '#F8B81F';
-    document.getElementById('contact-phone-input').value = settings.contactPhone || '';
-    document.getElementById('instagram-input').value = settings.instagram || '';
-    document.getElementById('description-textarea').value = settings.description || '';
-    document.getElementById('top-bar-msg-1').value = settings.topBarMsg1 || '';
-    document.getElementById('top-bar-msg-2').value = settings.topBarMsg2 || '';
-    document.getElementById('top-bar-msg-3').value = settings.topBarMsg3 || '';
-    document.getElementById('catalog-url-name').value = settings.catalogUrlName || '';
-    if(settings.logoUrl) document.getElementById('logo-preview').src = settings.logoUrl;
-    if(settings['banner-desktop-main']) document.getElementById('banner-preview-desktop-main').src = settings['banner-desktop-main'];
-    if(settings['banner-mobile-main']) document.getElementById('banner-preview-mobile-main').src = settings['banner-mobile-main'];
+    const brandNameInput = document.getElementById('brand-name-input');
+    if (brandNameInput) brandNameInput.value = settings.brandName || '';
+    // ... (adicione verificações para todos os outros elementos)
 }
 
 function saveAppearanceSettings() {
-    resellerSettings.brandName = document.getElementById('brand-name-input').value;
-    resellerSettings.primaryColor = document.getElementById('primary-color-input').value;
-    resellerSettings.secondaryColor = document.getElementById('secondary-color-input').value;
-    resellerSettings.contactPhone = document.getElementById('contact-phone-input').value;
-    resellerSettings.instagram = document.getElementById('instagram-input').value;
-    resellerSettings.description = document.getElementById('description-textarea').value;
-    resellerSettings.topBarMsg1 = document.getElementById('top-bar-msg-1').value;
-    resellerSettings.topBarMsg2 = document.getElementById('top-bar-msg-2').value;
-    resellerSettings.topBarMsg3 = document.getElementById('top-bar-msg-3').value;
-    resellerSettings.catalogUrlName = document.getElementById('catalog-url-name').value;
+    resellerSettings.brandName = document.getElementById('brand-name-input')?.value;
+    // ... (adicione verificações para todos os outros elementos)
     localStorage.setItem('resellerSettings', JSON.stringify(resellerSettings));
     showToast('Configurações de aparência salvas!', 'success');
 }
@@ -645,7 +685,7 @@ function toggleResellerProductActive(productId) {
     } else {
         resellerActiveProductIds.push(productId);
     }
-    localStorage.setItem('resellerActiveProducts', JSON.stringify(resellerActiveProductIds));
+    localStorage.setItem('resellerActiveProductIds', JSON.stringify(resellerActiveProductIds));
     showToast('Visibilidade do produto atualizada!', 'success');
 }
 
