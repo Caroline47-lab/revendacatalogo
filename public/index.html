@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Acesso ao Sistema - ERP CJOTA</title>
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
+    <script src="https://unpkg.com/feather-icons"></script>
+
+    <style>
+        :root {
+            --primary-color: #DB1472;
+            --secondary-color: #F8B81F;
+            --text-color: #334155;
+            --text-light: #64748b;
+            --bg-color: #f8fafc;
+            --card-bg: #ffffff;
+            --border-color: #e2e8f0;
+            --font-sans: 'Inter', sans-serif;
+            --shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+            --border-radius: 0.75rem;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            font-family: var(--font-sans);
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            padding: 1rem;
+        }
+        
+        .login-box {
+            text-align: center;
+            background-color: var(--card-bg);
+            padding: 3rem;
+            border-radius: var(--border-radius);
+            box-shadow: var(--shadow);
+            max-width: 450px;
+            width: 100%;
+        }
+        
+        .login-box h1 {
+            font-size: 1.875rem;
+            font-weight: 700;
+            color: var(--primary-color);
+            margin-bottom: 0.5rem;
+        }
+        
+        .login-box p {
+            color: var(--text-light);
+            margin-bottom: 2.5rem;
+            font-size: 1.1rem;
+        }
+        
+        .btn-group {
+            display: flex;
+            flex-direction: column;
+            gap: 1.25rem;
+        }
+        
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            padding: 1rem 1.5rem;
+            border-radius: 0.5rem;
+            border: none;
+            font-weight: 600;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            text-decoration: none;
+        }
+        
+        .btn-primary {
+            background-color: var(--primary-color);
+            color: white;
+        }
+        .btn-primary:hover {
+            opacity: 0.9;
+            transform: translateY(-2px);
+        }
+        
+        .btn-secondary {
+            background-color: var(--text-color);
+            color: white;
+        }
+        .btn-secondary:hover {
+            opacity: 0.9;
+            transform: translateY(-2px);
+        }
+    </style>
+</head>
+<body>
+
+    <div class="login-box">
+        <h1>ERP CJOTA</h1>
+        <p>Selecione o painel para continuar.</p>
+        <div class="btn-group">
+            <a href="painel-admin.html" class="btn btn-primary">
+                <i data-feather="shield"></i>
+                <span>Painel da Empresa</span>
+            </a>
+            <a href="painel-revendedora.html" class="btn btn-secondary">
+                <i data-feather="users"></i>
+                <span>Painel da Revendedora</span>
+            </a>
+        </div>
+    </div>
+
+    <script>
+      feather.replace();
+    </script>
+</body>
+</html>
