@@ -3,7 +3,7 @@
  * * VERSÃO CORRIGIDA E ESTABILIZADA
  * - Corrigido o bug crítico que impedia o funcionamento de todos os botões e o carregamento dos produtos.
  * - A função de inicialização de eventos foi reescrita para garantir que todos os botões sejam funcionais.
- * - Lógica de `onclick` no HTML foi substituída por `addEventListener` no JS para maior robustez.
+ * - Implementada a delegação de eventos para as tabelas dinâmicas, garantindo que os botões de ação sempre funcionem.
  */
 
 // --- VARIÁVEIS GLOBAIS ---
@@ -76,6 +76,9 @@ function setupEventListeners() {
     document.getElementById('add-sizing-chart-row-btn')?.addEventListener('click', addSizingChartRow);
     document.getElementById('add-sizing-chart-col-btn')?.addEventListener('click', addSizingChartColumn);
     document.getElementById('save-product-description-btn')?.addEventListener('click', saveProductDescription);
+
+    // **CORREÇÃO PRINCIPAL: Delegação de Eventos para Tabelas Dinâmicas**
+    setupTableEventListeners();
 }
 
 function setupNavigation() {
@@ -97,12 +100,50 @@ function setupNavigation() {
         mainContent.querySelector(`#${pageId}`).classList.add('active');
         
         // Carrega ou prepara o conteúdo da página ativa
-        if(pageId === 'reseller-products') renderResellerProductsTable(); // Apenas renderiza, não recarrega
+        if(pageId === 'reseller-products') renderResellerProductsTable();
         if(pageId === 'reseller-appearance') loadAppearanceSettings();
         if(pageId === 'reseller-promotions') setupPromotionsPage();
         if(pageId === 'reseller-descriptions') setupDescriptionsPage();
         
         feather.replace();
+    });
+}
+
+function setupTableEventListeners() {
+    const mainContent = document.querySelector('.main-content');
+
+    mainContent.addEventListener('click', (e) => {
+        const target = e.target;
+        const productRowButton = target.closest('.edit-margin-btn, .edit-tags-btn, .edit-desc-btn');
+        const chartRowButton = target.closest('.edit-chart-btn, .delete-chart-btn');
+        
+        if (productRowButton) {
+            const productId = parseInt(productRowButton.dataset.productId, 10);
+            if (productRowButton.classList.contains('edit-margin-btn')) {
+                showResellerProductEditModal(productId);
+            } else if (productRowButton.classList.contains('edit-tags-btn')) {
+                showResellerTagsModal(productId);
+            } else if (productRowButton.classList.contains('edit-desc-btn')) {
+                openProductDescriptionModal(productId);
+            }
+        }
+
+        if (chartRowButton) {
+            const chartId = chartRowButton.dataset.chartId;
+            if (chartRowButton.classList.contains('edit-chart-btn')) {
+                openSizingChartModal(chartId);
+            } else if (chartRowButton.classList.contains('delete-chart-btn')) {
+                deleteSizingChart(chartId);
+            }
+        }
+    });
+
+    mainContent.addEventListener('change', (e) => {
+        const target = e.target;
+        if (target.classList.contains('activate-toggle')) {
+            const productId = parseInt(target.dataset.productId, 10);
+            toggleResellerProductActive(productId);
+        }
     });
 }
 
@@ -125,7 +166,7 @@ function setupMobileMenu() {
 function openModal(modalId) {
     const modal = document.getElementById(modalId);
     if (modal) {
-        if (modalId.includes('sale') || modalId.includes('bmpl')) {
+        if (modalId.includes('flash-sale') || modalId.includes('bmpl')) {
             populateProductSelects();
         }
         modal.classList.add('active');
@@ -168,7 +209,7 @@ async function loadAllPublishedProducts() {
     let currentPage = 1;
     let hasMore = true;
     try {
-        loadLocalDataForReseller(); // Garante que a lista de IDs publicados está atualizada
+        loadLocalDataForReseller();
         while(hasMore) {
             const data = await realApiFetch(currentPage, 100, ''); 
             if (!data.data || data.data.length === 0) {
@@ -227,12 +268,6 @@ function renderResellerProductsTable() {
             </td>
         `;
     });
-
-    // Adiciona eventos após renderizar
-    tbody.querySelectorAll('.activate-toggle').forEach(el => el.addEventListener('change', (e) => toggleResellerProductActive(parseInt(e.target.dataset.productId))));
-    tbody.querySelectorAll('.edit-margin-btn').forEach(el => el.addEventListener('click', (e) => showResellerProductEditModal(parseInt(e.currentTarget.dataset.productId))));
-    tbody.querySelectorAll('.edit-tags-btn').forEach(el => el.addEventListener('click', (e) => showResellerTagsModal(parseInt(e.currentTarget.dataset.productId))));
-
     feather.replace();
 }
 
@@ -241,9 +276,7 @@ function saveAppearanceSettings() { /* ...código existente... */ }
 
 // --- LÓGICA DE PROMOÇÕES ---
 function setupPromotionsPage() {
-    // Carrega os dados salvos nos campos dos modais para fácil edição
     const { freeShipping, firstPurchase, stockLimit, vipCoupon, seasonalSale, timeLimit, progressiveDiscount, flashSale, bmpl } = resellerPromotions;
-
     if (freeShipping) document.getElementById('free-shipping-min-value').value = freeShipping.minValue || '';
     if (firstPurchase) {
         document.getElementById('first-purchase-code').value = firstPurchase.code || 'BEMVINDA10';
@@ -302,8 +335,6 @@ function renderSizingChartManager() {
     });
     tableHTML += `</tbody></table>`;
     container.innerHTML = tableHTML;
-    container.querySelectorAll('.edit-chart-btn').forEach(btn => btn.addEventListener('click', (e) => openSizingChartModal(e.currentTarget.dataset.chartId)));
-    container.querySelectorAll('.delete-chart-btn').forEach(btn => btn.addEventListener('click', (e) => deleteSizingChart(e.currentTarget.dataset.chartId)));
     feather.replace();
 }
 
@@ -326,7 +357,6 @@ function renderProductDescriptionList() {
             </td>
         `;
     });
-    tbody.querySelectorAll('.edit-desc-btn').forEach(btn => btn.addEventListener('click', (e) => openProductDescriptionModal(parseInt(e.currentTarget.dataset.productId))));
     feather.replace();
 }
 
@@ -478,8 +508,48 @@ function saveProductDescription() {
 function applyMassMargin() { /* ... */ }
 function handleImageUpload(event, previewElementId, settingsKey) { /* ... */ }
 function generateAndCopyCatalogLink() { /* ... */ }
-function toggleResellerProductActive(productId) { /* ... */ }
-function showResellerProductEditModal(productId) { /* ... */ }
-function saveResellerMargin(productId) { /* ... */ }
-function showResellerTagsModal(productId) { /* ... */ }
-function saveResellerTags(productId) { /* ... */ }
+function toggleResellerProductActive(productId) {
+    const index = resellerActiveProductIds.indexOf(productId);
+    if (index > -1) resellerActiveProductIds.splice(index, 1);
+    else resellerActiveProductIds.push(productId);
+    localStorage.setItem('resellerActiveProducts', JSON.stringify(resellerActiveProductIds));
+    showToast('Visibilidade do produto atualizada!', 'success');
+}
+function showResellerProductEditModal(productId) {
+    const product = resellerProducts.find(p => p.id === productId);
+    if (!product) return;
+    document.getElementById('modal-reseller-product-name').textContent = `Editar Margem: ${product.nome}`;
+    document.getElementById('reseller-margin-input').value = resellerProductMargins[productId] || 30;
+    document.getElementById('save-reseller-margin-btn').onclick = () => saveResellerMargin(productId);
+    openModal('reseller-product-edit-modal');
+}
+function saveResellerMargin(productId) {
+    const newMargin = parseFloat(document.getElementById('reseller-margin-input').value);
+    if (isNaN(newMargin) || newMargin < 0) { showToast('Margem inválida.', 'error'); return; }
+    resellerProductMargins[productId] = newMargin;
+    localStorage.setItem('resellerMargins', JSON.stringify(resellerProductMargins));
+    renderResellerProductsTable();
+    closeModal('reseller-product-edit-modal');
+    showToast('Margem atualizada!', 'success');
+}
+function showResellerTagsModal(productId) {
+    const product = resellerProducts.find(p => p.id === productId);
+    if (!product) return;
+    document.getElementById('modal-tags-product-name').textContent = `Editar Tags: ${product.nome}`;
+    const container = document.getElementById('tags-selection-container');
+    container.innerHTML = '';
+    const currentTags = resellerProductTags[productId] || [];
+    availableTags.forEach(tag => {
+        const isChecked = currentTags.includes(tag);
+        container.innerHTML += `<label><input type="checkbox" class="tag-checkbox" value="${tag}" ${isChecked ? 'checked' : ''}> ${tag}</label>`;
+    });
+    document.getElementById('save-reseller-tags-btn').onclick = () => saveResellerTags(productId);
+    openModal('reseller-tags-modal');
+}
+function saveResellerTags(productId) {
+    const selectedTags = Array.from(document.querySelectorAll('#tags-selection-container .tag-checkbox:checked')).map(cb => cb.value);
+    resellerProductTags[productId] = selectedTags;
+    localStorage.setItem('resellerProductTags', JSON.stringify(resellerProductTags));
+    closeModal('reseller-tags-modal');
+    showToast('Tags atualizadas!', 'success');
+}
