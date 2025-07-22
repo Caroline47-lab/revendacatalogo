@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Catálogo da Revendedora</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Google Fonts (Inter) -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Feather Icons -->
+    <script src="https://unpkg.com/feather-icons" defer></script>
+
+    <!-- Link para o CSS do Tema (será preenchido dinamicamente) -->
+    <link rel="stylesheet" id="theme-style" href="">
+
+    <style>
+        :root {
+            --primary-color: #DB1472;
+            --secondary-color: #F8B81F;
+            --text-color: #334155;
+            --text-light: #64748b;
+            --bg-color: #f8fafc;
+            --card-bg: #ffffff;
+            --border-color: #e2e8f0;
+            --shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+        }
+        /* Estilo base para o corpo, usando a fonte Inter */
+        body { 
+            font-family: 'Inter', sans-serif; 
+            background-color: var(--bg-color); 
+            color: var(--text-color); 
+        }
+        /* Animação do Spinner de Carregamento */
+        .spinner { 
+            border: 4px solid rgba(0, 0, 0, 0.1); 
+            width: 36px; 
+            height: 36px; 
+            border-radius: 50%; 
+            border-left-color: var(--primary-color); 
+            animation: spin 1s ease infinite; 
+            margin: auto; 
+        }
+        @keyframes spin { 
+            0% { transform: rotate(0deg); } 
+            100% { transform: rotate(360deg); } 
+        }
+        /* Estilos do Toast Notification */
+        #toast {
+            position: fixed;
+            bottom: -100px; /* Começa escondido */
+            left: 50%;
+            transform: translateX(-50%);
+            padding: 1rem 2rem;
+            border-radius: 0.5rem;
+            background-color: #333;
+            color: white;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            transition: bottom 0.5s ease-in-out;
+            z-index: 1000;
+        }
+        #toast.show {
+            bottom: 20px; /* Mostra o toast */
+        }
+    </style>
+</head>
+<body>
+
+    <!-- 
+      Container principal onde o tema irá construir seu layout.
+      Começa com um spinner de carregamento.
+    -->
+    <div id="theme-root">
+        <div style="display: flex; justify-content: center; align-items: center; height: 100vh;">
+            <div class="spinner"></div>
+        </div>
+    </div>
+    
+    <!-- MODAIS E OUTROS ELEMENTOS GLOBAIS -->
+    <div id="cart-modal" class="modal-overlay"></div>
+    <div id="toast"></div>
+
+    <!-- 
+      *** LÓGICA DE CARREGAMENTO DE SCRIPTS CORRIGIDA ***
+      Esta é a parte mais importante da correção.
+    -->
+
+    <!-- 1. Carrega o script de serviços PRIMEIRO, usando um caminho relativo. -->
+    <script src="../js/servicos.js"></script>
+    
+    <!-- 2. Script de orquestração para carregar tema e catálogo na ordem correta. -->
+    <script>
+        (function() {
+            // Identifica qual tema deve ser carregado (via URL ou localStorage)
+            const urlParams = new URLSearchParams(window.location.search);
+            const themeId = urlParams.get('theme') || localStorage.getItem('resellerActiveTheme') || 'elegance'; // 'elegance' como padrão
+            
+            // CORREÇÃO: Define o arquivo CSS do tema no <head> usando um caminho relativo a partir deste arquivo HTML.
+            document.getElementById('theme-style').setAttribute('href', `../temas/${themeId}/theme.css`);
+            
+            // Cria o script do TEMA (o "arquiteto")
+            const themeScript = document.createElement('script');
+            // CORREÇÃO: Usa um caminho relativo para o script do tema.
+            themeScript.src = `../temas/${themeId}/theme.js`;
+            themeScript.defer = true;
+            
+            // Define o que fazer QUANDO o script do tema terminar de carregar
+            themeScript.onload = function() {
+                console.log(`Tema '${themeId}' carregado e layout construído.`);
+                
+                // Agora que o arquiteto terminou, podemos chamar o "lojista" (catalogo.js)
+                const catalogScript = document.createElement('script');
+                // CORREÇÃO: Usa um caminho relativo para o script do catálogo.
+                catalogScript.src = `../js/catalogo.js`;
+                catalogScript.defer = true;
+                document.body.appendChild(catalogScript);
+                
+                console.log("Carregando 'catalogo.js' para preencher a loja.");
+            };
+
+            // Função para lidar com erros de carregamento de script
+            themeScript.onerror = function() {
+                console.error(`Falha ao carregar o script do tema: ../temas/${themeId}/theme.js. Verifique se o arquivo e a pasta do tema existem.`);
+                document.getElementById('theme-root').innerHTML = '<p style="text-align: center; padding-top: 2rem;">Ocorreu um erro ao carregar o tema da loja.</p>';
+            }
+            
+            // Adiciona o script do tema à página para iniciar o processo
+            document.body.appendChild(themeScript);
+        })();
+    </script>
+</body>
+</html>
