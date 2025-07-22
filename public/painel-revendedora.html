@@ -128,6 +128,17 @@
         .promo-card-footer { margin-top: auto; }
         .placeholder-card { text-align: center; padding: 2rem; border: 2px dashed var(--border-color); border-radius: var(--border-radius); color: var(--text-light); }
 
+        .theme-gallery { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 1.5rem; }
+        .theme-card { border: 3px solid var(--border-color); border-radius: var(--border-radius); overflow: hidden; cursor: pointer; transition: all 0.2s ease-in-out; }
+        .theme-card:hover { transform: translateY(-5px); box-shadow: var(--shadow); }
+        .theme-card.active { border-color: var(--primary-color); box-shadow: 0 0 0 3px var(--primary-color); }
+        .theme-preview { width: 100%; height: 150px; background-color: #e2e8f0; object-fit: cover; }
+        .theme-info { padding: 1rem; background-color: var(--card-bg); }
+        .theme-info h3 { font-weight: 600; margin-bottom: 0.25rem; }
+        .theme-info p { font-size: 0.9rem; color: var(--text-light); }
+        .theme-status { display: none; justify-content: center; align-items: center; gap: 0.5rem; padding: 0.5rem; background-color: var(--primary-color); color: white; font-weight: 600; font-size: 0.9rem; }
+        .theme-card.active .theme-status { display: flex; }
+
         @media (max-width: 768px) {
             .sidebar { position: fixed; top: 0; left: 0; height: 100%; transform: translateX(-100%); }
             .sidebar.open { transform: translateX(0); box-shadow: 5px 0 15px rgba(0,0,0,0.1); }
@@ -157,10 +168,8 @@
                     <li class="nav-item"><a class="nav-link" data-page="reseller-descriptions"><i data-feather="file-text"></i> Descrições</a></li>
                     <li class="nav-item"><a class="nav-link" data-page="reseller-sales"><i data-feather="dollar-sign"></i> Vendas</a></li>
                     <li class="nav-item"><a class="nav-link" data-page="reseller-appearance"><i data-feather="layout"></i> Aparência e Temas</a></li>
-                    <!-- NOVOS MENUS -->
                     <li class="nav-item"><a class="nav-link" data-page="reseller-payments"><i data-feather="credit-card"></i> Pagamentos</a></li>
                     <li class="nav-item"><a class="nav-link" data-page="reseller-shipping"><i data-feather="truck"></i> Envios</a></li>
-                    <!-- FIM NOVOS MENUS -->
                     <li class="nav-item" style="border-top: 1px solid var(--border-color); margin-top: 1rem; padding-top: 1rem;"><a href="catalogo/index.html" target="_blank" id="view-catalog-btn" class="nav-link" style="color: var(--primary-color);"><i data-feather="eye"></i> Ver Catálogo</a></li>
                 </ul>
                 <div class="sidebar-footer">
@@ -299,7 +308,6 @@
                     </div>
                 </section>
 
-                <!-- NOVAS PÁGINAS -->
                 <section id="reseller-payments" class="page">
                     <div class="settings-section">
                         <h2><i data-feather="credit-card"></i> Meios de Pagamento</h2>
@@ -312,14 +320,44 @@
                         <p class="placeholder-card">Em breve, o módulo para configurar seus meios de envio será implantado aqui.</p>
                     </div>
                 </section>
-                <!-- FIM DAS NOVAS PÁGINAS -->
 
                 <section id="reseller-appearance" class="page">
                     <div class="settings-section">
                         <h2><i data-feather="grid"></i> Galeria de Temas</h2>
                         <p style="color: var(--text-light); margin-top: -1rem; margin-bottom: 1.5rem;">Escolha um tema base para sua loja. Você poderá personalizar cores e imagens depois.</p>
-                        <div class="placeholder-card">
-                            <p>Em breve, a galeria de temas para o seu catálogo estará disponível aqui.</p>
+                        <div class="theme-gallery">
+                            <div class="theme-card active" data-theme-id="basic">
+                                <img src="https://placehold.co/400x250/e2e8f0/334155?text=Basic" alt="Tema Basic" class="theme-preview">
+                                <div class="theme-info">
+                                    <h3>Basic</h3>
+                                    <p>Simples, direto e funcional.</p>
+                                </div>
+                                <div class="theme-status"><i data-feather="check-circle"></i><span>Ativo</span></div>
+                            </div>
+                            <div class="theme-card" data-theme-id="elegance">
+                                <img src="https://placehold.co/400x250/f1f5f9/64748b?text=Elegance" alt="Tema Elegance" class="theme-preview">
+                                <div class="theme-info">
+                                    <h3>Elegance</h3>
+                                    <p>Layout sofisticado e fontes limpas.</p>
+                                </div>
+                                <div class="theme-status"><i data-feather="check-circle"></i><span>Ativo</span></div>
+                            </div>
+                            <div class="theme-card" data-theme-id="vibrante">
+                                <img src="https://placehold.co/400x250/db1472/ffffff?text=Vibrante" alt="Tema Vibrante" class="theme-preview">
+                                <div class="theme-info">
+                                    <h3>Vibrante</h3>
+                                    <p>Cores fortes e design moderno.</p>
+                                </div>
+                                <div class="theme-status"><i data-feather="check-circle"></i><span>Ativo</span></div>
+                            </div>
+                            <div class="theme-card" data-theme-id="minimalista">
+                                <img src="https://placehold.co/400x250/ffffff/111827?text=Minimalista" alt="Tema Minimalista" class="theme-preview">
+                                <div class="theme-info">
+                                    <h3>Minimalista</h3>
+                                    <p>Foco total nos seus produtos.</p>
+                                </div>
+                                <div class="theme-status"><i data-feather="check-circle"></i><span>Ativo</span></div>
+                            </div>
                         </div>
                     </div>
                     <div class="settings-section">
@@ -330,38 +368,40 @@
                             <div class="form-group"><label for="instagram-input">Seu Instagram</label><input type="text" id="instagram-input" placeholder="@seulogin"></div>
                         </div>
                     </div>
-                    <div class="settings-section">
-                        <h2><i data-feather="message-square"></i> Mensagens do Catálogo</h2>
-                        <div class="form-grid">
-                            <div class="form-group"><label for="top-bar-msg1-input">Mensagem 1 (Barra do Topo)</label><input type="text" id="top-bar-msg1-input" placeholder="Ex: FRETE GRÁTIS ACIMA DE R$299"></div>
-                            <div class="form-group"><label for="top-bar-msg2-input">Mensagem 2</label><input type="text" id="top-bar-msg2-input" placeholder="Ex: USE O CUPOM BEMVINDA10"></div>
-                            <div class="form-group"><label for="top-bar-msg3-input">Mensagem 3</label><input type="text" id="top-bar-msg3-input" placeholder="Ex: PARCELE EM ATÉ 6X SEM JUROS"></div>
-                        </div>
-                    </div>
-                     <div class="settings-section">
-                        <h2><i data-feather="image"></i> Imagens e Cores</h2>
-                        <div class="form-grid" style="grid-template-columns: 1fr 1fr;">
-                            <div class="form-group">
-                                <label>Logo da Loja</label>
-                                <input type="file" id="logo-upload" accept="image/*" class="search-input">
-                                <img id="logo-preview" src="https://placehold.co/100x100/e2e8f0/cccccc?text=Logo" alt="Prévia do logo" class="logo-preview">
+                    <div id="theme-customization-area">
+                        <div class="settings-section">
+                            <h2><i data-feather="message-square"></i> Mensagens do Catálogo</h2>
+                            <div class="form-grid">
+                                <div class="form-group"><label for="top-bar-msg1-input">Mensagem 1 (Barra do Topo)</label><input type="text" id="top-bar-msg1-input" placeholder="Ex: FRETE GRÁTIS ACIMA DE R$299"></div>
+                                <div class="form-group"><label for="top-bar-msg2-input">Mensagem 2</label><input type="text" id="top-bar-msg2-input" placeholder="Ex: USE O CUPOM BEMVINDA10"></div>
+                                <div class="form-group"><label for="top-bar-msg3-input">Mensagem 3</label><input type="text" id="top-bar-msg3-input" placeholder="Ex: PARCELE EM ATÉ 6X SEM JUROS"></div>
                             </div>
-                            <div class="form-group">
-                                <label>Cores</label>
-                                <div style="display: flex; gap: 1rem;">
-                                    <div class="form-group"><label for="primary-color-input">Principal</label><input type="color" id="primary-color-input" value="#DB1472"></div>
-                                    <div class="form-group"><label for="secondary-color-input">Secundária</label><input type="color" id="secondary-color-input" value="#F8B81F"></div>
+                        </div>
+                         <div class="settings-section">
+                            <h2><i data-feather="image"></i> Imagens e Cores</h2>
+                            <div class="form-grid" style="grid-template-columns: 1fr 1fr;">
+                                <div class="form-group">
+                                    <label>Logo da Loja</label>
+                                    <input type="file" id="logo-upload" accept="image/*" class="search-input">
+                                    <img id="logo-preview" src="https://placehold.co/100x100/e2e8f0/cccccc?text=Logo" alt="Prévia do logo" class="logo-preview">
+                                </div>
+                                <div class="form-group">
+                                    <label>Cores</label>
+                                    <div style="display: flex; gap: 1rem;">
+                                        <div class="form-group"><label for="primary-color-input">Principal</label><input type="color" id="primary-color-input" value="#DB1472"></div>
+                                        <div class="form-group"><label for="secondary-color-input">Secundária</label><input type="color" id="secondary-color-input" value="#F8B81F"></div>
+                                    </div>
                                 </div>
                             </div>
-                        </div>
-                        <div class="form-grid" style="margin-top: 1.5rem;">
-                            <div class="form-group">
-                                <label>Banner Principal (Desktop)</label>
-                                <div class="banner-preview" id="banner-preview-desktop-main"><input type="file" id="banner-desktop-main-upload" data-banner-id="desktop-main" accept="image/*" class="search-input banner-upload"></div>
-                            </div>
-                            <div class="form-group">
-                                <label>Banner Principal (Mobile)</label>
-                                <div class="banner-preview" id="banner-preview-mobile-main"><input type="file" id="banner-mobile-main-upload" data-banner-id="mobile-main" accept="image/*" class="search-input banner-upload"></div>
+                            <div class="form-grid" style="margin-top: 1.5rem;">
+                                <div class="form-group">
+                                    <label>Banner Principal (Desktop)</label>
+                                    <div class="banner-preview" id="banner-preview-desktop-main"><input type="file" id="banner-desktop-main-upload" data-banner-id="desktop-main" accept="image/*" class="search-input banner-upload"></div>
+                                </div>
+                                <div class="form-group">
+                                    <label>Banner Principal (Mobile)</label>
+                                    <div class="banner-preview" id="banner-preview-mobile-main"><input type="file" id="banner-mobile-main-upload" data-banner-id="mobile-main" accept="image/*" class="search-input banner-upload"></div>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -373,7 +413,7 @@
                         <div class="modal-footer" style="margin-top:0"><button id="generate-link-btn" class="btn btn-secondary">Copiar Link do Catálogo</button></div>
                     </div>
                     <div class="settings-section" style="display: flex; justify-content: flex-end;">
-                        <button id="save-settings-btn" class="btn btn-success"><i data-feather="save"></i> Salvar Todas as Configurações de Aparência</button>
+                        <button id="save-settings-btn" class="btn btn-success"><i data-feather="save"></i> Salvar Todas as Configurações</button>
                     </div>
                 </section>
             </main>
