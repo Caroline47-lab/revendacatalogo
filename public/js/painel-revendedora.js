@@ -170,7 +170,8 @@ function openModal(modalId) {
             populateProductSelects();
         }
         modal.classList.add('active');
-        feather.replace();
+        // Força a atualização dos ícones no modal
+        setTimeout(() => feather.replace(), 10);
     }
 }
 
@@ -396,7 +397,13 @@ function renderSizingChartEditor(headers, rows) {
     });
     table += `</tbody></table>`;
     editor.innerHTML = table;
-    editor.querySelectorAll('.remove-row-btn').forEach(btn => btn.addEventListener('click', (e) => removeSizingChartRow(e.currentTarget)));
+    // Delegação de evento para os botões de remover linha
+    editor.addEventListener('click', (e) => {
+        const removeButton = e.target.closest('.remove-row-btn');
+        if (removeButton) {
+            removeSizingChartRow(removeButton);
+        }
+    });
     feather.replace();
 }
 
@@ -411,7 +418,6 @@ function addSizingChartRow() {
     const actionCell = newRow.insertCell();
     actionCell.className = 'actions-cell';
     actionCell.innerHTML = `<button class="btn btn-danger btn-sm remove-row-btn"><i data-feather="trash-2"></i></button>`;
-    actionCell.querySelector('.remove-row-btn').addEventListener('click', (e) => removeSizingChartRow(e.currentTarget));
     feather.replace();
 }
 
@@ -512,7 +518,7 @@ function toggleResellerProductActive(productId) {
     const index = resellerActiveProductIds.indexOf(productId);
     if (index > -1) resellerActiveProductIds.splice(index, 1);
     else resellerActiveProductIds.push(productId);
-    localStorage.setItem('resellerActiveProducts', JSON.stringify(resellerActiveProductIds));
+    localStorage.setItem('resellerActiveProductIds', JSON.stringify(resellerActiveProductIds));
     showToast('Visibilidade do produto atualizada!', 'success');
 }
 function showResellerProductEditModal(productId) {
