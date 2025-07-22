@@ -106,21 +106,14 @@
         .form-group label { font-weight: 600; margin-bottom: 0.5rem; font-size: 0.9rem; }
         .form-group input[type="color"] { padding: 0.25rem; height: 48px; }
         .form-group textarea { min-height: 120px; resize: vertical; }
-        .logo-preview { width: 100px; height: 100px; border-radius: 50%; object-fit: cover; border: 2px solid var(--border-color); margin-top: 1rem; }
-        .banner-preview { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1rem; background-color: #f1f5f9; border: 2px dashed var(--border-color); padding: 1rem; border-radius: var(--border-radius); min-height: 150px; }
-        .banner-preview img { max-width: 100%; max-height: 120px; object-fit: cover; border-radius: 0.5rem; }
         
         .loading-indicator { text-align: center; padding: 2rem; display: none; }
         .loading-indicator.visible { display: block; }
         .spinner { border: 4px solid rgba(0, 0, 0, 0.1); width: 36px; height: 36px; border-radius: 50%; border-left-color: var(--primary-color); animation: spin 1s ease infinite; margin: auto; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
         
-        .tag-selection-grid { display: flex; flex-wrap: wrap; gap: 1rem; }
-        .tag-selection-grid label { display: flex; align-items: center; gap: 0.5rem; cursor: pointer; }
-        
         .promo-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 1.5rem; }
         .promo-card { background-color: var(--card-bg); border-radius: var(--border-radius); box-shadow: var(--shadow); padding: 1.5rem; display: flex; flex-direction: column; transition: transform 0.2s, box-shadow 0.2s; }
-        .promo-card:hover { transform: translateY(-5px); box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1); }
         .promo-card-header { display: flex; align-items: center; gap: 1rem; margin-bottom: 1rem; }
         .promo-card-icon { color: var(--primary-color); }
         .promo-card-title { font-size: 1.1rem; font-weight: 700; flex-grow: 1; }
@@ -186,6 +179,7 @@
                     </div>
                     <h1 id="revendedor-page-title">Meus Produtos</h1>
                 </div>
+                
                 <section id="reseller-products" class="page active">
                     <div class="page-controls" style="background: var(--card-bg); padding: 1rem; border-radius: var(--border-radius); box-shadow: var(--shadow); display: flex; gap: 1rem; align-items: center; flex-wrap: wrap;">
                         <div class="form-group" style="flex-grow: 1; margin-bottom: 0;">
@@ -324,94 +318,55 @@
                 <section id="reseller-appearance" class="page">
                     <div class="settings-section">
                         <h2><i data-feather="grid"></i> Galeria de Temas</h2>
-                        <p style="color: var(--text-light); margin-top: -1rem; margin-bottom: 1.5rem;">Escolha um tema base para sua loja. Você poderá personalizar cores e imagens depois.</p>
+                        <p style="color: var(--text-light); margin-top: -1rem; margin-bottom: 1.5rem;">Escolha um tema base para sua loja. Você poderá personalizar todos os detalhes a seguir.</p>
                         <div class="theme-gallery">
-                            <div class="theme-card active" data-theme-id="basic">
+                            <div class="theme-card" data-theme-id="basic">
                                 <img src="https://placehold.co/400x250/e2e8f0/334155?text=Basic" alt="Tema Basic" class="theme-preview">
-                                <div class="theme-info">
-                                    <h3>Basic</h3>
-                                    <p>Simples, direto e funcional.</p>
-                                </div>
+                                <div class="theme-info"><h3>Basic</h3><p>Simples, direto e funcional.</p></div>
                                 <div class="theme-status"><i data-feather="check-circle"></i><span>Ativo</span></div>
                             </div>
                             <div class="theme-card" data-theme-id="elegance">
                                 <img src="https://placehold.co/400x250/f1f5f9/64748b?text=Elegance" alt="Tema Elegance" class="theme-preview">
-                                <div class="theme-info">
-                                    <h3>Elegance</h3>
-                                    <p>Layout sofisticado e fontes limpas.</p>
-                                </div>
+                                <div class="theme-info"><h3>Elegance</h3><p>Layout sofisticado e fontes limpas.</p></div>
                                 <div class="theme-status"><i data-feather="check-circle"></i><span>Ativo</span></div>
                             </div>
                             <div class="theme-card" data-theme-id="vibrante">
                                 <img src="https://placehold.co/400x250/db1472/ffffff?text=Vibrante" alt="Tema Vibrante" class="theme-preview">
-                                <div class="theme-info">
-                                    <h3>Vibrante</h3>
-                                    <p>Cores fortes e design moderno.</p>
-                                </div>
+                                <div class="theme-info"><h3>Vibrante</h3><p>Cores fortes e design moderno.</p></div>
                                 <div class="theme-status"><i data-feather="check-circle"></i><span>Ativo</span></div>
                             </div>
                             <div class="theme-card" data-theme-id="minimalista">
                                 <img src="https://placehold.co/400x250/ffffff/111827?text=Minimalista" alt="Tema Minimalista" class="theme-preview">
-                                <div class="theme-info">
-                                    <h3>Minimalista</h3>
-                                    <p>Foco total nos seus produtos.</p>
-                                </div>
+                                <div class="theme-info"><h3>Minimalista</h3><p>Foco total nos seus produtos.</p></div>
                                 <div class="theme-status"><i data-feather="check-circle"></i><span>Ativo</span></div>
                             </div>
                         </div>
                     </div>
+                    
+                    <!-- ÁREA DE PERSONALIZAÇÃO DINÂMICA -->
+                    <div id="theme-customization-content-area" style="margin-top: 2rem;">
+                        <!-- O conteúdo de theme-settings.html será carregado aqui pelo JS -->
+                    </div>
+
                     <div class="settings-section">
                         <h2><i data-feather="user"></i> Identidade da Loja</h2>
+                        <p style="color: var(--text-light); margin-top: -1rem; margin-bottom: 1.5rem;">Informações que aparecerão no rodapé e links de contato.</p>
                         <div class="form-grid">
                             <div class="form-group"><label for="brand-name-input">Nome da sua Loja</label><input type="text" id="brand-name-input" placeholder="Ex: Sapatos da Ana"></div>
                             <div class="form-group"><label for="contact-phone-input">Seu WhatsApp para Contato</label><input type="text" id="contact-phone-input" placeholder="(XX) 99999-9999"></div>
                             <div class="form-group"><label for="instagram-input">Seu Instagram</label><input type="text" id="instagram-input" placeholder="@seulogin"></div>
                         </div>
                     </div>
-                    <div id="theme-customization-area">
-                        <div class="settings-section">
-                            <h2><i data-feather="message-square"></i> Mensagens do Catálogo</h2>
-                            <div class="form-grid">
-                                <div class="form-group"><label for="top-bar-msg1-input">Mensagem 1 (Barra do Topo)</label><input type="text" id="top-bar-msg1-input" placeholder="Ex: FRETE GRÁTIS ACIMA DE R$299"></div>
-                                <div class="form-group"><label for="top-bar-msg2-input">Mensagem 2</label><input type="text" id="top-bar-msg2-input" placeholder="Ex: USE O CUPOM BEMVINDA10"></div>
-                                <div class="form-group"><label for="top-bar-msg3-input">Mensagem 3</label><input type="text" id="top-bar-msg3-input" placeholder="Ex: PARCELE EM ATÉ 6X SEM JUROS"></div>
-                            </div>
-                        </div>
-                         <div class="settings-section">
-                            <h2><i data-feather="image"></i> Imagens e Cores</h2>
-                            <div class="form-grid" style="grid-template-columns: 1fr 1fr;">
-                                <div class="form-group">
-                                    <label>Logo da Loja</label>
-                                    <input type="file" id="logo-upload" accept="image/*" class="search-input">
-                                    <img id="logo-preview" src="https://placehold.co/100x100/e2e8f0/cccccc?text=Logo" alt="Prévia do logo" class="logo-preview">
-                                </div>
-                                <div class="form-group">
-                                    <label>Cores</label>
-                                    <div style="display: flex; gap: 1rem;">
-                                        <div class="form-group"><label for="primary-color-input">Principal</label><input type="color" id="primary-color-input" value="#DB1472"></div>
-                                        <div class="form-group"><label for="secondary-color-input">Secundária</label><input type="color" id="secondary-color-input" value="#F8B81F"></div>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="form-grid" style="margin-top: 1.5rem;">
-                                <div class="form-group">
-                                    <label>Banner Principal (Desktop)</label>
-                                    <div class="banner-preview" id="banner-preview-desktop-main"><input type="file" id="banner-desktop-main-upload" data-banner-id="desktop-main" accept="image/*" class="search-input banner-upload"></div>
-                                </div>
-                                <div class="form-group">
-                                    <label>Banner Principal (Mobile)</label>
-                                    <div class="banner-preview" id="banner-preview-mobile-main"><input type="file" id="banner-mobile-main-upload" data-banner-id="mobile-main" accept="image/*" class="search-input banner-upload"></div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
+                    
                     <div class="settings-section">
                         <h2><i data-feather="link"></i> URL da Loja</h2>
+                         <p style="color: var(--text-light); margin-top: -1rem; margin-bottom: 1.5rem;">Crie um link único para seu catálogo.</p>
                         <div class="form-grid">
                             <div class="form-group"><label for="catalog-url-name">Nome para a URL</label><input type="text" id="catalog-url-name" placeholder="Ex: sapatos-da-ana"></div>
                         </div>
-                        <div class="modal-footer" style="margin-top:0"><button id="generate-link-btn" class="btn btn-secondary">Copiar Link do Catálogo</button></div>
+                        <div class="modal-footer" style="margin-top:0; justify-content: flex-start; padding-top: 1rem;"><button id="generate-link-btn" class="btn btn-secondary">Copiar Link do Catálogo</button></div>
                     </div>
+
                     <div class="settings-section" style="display: flex; justify-content: flex-end;">
                         <button id="save-settings-btn" class="btn btn-success"><i data-feather="save"></i> Salvar Todas as Configurações</button>
                     </div>
