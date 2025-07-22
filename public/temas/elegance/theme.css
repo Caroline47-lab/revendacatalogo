@@ -1,1 +1,9 @@
+/* Importa a fonte Poppins para o tema Elegance */
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap');
 
+/* Aplica a fonte Poppins a todo o catálogo */
+body, #catalog-wrapper {
+    font-family: 'Poppins', sans-serif;
+}
+
+/* Outros estilos específicos do tema podem ser adicionados aqui */
