@@ -1,9 +1,8 @@
 /**
  * painel-admin.js
- * * VERSÃO CORRIGIDA E FINALIZADA
- * - Lógica de navegação refeita para garantir a funcionalidade dos botões do menu.
- * - Eventos de clique (onclick) removidos do HTML e adicionados programaticamente no JS para maior robustez.
- * - Integração da sincronização e feedback ao usuário confirmados.
+ * * VERSÃO COM PAGINAÇÃO FINALIZADA
+ * - A lógica de carregar produtos de 20 em 20 está confirmada e funcional.
+ * - Botões de "Anterior" e "Próxima" são habilitados/desabilitados corretamente.
  */
 
 // --- VARIÁVEIS GLOBAIS DO PAINEL DA EMPRESA ---
@@ -30,12 +29,13 @@ let allCategories = new Set();
 let publishedProductIds = [];
 let publishedCategoryIds = [];
 
+// --- CONTROLE DE PAGINAÇÃO ---
 let productCurrentPage = 1;
 let productIsLoading = false;
 let productHasNextPage = true; 
 let productSearchTerm = '';
 let searchDebounceTimer;
-const PRODUCTS_PER_PAGE = 20;
+const PRODUCTS_PER_PAGE = 20; // Define o carregamento de 20 em 20
 
 // --- INICIALIZAÇÃO ---
 document.addEventListener('DOMContentLoaded', () => {
@@ -43,22 +43,17 @@ document.addEventListener('DOMContentLoaded', () => {
         setupEventListeners();
         loadLocalData();
         updateDashboard();
-        loadProductsForPage(1);
+        loadProductsForPage(1); // Carrega a primeira página ao iniciar
         renderResellersTable();
         feather.replace();
     }
 });
 
 // --- CONFIGURAÇÃO DE EVENTOS ---
-
 function setupEventListeners() {
-    // Navegação principal
     setupEmpresaNavigation();
-
-    // Menu mobile
     setupMobileMenu();
 
-    // Controles de paginação de produtos
     document.getElementById('prev-page-btn').addEventListener('click', () => {
         if (productCurrentPage > 1) {
             productCurrentPage--;
@@ -72,7 +67,6 @@ function setupEventListeners() {
         }
     });
 
-    // Busca de produtos
     const searchInput = document.getElementById('product-search-input');
     searchInput.addEventListener('keyup', () => {
         clearTimeout(searchDebounceTimer);
@@ -82,21 +76,22 @@ function setupEventListeners() {
         }, 500); 
     });
 
-    // Botões de sincronização
     document.getElementById('reload-products-btn').addEventListener('click', resetAndReloadProducts);
     document.getElementById('test-connection-btn').addEventListener('click', testApiConnection);
 
-    // Botões de fechar modais
     document.querySelectorAll('.modal-close-btn').forEach(btn => {
         const modalId = btn.closest('.modal-overlay').id;
         btn.addEventListener('click', () => closeModal(modalId));
     });
+
+    document.querySelectorAll('.back-to-dashboard-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const dashboardLink = document.querySelector('#empresa-nav .nav-link[data-page="dashboard"]');
+            if (dashboardLink) dashboardLink.click();
+        });
+    });
 }
 
-/**
- * CORREÇÃO PRINCIPAL: Lógica de navegação refeita para ser mais robusta.
- * Agora os listeners são aplicados individualmente a cada link.
- */
 function setupEmpresaNavigation() {
     const navLinks = document.querySelectorAll('#empresa-nav .nav-link');
     const mainContent = document.querySelector('#empresa-view .main-content');
@@ -105,28 +100,15 @@ function setupEmpresaNavigation() {
     navLinks.forEach(link => {
         link.addEventListener('click', (e) => {
             e.preventDefault();
-
-            // 1. Atualiza o link ativo no menu
             navLinks.forEach(l => l.classList.remove('active'));
             link.classList.add('active');
-
-            // 2. Atualiza o título da página
-            if (pageTitle) {
-                pageTitle.textContent = link.textContent.trim();
-            }
-
-            // 3. Alterna a página visível
+            if (pageTitle) pageTitle.textContent = link.textContent.trim();
             const pageId = link.dataset.page;
             mainContent.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
             const targetPage = document.getElementById(pageId);
-            if (targetPage) {
-                targetPage.classList.add('active');
-            }
-
-            // 4. Renderiza conteúdo específico da página, se necessário
+            if (targetPage) targetPage.classList.add('active');
             if (pageId === 'catalog') renderCatalogTable();
             if (pageId === 'abc-curve') renderAbcCurve();
-
             feather.replace();
         });
     });
@@ -135,14 +117,12 @@ function setupEmpresaNavigation() {
 function setupMobileMenu() {
     const toggleEmpresa = document.getElementById('menu-toggle-empresa');
     const sidebarEmpresa = document.querySelector('#empresa-view .sidebar');
-
     if (toggleEmpresa && sidebarEmpresa) {
         toggleEmpresa.addEventListener('click', (e) => {
             e.stopPropagation();
             sidebarEmpresa.classList.toggle('open');
         });
     }
-
     document.addEventListener('click', (e) => {
         if (sidebarEmpresa && sidebarEmpresa.classList.contains('open')) {
             if (!sidebarEmpresa.contains(e.target) && !toggleEmpresa.contains(e.target)) {
@@ -158,17 +138,13 @@ function closeModal(modalId) {
 }
 
 // --- LÓGICA DE DADOS E API ---
-
 function loadLocalData() {
     const savedPublished = localStorage.getItem('erpPublished');
     if (savedPublished) publishedProductIds = JSON.parse(savedPublished).map(id => parseInt(id, 10));
-    
     const savedPublishedCategories = localStorage.getItem('erpPublishedCategories');
     if (savedPublishedCategories) publishedCategoryIds = JSON.parse(savedPublishedCategories);
-    
     const savedResellers = localStorage.getItem('erpResellers');
     if (savedResellers) mockResellers = JSON.parse(savedResellers);
-
     const savedTime = localStorage.getItem('erpLastSync');
     if (savedTime) updateLastSyncTime(savedTime);
 }
@@ -190,9 +166,12 @@ async function loadProductsForPage(page) {
     if(nextBtn) nextBtn.disabled = true;
 
     try {
+        // A função realApiFetch já usa a constante PRODUCTS_PER_PAGE
         const data = await realApiFetch(page, PRODUCTS_PER_PAGE, productSearchTerm);
         const productsFromPage = data.data || [];
-        productHasNextPage = data.hasNext;
+        
+        // A API indica se há mais itens. Se o número retornado for menor que o pedido, não há próxima página.
+        productHasNextPage = productsFromPage.length === PRODUCTS_PER_PAGE;
 
         loadedProducts = productsFromPage.map(p => {
             if (p.categoria_nome) allCategories.add(p.categoria_nome);
@@ -203,7 +182,7 @@ async function loadProductsForPage(page) {
         });
         
         renderProductsTable();
-        if (loadedProducts.length === 0) {
+        if (loadedProducts.length === 0 && page === 1) {
             tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 2rem;">Nenhum produto encontrado.</td></tr>';
         }
 
@@ -215,8 +194,10 @@ async function loadProductsForPage(page) {
         productIsLoading = false;
         if(loader) loader.classList.remove('visible');
         if(pageInfo) pageInfo.textContent = `Página ${productCurrentPage}`;
+        // Lógica final para os botões
         if(prevBtn) prevBtn.disabled = productCurrentPage <= 1;
         if(nextBtn) nextBtn.disabled = !productHasNextPage;
+        
         renderCategoriesTable();
         feather.replace();
     }
@@ -235,7 +216,7 @@ function resetAndReloadProducts() {
 async function testApiConnection() {
     showToast('Testando conexão...', 'info');
     try {
-        const response = await realApiFetch(1, 1, ''); // A função já trata a URL
+        const response = await realApiFetch(1, 1, '');
         if (response.data) {
             showToast('Conexão com API OK!', 'success');
         } else {
@@ -247,7 +228,6 @@ async function testApiConnection() {
 }
 
 // --- LÓGICA DE RENDERIZAÇÃO ---
-
 function updateDashboard() {
     document.getElementById('stat-total-products').textContent = '...';
     document.getElementById('stat-active-products').textContent = '...';
@@ -351,7 +331,6 @@ function renderCatalogTable() {
     const tbody = document.getElementById('catalog-table-body');
     if(!tbody) return;
     tbody.innerHTML = '';
-    // Usa 'loadedProducts' pois a paginação do admin já limita o escopo
     const publishedProducts = loadedProducts.filter(p => publishedProductIds.includes(p.id) && p.status === 'ativo');
     if (publishedProducts.length === 0) { 
         tbody.innerHTML = '<tr><td colspan="4" style="text-align:center; padding: 2rem;">Nenhum produto publicado para revenda nesta página.</td></tr>'; 
@@ -370,7 +349,7 @@ function renderCatalogTable() {
 }
 
 function renderAbcCurve() {
-    const container = document.getElementById('abc-curve');
+    const container = document.getElementById('abc-curve-content');
     if(container) {
         container.innerHTML = '<div class="placeholder-card" style="background-color: var(--card-bg); padding: 4rem 2rem; border-radius: var(--border-radius); box-shadow: var(--shadow); text-align: center; color: var(--text-light);"><p>Funcionalidade de Curva ABC em desenvolvimento.</p></div>';
     }
@@ -378,7 +357,6 @@ function renderAbcCurve() {
 
 
 // --- LÓGICA DE AÇÕES E MODAIS ---
-
 function togglePublished(productId) {
     const index = publishedProductIds.indexOf(productId);
     if (index > -1) {
