@@ -93,12 +93,14 @@ function initializeCatalog() {
             const newProductsData = await realApiFetch(currentPage);
             
             if (newProductsData && newProductsData.data.length > 0) {
-                // Simula a busca de configurações da revendedora para precificação
                 const margins = JSON.parse(localStorage.getItem('resellerMargins')) || {};
-                const activeIds = JSON.parse(localStorage.getItem('resellerActiveProducts')) || [];
+                // CORREÇÃO: Usando a chave correta 'resellerActiveProductIds'
+                const activeIdsRaw = localStorage.getItem('resellerActiveProductIds');
+                const activeIds = activeIdsRaw ? JSON.parse(activeIdsRaw) : [];
 
                 const processedProducts = newProductsData.data
-                    .filter(p => activeIds.includes(p.id)) // Filtra apenas produtos ativos
+                    // CORREÇÃO: Garante que a comparação seja entre números
+                    .filter(p => activeIds.includes(parseInt(p.id))) 
                     .map(p => {
                         const margin = margins[p.id] || 30;
                         return {
@@ -115,11 +117,14 @@ function initializeCatalog() {
                 hasMore = newProductsData.hasNext;
             } else {
                 hasMore = false;
-                if(allProducts.length === 0){
-                     const grid = document.getElementById('catalog-product-grid');
-                     if(grid) grid.innerHTML = '<p class="col-span-full text-center text-gray-500">Nenhum produto para exibir no momento.</p>';
-                }
             }
+
+            // Mensagem de "Nenhum produto" só aparece se, após todas as buscas, a lista estiver vazia.
+            if (!hasMore && allProducts.length === 0){
+                 const grid = document.getElementById('catalog-product-grid');
+                 if(grid) grid.innerHTML = '<p class="col-span-full text-center text-gray-500">Nenhum produto ativo para exibir no momento.</p>';
+            }
+
         } catch (error) {
             console.error("Erro ao carregar mais produtos:", error);
         } finally {
