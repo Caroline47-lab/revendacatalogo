@@ -173,7 +173,14 @@
                     <h1 id="revendedor-page-title">Meus Produtos</h1>
                 </div>
                 <section id="reseller-products" class="page active">
-                    <div class="table-container">
+                    <div class="page-controls" style="background: var(--card-bg); padding: 1rem; border-radius: var(--border-radius); box-shadow: var(--shadow); display: flex; gap: 1rem; align-items: center;">
+                        <div class="form-group" style="flex-grow: 1; margin-bottom: 0;">
+                            <label for="mass-margin-input" style="margin-bottom: 0.25rem;">Aplicar margem em massa (%):</label>
+                            <input type="number" id="mass-margin-input" class="search-input" placeholder="Ex: 40">
+                        </div>
+                        <button id="apply-mass-margin" class="btn btn-primary" style="align-self: flex-end;">Aplicar</button>
+                    </div>
+                    <div class="table-container" style="margin-top: 1.5rem;">
                         <table class="product-table">
                             <thead><tr><th>Imagem</th><th>Nome</th><th>Preço Base</th><th>Sua Margem (%)</th><th>Preço Final</th><th>Ativar no Catálogo</th><th>Ações</th></tr></thead>
                             <tbody id="reseller-products-table-body"></tbody>
@@ -185,11 +192,53 @@
                 </section>
                 
                 <section id="reseller-promotions" class="page">
-                    <!-- Conteúdo da página de promoções será renderizado aqui -->
+                    <div class="promo-grid">
+                        <!-- Card de Promoção: Flash Sale -->
+                        <div class="promo-card">
+                            <div class="promo-card-header">
+                                <i data-feather="zap" class="promo-card-icon"></i>
+                                <h3 class="promo-card-title">Flash Sale (Oferta Relâmpago)</h3>
+                            </div>
+                            <p class="promo-card-desc">Crie uma oferta com grande desconto para um produto específico por tempo limitado.</p>
+                            <div class="promo-card-footer">
+                                <button class="btn btn-primary w-full" data-modal-target="flash-sale-modal">Configurar</button>
+                            </div>
+                        </div>
+
+                        <!-- Card de Promoção: Frete Grátis -->
+                        <div class="promo-card">
+                            <div class="promo-card-header">
+                                <i data-feather="truck" class="promo-card-icon"></i>
+                                <h3 class="promo-card-title">Frete Grátis</h3>
+                            </div>
+                            <p class="promo-card-desc">Ofereça frete grátis para compras acima de um determinado valor para incentivar pedidos maiores.</p>
+                            <div class="promo-card-footer">
+                                <button class="btn btn-primary w-full" data-modal-target="free-shipping-modal">Configurar</button>
+                            </div>
+                        </div>
+
+                        <!-- Card de Promoção: Cupom de Primeira Compra -->
+                        <div class="promo-card">
+                            <div class="promo-card-header">
+                                <i data-feather="award" class="promo-card-icon"></i>
+                                <h3 class="promo-card-title">Cupom de Primeira Compra</h3>
+                            </div>
+                            <p class="promo-card-desc">Atraia novos clientes oferecendo um cupom de desconto exclusivo para a primeira compra.</p>
+                            <div class="promo-card-footer">
+                                <button class="btn btn-primary w-full" data-modal-target="first-purchase-modal">Configurar</button>
+                            </div>
+                        </div>
+                    </div>
                 </section>
 
                 <section id="reseller-showcase" class="page">
-                    <!-- Conteúdo da página de vitrine será renderizado aqui -->
+                    <div class="settings-section">
+                        <h2><i data-feather="star"></i> Organizar Vitrine</h2>
+                        <p style="color: var(--text-light); margin-top: -1rem; margin-bottom: 1.5rem;">Crie seções personalizadas como "Destaques" ou "Lançamentos" para exibir em seu catálogo.</p>
+                        <div class="placeholder-card" style="text-align: center; padding: 2rem; border: 2px dashed var(--border-color); border-radius: var(--border-radius);">
+                            <p>Funcionalidade em desenvolvimento.</p>
+                        </div>
+                    </div>
                 </section>
 
                 <section id="reseller-descriptions" class="page">
@@ -200,7 +249,6 @@
                         </div>
                         <p style="color: var(--text-light); margin-top: -1rem; margin-bottom: 1.5rem;">Crie modelos de tabelas (Ex: Rasteirinhas, Bolsas) e depois associe a cada produto.</p>
                         <div id="sizing-charts-list" class="table-container">
-                            <!-- A lista de tabelas de medidas será renderizada aqui -->
                         </div>
                     </div>
                     <div class="settings-section">
@@ -217,7 +265,6 @@
                                     </tr>
                                 </thead>
                                 <tbody id="product-description-list-body">
-                                    <!-- A lista de produtos para edição será renderizada aqui -->
                                 </tbody>
                             </table>
                         </div>
@@ -225,16 +272,114 @@
                 </section>
 
                 <section id="reseller-sales" class="page">
-                     <!-- Conteúdo da página de vendas será renderizado aqui -->
+                     <div class="settings-section">
+                        <h2><i data-feather="dollar-sign"></i> Vendas e Pedidos</h2>
+                        <p style="color: var(--text-light); margin-top: -1rem; margin-bottom: 1.5rem;">Acompanhe os pedidos recebidos através do seu catálogo.</p>
+                        <div class="placeholder-card" style="text-align: center; padding: 2rem; border: 2px dashed var(--border-color); border-radius: var(--border-radius);">
+                            <p>Funcionalidade em desenvolvimento.</p>
+                        </div>
+                    </div>
                 </section>
                 <section id="reseller-appearance" class="page">
-                     <!-- Conteúdo da página de aparência será renderizado aqui -->
+                    <div class="settings-section">
+                        <h2><i data-feather="user"></i> Identidade da Loja</h2>
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label for="brand-name-input">Nome da sua Loja</label>
+                                <input type="text" id="brand-name-input" placeholder="Ex: Sapatos da Ana">
+                            </div>
+                            <div class="form-group">
+                                <label for="contact-phone-input">Seu WhatsApp para Contato</label>
+                                <input type="text" id="contact-phone-input" placeholder="(XX) 99999-9999">
+                            </div>
+                        </div>
+                    </div>
+                     <div class="settings-section">
+                        <h2><i data-feather="image"></i> Imagens e Cores</h2>
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label>Logo da Loja</label>
+                                <input type="file" id="logo-upload" accept="image/*" class="search-input">
+                                <img id="logo-preview" src="https://placehold.co/100x100/e2e8f0/cccccc?text=Logo" alt="Prévia do logo" class="logo-preview">
+                            </div>
+                            <div class="form-group">
+                                <label>Cor Principal</label>
+                                <input type="color" id="primary-color-input" value="#DB1472">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="settings-section">
+                        <div style="display: flex; justify-content: flex-end;">
+                            <button id="save-settings-btn" class="btn btn-success"><i data-feather="save"></i> Salvar Aparência</button>
+                        </div>
+                    </div>
                 </section>
             </main>
         </div>
     </div>
     
     <!-- MODAIS -->
+    <div id="reseller-product-edit-modal" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="modal-reseller-product-name">Editar Margem</h3>
+                <button class="modal-close-btn"><i data-feather="x"></i></button>
+            </div>
+            <div class="form-group">
+                <label for="reseller-margin-input">Sua Margem de Lucro (%)</label>
+                <input type="number" id="reseller-margin-input" placeholder="Ex: 40">
+            </div>
+            <div class="modal-footer">
+                <button id="save-reseller-margin-btn" class="btn btn-success">Salvar Margem</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="reseller-tags-modal" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="modal-tags-product-name">Editar Tags</h3>
+                <button class="modal-close-btn"><i data-feather="x"></i></button>
+            </div>
+            <div class="form-group">
+                <label>Selecione as tags para este produto:</label>
+                <div id="tags-selection-container" class="tag-selection-grid">
+                    <!-- Tags serão inseridas pelo JS -->
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button id="save-reseller-tags-btn" class="btn btn-success">Salvar Tags</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="flash-sale-modal" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-header"><h3>Configurar Flash Sale</h3><button class="modal-close-btn"><i data-feather="x"></i></button></div>
+            <div class="form-group"><label for="flash-sale-product">Produto em Oferta</label><select id="flash-sale-product"></select></div>
+            <div class="form-group"><label for="flash-sale-discount">Percentual de Desconto (%)</label><input type="number" id="flash-sale-discount" placeholder="Ex: 25"></div>
+            <div class="form-group"><label for="flash-sale-end-date">Data de Término</label><input type="date" id="flash-sale-end-date"></div>
+            <div class="modal-footer"><button id="save-flash-sale-btn" class="btn btn-success">Salvar Flash Sale</button></div>
+        </div>
+    </div>
+
+    <div id="free-shipping-modal" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-header"><h3>Configurar Frete Grátis</h3><button class="modal-close-btn"><i data-feather="x"></i></button></div>
+            <div class="form-group"><label for="free-shipping-min-value">Valor Mínimo para Frete Grátis (R$)</label><input type="number" id="free-shipping-min-value" placeholder="Ex: 299.90"></div>
+            <div class="modal-footer"><button id="save-free-shipping-btn" class="btn btn-success">Salvar Configuração</button></div>
+        </div>
+    </div>
+
+    <div id="first-purchase-modal" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-header"><h3>Cupom de Primeira Compra</h3><button class="modal-close-btn"><i data-feather="x"></i></button></div>
+            <div class="form-group"><label for="first-purchase-code">Código do Cupom</label><input type="text" id="first-purchase-code" value="BEMVINDA10"></div>
+            <div class="form-group"><label for="first-purchase-discount">Percentual de Desconto (%)</label><input type="number" id="first-purchase-discount" value="10"></div>
+            <div class="modal-footer"><button id="save-first-purchase-btn" class="btn btn-success">Salvar Cupom</button></div>
+        </div>
+    </div>
+
     <div id="product-description-modal" class="modal-overlay">
         <div class="modal-content">
             <div class="modal-header">
@@ -268,7 +413,6 @@
                 <input type="text" id="sizing-chart-name" placeholder="Ex: Tabela de Rasteirinhas">
             </div>
             <div id="sizing-chart-editor" style="margin-top: 1.5rem;">
-                <!-- O editor da tabela será construído aqui pelo JS -->
             </div>
             <div style="margin-top: 1rem; display: flex; gap: 1rem;">
                  <button id="add-sizing-chart-row-btn" class="btn btn-secondary"><i data-feather="plus"></i> Adicionar Linha (Tamanho)</button>
@@ -282,14 +426,6 @@
     
     <div id="toast"></div>
 
-    <!-- 
-      ================================================================
-      == CORREÇÃO APLICADA AQUI ==
-      Garantindo que o 'servicos.js' (a caixa de ferramentas) seja 
-      carregado ANTES do 'painel-revendedora.js' (que usa as ferramentas).
-      Essa é a correção principal que resolve o problema.
-      ================================================================
-    -->
     <script src="js/servicos.js"></script>
     <script src="js/painel-revendedora.js"></script>
 </body>
