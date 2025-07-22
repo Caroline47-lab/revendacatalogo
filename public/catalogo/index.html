@@ -44,8 +44,16 @@
     </style>
     <script>
         (function() {
+            // --- DIAGNÓSTICO 1 ---
+            console.log("--- PASSO 1: index.html ---");
             const urlParams = new URLSearchParams(window.location.search);
-            const themeId = urlParams.get('theme') || localStorage.getItem('resellerActiveTheme') || 'basic';
+            const themeFromUrl = urlParams.get('theme');
+            const themeFromStorage = localStorage.getItem('resellerActiveTheme');
+            const themeId = themeFromUrl || themeFromStorage || 'basic';
+            console.log(`Tema identificado: ${themeId}. (URL: ${themeFromUrl}, Storage: ${themeFromStorage})`);
+            console.log(`Tentando carregar CSS: ../temas/${themeId}/theme.css`);
+            console.log(`Tentando carregar JS: ../temas/${themeId}/theme.js`);
+            // --- FIM DO DIAGNÓSTICO 1 ---
 
             document.getElementById('theme-style').setAttribute('href', `../temas/${themeId}/theme.css`);
 
