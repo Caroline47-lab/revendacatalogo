@@ -1,23 +1,20 @@
 /**
  * catalogo.js
  * Lógica principal para o funcionamento do catálogo.
- * VERSÃO CORRIGIDA: Agora espera o evento 'theme:ready' para iniciar.
+ * VERSÃO CORRIGIDA: Agora expõe a função initializeCatalog para ser chamada pelo tema.
  */
 
-// AVISA QUE O SCRIPT FOI CARREGADO, MAS NÃO FAZ NADA AINDA
-console.log('catalogo.js loaded, waiting for theme:ready...');
+console.log('catalogo.js loaded, waiting for initializeCatalog() call...');
 
-// ESPERA O SINAL DO TEMA ANTES DE INICIAR
-document.addEventListener('theme:ready', () => {
-    console.log('Theme is ready! Initializing catalog...');
-    initializeCatalog();
-});
-
-
+/**
+ * Função principal que inicializa toda a lógica do catálogo.
+ * É chamada pelo script do tema (theme.js) assim que o layout HTML está pronto.
+ */
 function initializeCatalog() {
+    console.log('Theme is ready! Initializing catalog...');
+
     // --- VARIÁVEIS GLOBAIS DO CATÁLOGO ---
     let allProducts = [];
-    let currentProducts = [];
     let cart = [];
     let currentPage = 1;
     let isLoading = false;
@@ -27,7 +24,6 @@ function initializeCatalog() {
     let activeTheme = 'basic';
     
     // --- INICIALIZAÇÃO ---
-    // A função principal agora é chamada após o evento
     (async () => {
         loadLocalDataForCatalog();
         setupCatalogEventListeners();
@@ -60,26 +56,29 @@ function initializeCatalog() {
     }
     
     function setupCatalogEventListeners() {
-        // Lógica para infinite scroll, cliques em produtos, etc.
         window.addEventListener('scroll', () => {
             if (window.innerHeight + window.scrollY >= document.body.offsetHeight - 500 && !isLoading && hasMore) {
                 loadMoreProducts();
             }
         });
     
-        document.getElementById('catalog-product-grid').addEventListener('click', (e) => {
-            const card = e.target.closest('.product-card');
-            if (card && card.dataset.productId) {
-                // Lógica para abrir detalhes do produto
-                console.log(`Product clicked: ${card.dataset.productId}`);
-            }
-        });
+        const productGrid = document.getElementById('catalog-product-grid');
+        if (productGrid) {
+            productGrid.addEventListener('click', (e) => {
+                const card = e.target.closest('.product-card');
+                if (card && card.dataset.productId) {
+                    console.log(`Product clicked: ${card.dataset.productId}`);
+                }
+            });
+        }
     }
     
     async function loadInitialProducts() {
         currentPage = 1;
         hasMore = true;
-        allProducts = []; // Limpa a lista antes de carregar
+        allProducts = []; 
+        const grid = document.getElementById('catalog-product-grid');
+        if(grid) grid.innerHTML = ''; // Limpa a grade antes de carregar
         await loadMoreProducts();
     }
     
@@ -90,17 +89,36 @@ function initializeCatalog() {
         if (loader) loader.style.display = 'block';
     
         try {
-            // Simulação de chamada de API
-            // Em um cenário real, esta seria a chamada para `realApiFetch`
-            const newProducts = await mockApiFetch(currentPage); 
+            // Usando a API real
+            const newProductsData = await realApiFetch(currentPage);
             
-            if (newProducts && newProducts.data.length > 0) {
-                allProducts = [...allProducts, ...newProducts.data];
-                renderProductGrid(newProducts.data);
+            if (newProductsData && newProductsData.data.length > 0) {
+                // Simula a busca de configurações da revendedora para precificação
+                const margins = JSON.parse(localStorage.getItem('resellerMargins')) || {};
+                const activeIds = JSON.parse(localStorage.getItem('resellerActiveProducts')) || [];
+
+                const processedProducts = newProductsData.data
+                    .filter(p => activeIds.includes(p.id)) // Filtra apenas produtos ativos
+                    .map(p => {
+                        const margin = margins[p.id] || 30;
+                        return {
+                            id: p.id,
+                            nome: p.nome,
+                            preco_final: parseFloat(p.preco) * (1 + margin / 100),
+                            imagem: p.imagem.split(',')[0].trim()
+                        };
+                    });
+
+                allProducts = [...allProducts, ...processedProducts];
+                renderProductGrid(processedProducts);
                 currentPage++;
-                hasMore = newProducts.hasNext;
+                hasMore = newProductsData.hasNext;
             } else {
                 hasMore = false;
+                if(allProducts.length === 0){
+                     const grid = document.getElementById('catalog-product-grid');
+                     if(grid) grid.innerHTML = '<p class="col-span-full text-center text-gray-500">Nenhum produto para exibir no momento.</p>';
+                }
             }
         } catch (error) {
             console.error("Erro ao carregar mais produtos:", error);
@@ -116,13 +134,23 @@ function initializeCatalog() {
     
         productsToRender.forEach(product => {
             const card = document.createElement('div');
-            card.className = 'product-card'; // Classe base para estilização do tema
+            // A classe base é aplicada aqui, e o tema controla o estilo
+            card.className = 'product-card group relative'; 
             card.dataset.productId = product.id;
             card.innerHTML = `
-                <img src="${proxyImageUrl(product.imagem)}" alt="${product.nome}" class="w-full h-48 object-cover">
-                <div class="p-4">
-                    <h3 class="font-semibold text-md">${product.nome}</h3>
-                    <p class="text-lg font-bold text-[var(--primary-color)] mt-2">R$ ${product.preco_final.toFixed(2)}</p>
+                <div class="aspect-h-1 aspect-w-1 w-full overflow-hidden rounded-md lg:aspect-none group-hover:opacity-75 lg:h-80">
+                    <img src="${proxyImageUrl(product.imagem)}" alt="${product.nome}" class="h-full w-full object-cover object-center lg:h-full lg:w-full">
+                </div>
+                <div class="mt-4 flex justify-between p-2">
+                    <div>
+                        <h3 class="text-sm text-gray-700">
+                            <a href="#">
+                                <span aria-hidden="true" class="absolute inset-0"></span>
+                                ${product.nome}
+                            </a>
+                        </h3>
+                    </div>
+                    <p class="text-sm font-medium text-gray-900">R$ ${product.preco_final.toFixed(2)}</p>
                 </div>
             `;
             grid.appendChild(card);
@@ -153,31 +181,7 @@ function initializeCatalog() {
         }
     }
     
-    // --- Funções Mock e Utilitários ---
-    
     function proxyImageUrl(url) {
         return url || 'https://placehold.co/300x300/e2e8f0/cccccc?text=Produto';
-    }
-    
-    async function mockApiFetch(page = 1) {
-        // Simula uma resposta da API para teste
-        return new Promise(resolve => {
-            setTimeout(() => {
-                const products = [];
-                for (let i = 0; i < 12; i++) {
-                    const id = (page - 1) * 12 + i + 1;
-                    products.push({
-                        id: id,
-                        nome: `Produto de Teste ${id}`,
-                        preco_final: 99.90,
-                        imagem: `https://placehold.co/300x300/e2e8f0/cccccc?text=Produto+${id}`
-                    });
-                }
-                resolve({
-                    data: products,
-                    hasNext: page < 3 // Simula que há 3 páginas de produtos
-                });
-            }, 1000);
-        });
     }
 }
