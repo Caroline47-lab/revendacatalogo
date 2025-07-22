@@ -1,14 +1,13 @@
 /**
  * catalogo.js
  * Lógica principal para o funcionamento do catálogo.
- * Este script é carregado dinamicamente pelo theme.js para garantir a ordem de execução.
+ * Este script é carregado pelo index.html DEPOIS que o theme.js termina.
  */
 (function() {
-    console.log('Catalog script executing now that theme is ready.');
+    console.log('catalogo.js: Executando agora que o layout do tema está pronto.');
 
-    // --- VARIÁVEIS GLOBAIS DO CATÁLOGO ---
+    // --- VARIÁVEIS GLOBAIS ---
     let allProducts = [];
-    let cart = [];
     let currentPage = 1;
     let isLoading = false;
     let hasMore = true;
@@ -19,25 +18,14 @@
         loadLocalDataForCatalog();
         setupCatalogEventListeners();
         await loadInitialProducts();
-        renderFilters();
         applyResellerIdentity();
-        if (typeof feather !== 'undefined') {
-            feather.replace();
-        }
     })();
     
     
-    // --- FUNÇÕES DO CATÁLOGO ---
-    
+    // --- FUNÇÕES ---
     function loadLocalDataForCatalog() {
         const settings = localStorage.getItem('resellerSettings');
         if (settings) resellerSettings = JSON.parse(settings);
-    
-        const savedCart = localStorage.getItem('resellerCart');
-        if (savedCart) {
-            cart = JSON.parse(savedCart);
-            updateCartCount();
-        }
     }
     
     function setupCatalogEventListeners() {
@@ -68,12 +56,10 @@
             
             if (newProductsData && newProductsData.data.length > 0) {
                 const margins = JSON.parse(localStorage.getItem('resellerMargins')) || {};
-                // CORREÇÃO: Usando a chave correta 'resellerActiveProductIds'
                 const activeIdsRaw = localStorage.getItem('resellerActiveProductIds');
                 const activeIds = activeIdsRaw ? JSON.parse(activeIdsRaw) : [];
 
                 const processedProducts = newProductsData.data
-                    // CORREÇÃO: Garante que a comparação seja entre números
                     .filter(p => activeIds.includes(parseInt(p.id))) 
                     .map(p => {
                         const margin = margins[p.id] || 30;
@@ -127,8 +113,6 @@
         });
     }
     
-    function renderFilters() {}
-    
     function applyResellerIdentity() {
         const footer = document.querySelector('footer');
         if(footer) {
@@ -139,16 +123,7 @@
                     <a id="catalog-whatsapp-link" href="#" target="_blank" class="font-semibold flex items-center gap-2"><i data-feather="message-circle"></i>WhatsApp</a>
                 </div>
             `;
-            feather.replace();
-        }
-    }
-    
-    function updateCartCount() {
-        const cartCount = document.querySelector('.cart-count');
-        if (cartCount) {
-            const totalItems = cart.reduce((sum, item) => sum + item.quantity, 0);
-            cartCount.textContent = totalItems;
-            cartCount.style.display = totalItems > 0 ? 'flex' : 'none';
+            if (typeof feather !== 'undefined') feather.replace();
         }
     }
     
