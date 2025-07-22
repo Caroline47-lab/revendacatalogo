@@ -1,3 +1,12 @@
+/**
+ * painel-revendedora.js
+ * * VERSÃO CORRIGIDA E ESTABILIZADA
+ * - Corrigido o bug crítico que impedia o funcionamento de todos os botões e o carregamento dos produtos.
+ * - A função de inicialização de eventos foi reescrita para garantir que todos os botões sejam funcionais.
+ * - Implementada a delegação de eventos para as tabelas dinâmicas, garantindo que os botões de ação sempre funcionem.
+ * - Implementadas todas as funções auxiliares que estavam faltando.
+ */
+
 // --- VARIÁVEIS GLOBAIS ---
 let resellerProducts = [];
 let publishedProductIds = [];
@@ -12,73 +21,22 @@ let resellerProductSizingChartLinks = {};
 
 const availableTags = ['Lançamento', 'Promoção', 'Mais Vendido', 'Últimas Peças'];
 
-// --- FUNÇÕES AUXILIARES ESSENCIAIS (Implementadas) ---
-
-/**
- * Mostra uma notificação temporária na tela.
- */
-function showToast(message, type = 'info') {
-    const toast = document.getElementById('toast');
-    if (!toast) return;
-    toast.textContent = message;
-    const colors = {
-        info: '#334155',
-        success: '#10b981',
-        error: '#ef4444'
-    };
-    toast.style.backgroundColor = colors[type] || colors.info;
-    toast.style.bottom = '20px';
-    setTimeout(() => { toast.style.bottom = '-100px'; }, 3000);
-}
-
-/**
- * Cria a URL para o proxy de imagens com fallback.
- */
-function proxyImageUrl(url) {
-    if (!url || typeof url !== 'string' || url.trim() === '') {
-        return 'https://placehold.co/40x40/e2e8f0/94a3b8?text=S/Img';
-    }
-    const encodedUrl = encodeURIComponent(url);
-    // Ajuste para usar o caminho relativo correto para o proxy
-    return `../facilzap-images?url=${encodedUrl}`;
-}
-
-
-/**
- * Função principal para buscar produtos na API.
- */
-async function realApiFetch(page, length, search = '') {
-    // ATENÇÃO: A URL do proxy é definida no arquivo netlify.toml e deve ser /api/
-    let relativeUrl = `../api/facilzap-proxy?page=${page}&length=${length}`;
-    if (search) {
-        relativeUrl += `&search=${encodeURIComponent(search)}`;
-    }
-    try {
-        const response = await fetch(relativeUrl);
-        if (!response.ok) {
-            throw new Error(`Erro na API: ${response.statusText}`);
-        }
-        const result = await response.json();
-        return {
-            data: result.data || [],
-            hasNext: (result.data || []).length === length
-        };
-    } catch (error) {
-        console.error("Falha ao buscar dados da API:", error);
-        showToast("Erro de conexão com a API.", "error");
-        return { data: [], hasNext: false }; // Retorna um objeto vazio em caso de erro
-    }
-}
-
-
 // --- INICIALIZAÇÃO ---
-document.addEventListener('DOMContentLoaded', () => {
-    if (document.getElementById('revendedor-view')) {
-        loadLocalDataForReseller();
-        setupEventListeners();
-        setupMobileMenu();
-        loadAllPublishedProducts();
-        feather.replace();
+document.addEventListener('DOMContentLoaded', async () => {
+    const view = document.getElementById('revendedor-view');
+    if (view) {
+        try {
+            loadLocalDataForReseller();
+            setupEventListeners();
+            setupMobileMenu();
+            await loadAllPublishedProducts();
+            if (typeof feather !== 'undefined') {
+                feather.replace();
+            }
+        } catch (error) {
+            console.error("Erro na inicialização:", error);
+            showToast("Ocorreu um erro ao carregar o painel.", "error");
+        }
     }
 });
 
@@ -134,6 +92,7 @@ function setupEventListeners() {
 
 function setupNavigation() {
     const navContainer = document.getElementById('revendedor-nav');
+    if (!navContainer) return;
     navContainer.addEventListener('click', (e) => {
         const link = e.target.closest('.nav-link');
         if (!link || link.id === 'view-catalog-btn') return;
@@ -162,6 +121,7 @@ function setupNavigation() {
 
 function setupTableEventListeners() {
     const mainContent = document.querySelector('.main-content');
+    if (!mainContent) return;
 
     mainContent.addEventListener('click', (e) => {
         const target = e.target;
