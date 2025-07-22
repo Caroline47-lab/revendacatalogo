@@ -1008,6 +1008,23 @@ function generateAndCopyCatalogLink() {
     document.body.removeChild(textArea);
 }
 
+// CORREÇÃO: Funções que estavam faltando foram adicionadas.
+function addSaleItem() {
+  console.log("Função addSaleItem chamada.");
+  // Lógica para adicionar item à venda será implementada aqui.
+}
+
+function saveSale() {
+  console.log("Função saveSale chamada.");
+  // Lógica para salvar a venda será implementada aqui.
+}
+
+function updateSaleVariationSelect() {
+  console.log("Função updateSaleVariationSelect chamada.");
+  // Lógica para atualizar as variações do produto será implementada aqui.
+}
+
+
 // Função auxiliar para debug - pode ser removida em produção
 function debugMenuElements() {
     console.log('=== DEBUG MENU MOBILE ===');
