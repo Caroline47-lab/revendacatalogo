@@ -82,94 +82,56 @@ function switchView(viewId) {
     }
 }
 
-// CORREÇÃO: Função do menu mobile completamente reescrita para funcionar corretamente
+// CORREÇÃO: Função do menu mobile reescrita com uma abordagem mais simples e robusta (delegação de eventos).
 function setupMobileMenu() {
-    // Seleciona os elementos uma única vez
-    const toggleEmpresa = document.getElementById('menu-toggle-empresa');
     const sidebarEmpresa = document.querySelector('#empresa-view .sidebar');
-    const toggleRevendedor = document.getElementById('menu-toggle-revendedor');
     const sidebarRevendedor = document.querySelector('#revendedor-view .sidebar');
-    
-    // Menu da empresa
-    if (toggleEmpresa && sidebarEmpresa) {
-        // Remove listeners anteriores clonando o nó para evitar duplicação
-        const newToggleEmpresa = toggleEmpresa.cloneNode(true);
-        toggleEmpresa.parentNode.replaceChild(newToggleEmpresa, toggleEmpresa);
-        
-        newToggleEmpresa.addEventListener('click', function(e) {
+
+    document.body.addEventListener('click', function(e) {
+        const toggleEmpresaBtn = e.target.closest('#menu-toggle-empresa');
+        const toggleRevendedorBtn = e.target.closest('#menu-toggle-revendedor');
+        const navLink = e.target.closest('.nav-link');
+
+        // Se clicou no botão de menu da empresa
+        if (toggleEmpresaBtn) {
             e.preventDefault();
-            e.stopPropagation();
-            
-            // Fecha o outro menu se estiver aberto
-            if (sidebarRevendedor) {
-                sidebarRevendedor.classList.remove('open');
-            }
-            
-            // Alterna a visibilidade do menu da empresa
             sidebarEmpresa.classList.toggle('open');
-        });
-    }
+            if (sidebarRevendedor) sidebarRevendedor.classList.remove('open'); // Fecha o outro menu
+            return;
+        }
 
-    // Menu do revendedor
-    if (toggleRevendedor && sidebarRevendedor) {
-        // Remove listeners anteriores clonando o nó
-        const newToggleRevendedor = toggleRevendedor.cloneNode(true);
-        toggleRevendedor.parentNode.replaceChild(newToggleRevendedor, toggleRevendedor);
-        
-        newToggleRevendedor.addEventListener('click', function(e) {
+        // Se clicou no botão de menu da revendedora
+        if (toggleRevendedorBtn) {
             e.preventDefault();
-            e.stopPropagation();
-
-            // Fecha o outro menu se estiver aberto
-            if (sidebarEmpresa) {
-                sidebarEmpresa.classList.remove('open');
-            }
-            
-            // Alterna a visibilidade do menu do revendedor
             sidebarRevendedor.classList.toggle('open');
-        });
-    }
-    
-    // Listener global para fechar os menus ao clicar fora
-    document.addEventListener('click', function(e) {
-        // Verifica se o clique foi fora do menu da empresa e do seu botão
-        const isClickInsideEmpresa = sidebarEmpresa && (sidebarEmpresa.contains(e.target) || e.target.closest('#menu-toggle-empresa'));
-        if (sidebarEmpresa && sidebarEmpresa.classList.contains('open') && !isClickInsideEmpresa) {
+            if (sidebarEmpresa) sidebarEmpresa.classList.remove('open'); // Fecha o outro menu
+            return;
+        }
+
+        // Se clicou em um link de navegação dentro de um menu aberto
+        if (navLink) {
+            if (sidebarEmpresa && sidebarEmpresa.contains(navLink)) {
+                setTimeout(() => sidebarEmpresa.classList.remove('open'), 150);
+            }
+            if (sidebarRevendedor && sidebarRevendedor.contains(navLink)) {
+                setTimeout(() => sidebarRevendedor.classList.remove('open'), 150);
+            }
+            // Não retorna aqui para permitir que a navegação da página continue
+        }
+
+        // Se clicou fora de um menu aberto, fecha-o
+        if (sidebarEmpresa && sidebarEmpresa.classList.contains('open') && !sidebarEmpresa.contains(e.target)) {
             sidebarEmpresa.classList.remove('open');
         }
-        
-        // Verifica se o clique foi fora do menu do revendedor e do seu botão
-        const isClickInsideRevendedor = sidebarRevendedor && (sidebarRevendedor.contains(e.target) || e.target.closest('#menu-toggle-revendedor'));
-        if (sidebarRevendedor && sidebarRevendedor.classList.contains('open') && !isClickInsideRevendedor) {
+        if (sidebarRevendedor && sidebarRevendedor.classList.contains('open') && !sidebarRevendedor.contains(e.target)) {
             sidebarRevendedor.classList.remove('open');
         }
     });
 
-    // Função auxiliar para fechar o menu ao clicar em um link
-    const addLinkListeners = (sidebar) => {
-        if (!sidebar) return;
-        const links = sidebar.querySelectorAll('.nav-link');
-        links.forEach(link => {
-            link.addEventListener('click', () => {
-                // Adiciona um pequeno delay para garantir que a navegação ocorra antes de fechar
-                setTimeout(() => {
-                    sidebar.classList.remove('open');
-                }, 150);
-            });
-        });
-    };
-
-    addLinkListeners(sidebarEmpresa);
-    addLinkListeners(sidebarRevendedor);
-
-    // Fecha os menus se a tela for redimensionada (útil para transição de mobile para desktop)
+    // Fecha os menus ao redimensionar a tela
     window.addEventListener('resize', function() {
-        if (sidebarEmpresa) {
-            sidebarEmpresa.classList.remove('open');
-        }
-        if (sidebarRevendedor) {
-            sidebarRevendedor.classList.remove('open');
-        }
+        if (sidebarEmpresa) sidebarEmpresa.classList.remove('open');
+        if (sidebarRevendedor) sidebarRevendedor.classList.remove('open');
     });
 }
 
@@ -969,7 +931,7 @@ function renderAbandonedCartsTable() {
 
 function recoverCart(customer, items) {
     let message = `Olá ${customer.name}, vi que você se interessou por alguns produtos em meu catálogo. Gostaria de ajuda para finalizar seu pedido?`;
-    const phone = (customer.phone || '').replace(/\D/g, '');
+    const phone = (customer.phone || '').replace(/[^0-9]/g, '');
     if (!phone) { showToast('Número de telefone inválido.', 'error'); return; }
     
     const whatsappUrl = `https://wa.me/55${phone}?text=${encodeURIComponent(message)}`;
@@ -1039,7 +1001,7 @@ function renderAbcCurve() {
 }
 
 function generateAndCopyCatalogLink() {
-    const urlName = document.getElementById('catalog-url-name').value.trim().toLowerCase().replace(/[^a-z0-na-z0-9-]/g, '');
+    const urlName = document.getElementById('catalog-url-name').value.trim().toLowerCase().replace(/[^a-z0-9-]/g, '');
     if (!urlName) {
         showToast('Por favor, insira um nome para a URL da sua loja.', 'error');
         return;
@@ -1070,3 +1032,4 @@ function debugMenuElements() {
     console.log('Sidebar Revendedor:', document.querySelector('#revendedor-view .sidebar'));
     console.log('========================');
 }
+" in the document. Explain why the selected code is not working as expect
