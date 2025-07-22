@@ -1,11 +1,11 @@
 /**
  * painel-revendedora.js
- * ARQUITETURA SIMPLIFICADA E RESTAURADA
- * - Mantém todo o código original de produtos, promoções, etc.
- * - Adiciona a nova lógica para o modal de configuração de aparência.
+ * VERSÃO CORRIGIDA: Mantém todo o código original que já funcionava.
+ * Adiciona a nova lógica para o modal de configuração de aparência, sem remover
+ * as funcionalidades existentes de produtos, promoções, etc.
  */
 
-// --- VARIÁVEIS GLOBAIS (EXISTENTES) ---
+// --- VARIÁVEIS GLOBAIS ---
 let resellerProducts = [];
 let publishedProductIds = [];
 let resellerProductMargins = {};
@@ -22,7 +22,10 @@ let resellerDescriptionModels = [];
 let currentAssociationType = null;
 let currentModelIdToAssociate = null;
 
-// NOVO: Objeto para guardar as configurações de aparência
+// VARIÁVEL ANTIGA DE TEMA (não será mais usada para carregar arquivos)
+let resellerActiveTheme = 'basic'; 
+
+// NOVO: Objeto para guardar as configurações de aparência do catálogo
 let resellerCatalogAppearance = {}; 
 
 const availableTags = ['Lançamento', 'Promoção', 'Mais Vendido', 'Últimas Peças'];
@@ -36,66 +39,25 @@ document.addEventListener('DOMContentLoaded', async () => {
             setupEventListeners();
             setupMobileMenu();
             await loadAllPublishedProducts();
-            if (document.querySelector('#reseller-appearance')?.classList.contains('active')) {
+            if (document.querySelector('#reseller-appearance').classList.contains('active')) {
                 setupAppearancePage();
             }
             if (typeof feather !== 'undefined') {
                 feather.replace();
             }
-        } catch (error) {
+        } catch (error)
+        {
             console.error("Erro na inicialização:", error);
             showToast("Ocorreu um erro ao carregar o painel.", "error");
         }
     }
 });
 
-// --- CARREGAMENTO DE DADOS ---
-function loadLocalDataForReseller() {
-    // Carrega todos os dados originais
-    const savedPublished = localStorage.getItem('erpPublished');
-    if (savedPublished) publishedProductIds = JSON.parse(savedPublished).map(id => parseInt(id, 10));
-    const savedMargins = localStorage.getItem('resellerMargins');
-    if (savedMargins) resellerProductMargins = JSON.parse(savedMargins);
-    const savedTags = localStorage.getItem('resellerProductTags');
-    if (savedTags) resellerProductTags = JSON.parse(savedTags);
-    const savedResellerActive = localStorage.getItem('resellerActiveProducts');
-    if (savedResellerActive) resellerActiveProductIds = JSON.parse(savedResellerActive).map(id => parseInt(id, 10));
-    const savedSettings = localStorage.getItem('resellerSettings');
-    if (savedSettings) resellerSettings = JSON.parse(savedSettings);
-    const savedPromotions = localStorage.getItem('resellerPromotions');
-    if (savedPromotions) resellerPromotions = JSON.parse(savedPromotions);
-    const savedDescriptions = localStorage.getItem('resellerProductDescriptions');
-    if (savedDescriptions) resellerProductDescriptions = JSON.parse(savedDescriptions);
-    const savedSizingCharts = localStorage.getItem('resellerSizingCharts');
-    if (savedSizingCharts) resellerSizingCharts = JSON.parse(savedSizingCharts);
-    const savedSizingChartLinks = localStorage.getItem('resellerProductSizingChartLinks');
-    if (savedSizingChartLinks) resellerProductSizingChartLinks = JSON.parse(savedSizingChartLinks);
-    const savedShowcase = localStorage.getItem('resellerShowcase');
-    if (savedShowcase) resellerShowcase = JSON.parse(savedShowcase);
-    const savedDescModels = localStorage.getItem('resellerDescriptionModels');
-    if(savedDescModels) resellerDescriptionModels = JSON.parse(savedDescModels);
-
-    // Adiciona o carregamento das configurações de aparência
-    const savedAppearance = localStorage.getItem('resellerCatalogAppearance');
-    if (savedAppearance) {
-        resellerCatalogAppearance = JSON.parse(savedAppearance);
-    } else {
-        // Define valores padrão se não houver nada salvo
-        resellerCatalogAppearance = {
-            primaryColor: '#DB1472',
-            headerBg: '#FFFFFF',
-            logoUrl: 'https://placehold.co/200x80/e2e8f0/cccccc?text=Preview+Logo',
-            bannerUrl: 'https://placehold.co/400x200/e2e8f0/cccccc?text=Preview+Banner'
-        };
-    }
-}
-
-
 // --- CONFIGURAÇÃO DE EVENTOS ---
 function setupEventListeners() {
     setupNavigation();
 
-    // Botão de salvar da página de aparência (salva identidade e URL)
+    // Botão de salvar da página de aparência (agora salva identidade e URL)
     document.getElementById('save-settings-btn')?.addEventListener('click', saveGeneralSettings);
     
     // Botão para abrir o NOVO modal de configuração de tema
@@ -121,10 +83,13 @@ function setupEventListeners() {
     
     document.querySelectorAll('[data-modal-target]').forEach(button => {
         button.addEventListener('click', (e) => {
+            // Adicionado para não conflitar com o novo botão de abrir modal
+            if (e.currentTarget.id === 'open-theme-config-btn') return;
             const modalId = e.currentTarget.getAttribute('data-modal-target');
             openModal(modalId);
         });
     });
+
     document.querySelectorAll('.modal-close-btn').forEach(btn => {
         btn.addEventListener('click', (e) => {
             const modalId = e.currentTarget.closest('.modal-overlay').id;
@@ -132,7 +97,6 @@ function setupEventListeners() {
         });
     });
     
-    // Listeners para todos os botões de salvar dos modais de promoção
     document.getElementById('save-flash-sale-btn')?.addEventListener('click', saveFlashSale);
     document.getElementById('save-stock-limit-btn')?.addEventListener('click', saveStockLimit);
     document.getElementById('save-time-limit-btn')?.addEventListener('click', saveTimeLimit);
@@ -155,124 +119,6 @@ function setupEventListeners() {
     document.getElementById('showcase-product-search')?.addEventListener('keyup', filterShowcaseProducts);
 
     setupDynamicEventListeners();
-}
-
-// --- LÓGICA DE APARÊNCIA (NOVA ABORDAGEM) ---
-
-function setupAppearancePage() {
-    loadIdentitySettings();
-    // Não precisa carregar o form do modal aqui, apenas ao abrir o modal
-}
-
-/**
- * Salva as configurações GERAIS (identidade e URL).
- */
-function saveGeneralSettings() {
-    resellerSettings = {
-        ...resellerSettings,
-        brandName: document.getElementById('brand-name-input').value,
-        contactPhone: document.getElementById('contact-phone-input').value,
-        instagram: document.getElementById('instagram-input').value,
-        catalogUrlName: document.getElementById('catalog-url-name').value.trim().toLowerCase().replace(/[^a-z0-9-]/g, ''),
-    };
-    localStorage.setItem('resellerSettings', JSON.stringify(resellerSettings));
-    showToast('Configurações de Identidade e URL salvas!', 'success');
-}
-
-/**
- * Salva as configurações de APARÊNCIA (cores, imagens) do modal.
- */
-function saveAppearanceSettings() {
-    resellerCatalogAppearance = {
-        primaryColor: document.getElementById('appearance-primary-color').value,
-        headerBg: document.getElementById('appearance-header-bg').value,
-        logoUrl: document.getElementById('appearance-logo-preview').src,
-        bannerUrl: document.getElementById('appearance-banner-preview').src,
-    };
-    localStorage.setItem('resellerCatalogAppearance', JSON.stringify(resellerCatalogAppearance));
-}
-
-/**
- * Carrega as configurações de aparência salvas e preenche os campos do MODAL.
- */
-function loadAppearanceSettingsIntoForm() {
-    const settings = resellerCatalogAppearance;
-    document.getElementById('appearance-primary-color').value = settings.primaryColor || '#DB1472';
-    document.getElementById('appearance-header-bg').value = settings.headerBg || '#FFFFFF';
-    document.getElementById('appearance-logo-preview').src = settings.logoUrl || 'https://placehold.co/200x80/e2e8f0/cccccc?text=Preview+Logo';
-    document.getElementById('appearance-banner-preview').src = settings.bannerUrl || 'https://placehold.co/400x200/e2e8f0/cccccc?text=Preview+Banner';
-}
-
-function loadIdentitySettings() {
-    const settings = resellerSettings;
-    document.getElementById('brand-name-input').value = settings.brandName || '';
-    document.getElementById('contact-phone-input').value = settings.contactPhone || '';
-    document.getElementById('instagram-input').value = settings.instagram || '';
-    document.getElementById('catalog-url-name').value = settings.catalogUrlName || '';
-}
-
-/**
- * Função auxiliar para lidar com upload de imagem e preview.
- */
-function setupImageUpload(inputId, previewId) {
-    const input = document.getElementById(inputId);
-    const preview = document.getElementById(previewId);
-    if (!input || !preview) return;
-
-    input.addEventListener('change', (event) => {
-        const file = event.target.files[0];
-        if (file) {
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                preview.src = e.target.result;
-            }
-            reader.readAsDataURL(file);
-        }
-    });
-}
-
-
-// ===================================================================
-// TODAS AS SUAS FUNÇÕES ORIGINAIS ESTÃO RESTAURADAS E INTACTAS ABAIXO
-// ===================================================================
-
-async function loadAllPublishedProducts() {
-    const loader = document.getElementById('reseller-product-list-loader');
-    if (loader) loader.classList.add('visible');
-    
-    resellerProducts = []; 
-    let currentPage = 1;
-    let hasMore = true;
-    try {
-        while(hasMore) {
-            // Assumindo que realApiFetch existe em servicos.js
-            const data = await realApiFetch(currentPage, 100, ''); 
-            if (!data.data || data.data.length === 0) {
-                hasMore = false;
-                break;
-            }
-            const publishedInPage = data.data.filter(p => publishedProductIds.includes(parseInt(p.id, 10)));
-            if (publishedInPage.length > 0) {
-                 const processed = publishedInPage.map(p => ({ 
-                    id: parseInt(p.id, 10), 
-                    nome: p.nome || 'Nome não informado', 
-                    preco_original: parseFloat(p.preco || 0), 
-                    imagem: (typeof p.imagem === 'string' ? p.imagem.split(',')[0].trim() : null) 
-                }));
-                resellerProducts.push(...processed);
-            }
-            hasMore = data.hasNext;
-            currentPage++;
-        }
-    } catch (error) {
-        console.error("Erro ao buscar produtos:", error);
-        showToast("Erro ao carregar seus produtos.", "error");
-    } finally {
-        if(document.getElementById('reseller-products').classList.contains('active')) {
-            renderResellerProductsTable(); 
-        }
-        if(loader) loader.classList.remove('visible');
-    }
 }
 
 function setupNavigation() {
@@ -310,12 +156,13 @@ function setupDynamicEventListeners() {
     if (!mainContent) return;
 
     mainContent.addEventListener('click', (e) => {
-        const target = e.target.closest('button');
+        const target = e.target.closest('button, .theme-card');
         if (!target) return;
 
         const { 
             productId, chartId, showcaseId, 
-            descModelId, associateChartId, associateDescId
+            descModelId, associateChartId, associateDescId,
+            themeId
         } = target.dataset;
 
         if (target.matches('.edit-margin-btn')) showResellerProductEditModal(productId);
@@ -369,6 +216,156 @@ function closeModal(modalId) {
     if (modal) modal.classList.remove('active');
 }
 
+function loadLocalDataForReseller() {
+    const savedPublished = localStorage.getItem('erpPublished');
+    if (savedPublished) publishedProductIds = JSON.parse(savedPublished).map(id => parseInt(id, 10));
+    const savedMargins = localStorage.getItem('resellerMargins');
+    if (savedMargins) resellerProductMargins = JSON.parse(savedMargins);
+    const savedTags = localStorage.getItem('resellerProductTags');
+    if (savedTags) resellerProductTags = JSON.parse(savedTags);
+    const savedResellerActive = localStorage.getItem('resellerActiveProducts');
+    if (savedResellerActive) resellerActiveProductIds = JSON.parse(savedResellerActive).map(id => parseInt(id, 10));
+    const savedSettings = localStorage.getItem('resellerSettings');
+    if (savedSettings) resellerSettings = JSON.parse(savedSettings);
+    const savedPromotions = localStorage.getItem('resellerPromotions');
+    if (savedPromotions) resellerPromotions = JSON.parse(savedPromotions);
+    const savedDescriptions = localStorage.getItem('resellerProductDescriptions');
+    if (savedDescriptions) resellerProductDescriptions = JSON.parse(savedDescriptions);
+    const savedSizingCharts = localStorage.getItem('resellerSizingCharts');
+    if (savedSizingCharts) resellerSizingCharts = JSON.parse(savedSizingCharts);
+    const savedSizingChartLinks = localStorage.getItem('resellerProductSizingChartLinks');
+    if (savedSizingChartLinks) resellerProductSizingChartLinks = JSON.parse(savedSizingChartLinks);
+    const savedShowcase = localStorage.getItem('resellerShowcase');
+    if (savedShowcase) resellerShowcase = JSON.parse(savedShowcase);
+    const savedDescModels = localStorage.getItem('resellerDescriptionModels');
+    if(savedDescModels) resellerDescriptionModels = JSON.parse(savedDescModels);
+    
+    // Adiciona o carregamento das configurações de aparência
+    const savedAppearance = localStorage.getItem('resellerCatalogAppearance');
+    if (savedAppearance) {
+        resellerCatalogAppearance = JSON.parse(savedAppearance);
+    } else {
+        resellerCatalogAppearance = {
+            primaryColor: '#DB1472',
+            headerBg: '#FFFFFF',
+            logoUrl: 'https://placehold.co/200x80/e2e8f0/cccccc?text=Preview+Logo',
+            bannerUrl: 'https://placehold.co/400x200/e2e8f0/cccccc?text=Preview+Banner'
+        };
+    }
+}
+
+async function loadAllPublishedProducts() {
+    const loader = document.getElementById('reseller-product-list-loader');
+    if (loader) loader.classList.add('visible');
+    
+    resellerProducts = []; 
+    let currentPage = 1;
+    let hasMore = true;
+    try {
+        loadLocalDataForReseller();
+        while(hasMore) {
+            const data = await realApiFetch(currentPage, 100, ''); 
+            if (!data.data || data.data.length === 0) {
+                hasMore = false;
+                break;
+            }
+            const publishedInPage = data.data.filter(p => publishedProductIds.includes(parseInt(p.id, 10)));
+            if (publishedInPage.length > 0) {
+                 const processed = publishedInPage.map(p => ({ 
+                    id: parseInt(p.id, 10), 
+                    nome: p.nome || 'Nome não informado', 
+                    preco_original: parseFloat(p.preco || 0), 
+                    imagem: (typeof p.imagem === 'string' ? p.imagem.split(',')[0].trim() : null) 
+                }));
+                resellerProducts.push(...processed);
+            }
+            hasMore = data.hasNext;
+            currentPage++;
+        }
+    } catch (error) {
+        console.error("Erro ao buscar produtos:", error);
+        showToast("Erro ao carregar seus produtos.", "error");
+    } finally {
+        renderResellerProductsTable(); 
+        if(loader) loader.classList.remove('visible');
+    }
+}
+
+// --- LÓGICA DE APARÊNCIA (NOVA ABORDAGEM) ---
+
+function setupAppearancePage() {
+    loadIdentitySettings();
+}
+
+/**
+ * Salva as configurações GERAIS (identidade e URL).
+ */
+function saveGeneralSettings() {
+    resellerSettings = {
+        ...resellerSettings,
+        brandName: document.getElementById('brand-name-input').value,
+        contactPhone: document.getElementById('contact-phone-input').value,
+        instagram: document.getElementById('instagram-input').value,
+        catalogUrlName: document.getElementById('catalog-url-name').value.trim().toLowerCase().replace(/[^a-z0-9-]/g, ''),
+    };
+    localStorage.setItem('resellerSettings', JSON.stringify(resellerSettings));
+    showToast('Configurações de Identidade e URL salvas!', 'success');
+}
+
+/**
+ * Salva as configurações de APARÊNCIA (cores, imagens) do modal.
+ */
+function saveAppearanceSettings() {
+    resellerCatalogAppearance = {
+        primaryColor: document.getElementById('appearance-primary-color').value,
+        headerBg: document.getElementById('appearance-header-bg').value,
+        logoUrl: document.getElementById('appearance-logo-preview').src,
+        bannerUrl: document.getElementById('appearance-banner-preview').src,
+    };
+    localStorage.setItem('resellerCatalogAppearance', JSON.stringify(resellerCatalogAppearance));
+}
+
+/**
+ * Carrega as configurações de aparência salvas e preenche os campos do MODAL.
+ */
+function loadAppearanceSettingsIntoForm() {
+    const settings = resellerCatalogAppearance;
+    document.getElementById('appearance-primary-color').value = settings.primaryColor || '#DB1472';
+    document.getElementById('appearance-header-bg').value = settings.headerBg || '#FFFFFF';
+    document.getElementById('appearance-logo-preview').src = settings.logoUrl || 'https://placehold.co/200x80/e2e8f0/cccccc?text=Preview+Logo';
+    document.getElementById('appearance-banner-preview').src = settings.bannerUrl || 'https://placehold.co/400x200/e2e8f0/cccccc?text=Preview+Banner';
+}
+
+/**
+ * Função auxiliar para lidar com upload de imagem e preview.
+ */
+function setupImageUpload(inputId, previewId) {
+    const input = document.getElementById(inputId);
+    const preview = document.getElementById(previewId);
+    if (!input || !preview) return;
+
+    input.addEventListener('change', (event) => {
+        const file = event.target.files[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                preview.src = e.target.result;
+            }
+            reader.readAsDataURL(file);
+        }
+    });
+}
+
+function loadIdentitySettings() {
+    const settings = resellerSettings;
+    document.getElementById('brand-name-input').value = settings.brandName || '';
+    document.getElementById('contact-phone-input').value = settings.contactPhone || '';
+    document.getElementById('instagram-input').value = settings.instagram || '';
+    document.getElementById('catalog-url-name').value = settings.catalogUrlName || '';
+}
+
+// --- DEMAIS FUNÇÕES (PRODUTOS, PROMOÇÕES, VITRINE, DESCRIÇÕES, ETC.) ---
+
 function renderResellerProductsTable() {
     const tbody = document.getElementById('reseller-products-table-body');
     if (!tbody) return;
@@ -400,10 +397,12 @@ function renderResellerProductsTable() {
     feather.replace();
 }
 
-function setupPromotionsPage() {}
+function setupPromotionsPage() {
+    // ...código futuro...
+}
 
-function setupShowcasePage() { 
-    updateShowcaseCounts(); 
+function setupShowcasePage() {
+    updateShowcaseCounts();
 }
 
 function updateShowcaseCounts() {
@@ -453,8 +452,8 @@ function renderShowcaseProductList(searchTerm = '') {
     });
 }
 
-function filterShowcaseProducts(event) { 
-    renderShowcaseProductList(event.target.value); 
+function filterShowcaseProducts(event) {
+    renderShowcaseProductList(event.target.value);
 }
 
 function saveShowcaseSelection() {
