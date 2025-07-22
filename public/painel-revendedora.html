@@ -214,7 +214,7 @@
                                     <h2 style="margin-bottom: 0; border-bottom: none; padding-bottom: 0;">Lançamentos da Semana</h2>
                                 </div>
                                 <div style="display: flex; align-items: center; gap: 1.5rem;">
-                                    <span class="product-count-badge" style="font-size: 0.85rem; color: var(--text-light); background-color: #f1f5f9; padding: 0.25rem 0.75rem; border-radius: 999px;">3 produtos</span>
+                                    <span class="product-count-badge" style="font-size: 0.85rem; color: var(--text-light); background-color: #f1f5f9; padding: 0.25rem 0.75rem; border-radius: 999px;">0 produtos</span>
                                     <button class="btn btn-secondary" data-showcase-id="lancamentos"><i data-feather="edit"></i> Gerenciar</button>
                                     <label class="toggle-switch">
                                         <input type="checkbox" checked>
@@ -230,7 +230,7 @@
                                     <h2 style="margin-bottom: 0; border-bottom: none; padding-bottom: 0;">Mais Vendidos</h2>
                                 </div>
                                 <div style="display: flex; align-items: center; gap: 1.5rem;">
-                                    <span class="product-count-badge" style="font-size: 0.85rem; color: var(--text-light); background-color: #f1f5f9; padding: 0.25rem 0.75rem; border-radius: 999px;">5 produtos</span>
+                                    <span class="product-count-badge" style="font-size: 0.85rem; color: var(--text-light); background-color: #f1f5f9; padding: 0.25rem 0.75rem; border-radius: 999px;">0 produtos</span>
                                     <button class="btn btn-secondary" data-showcase-id="mais_vendidos"><i data-feather="edit"></i> Gerenciar</button>
                                     <label class="toggle-switch">
                                         <input type="checkbox" checked>
@@ -261,7 +261,8 @@
                 <section id="reseller-descriptions" class="page">
                     <div class="settings-section">
                         <div style="display: flex; justify-content: space-between; align-items: center;">
-                            <h2><i data-feather="ruler"></i> Modelos de Tabela de Medidas</h2>
+                            <!-- CORREÇÃO DO ÍCONE: 'ruler' trocado por 'sliders' -->
+                            <h2><i data-feather="sliders"></i> Modelos de Tabela de Medidas</h2>
                             <button id="add-sizing-chart-btn" class="btn btn-success"><i data-feather="plus"></i> Criar Novo Modelo</button>
                         </div>
                         <p style="color: var(--text-light); margin-top: -1rem; margin-bottom: 1.5rem;">Crie modelos de tabelas (Ex: Rasteirinhas, Bolsas) e depois associe a cada produto.</p>
@@ -362,7 +363,6 @@
     <div id="product-description-modal" class="modal-overlay"><div class="modal-content"><div class="modal-header"><h3 id="product-description-modal-title">Editar Descrição</h3><button class="modal-close-btn"><i data-feather="x"></i></button></div><div class="form-group"><label for="product-description-textarea">Descrição do Produto</label><textarea id="product-description-textarea" class="form-group textarea" placeholder="Descreva os detalhes, materiais e diferenciais do produto..."></textarea></div><div class="form-group"><label for="product-sizing-chart-select">Associar Tabela de Medidas</label><select id="product-sizing-chart-select"><option value="">Nenhuma</option></select></div><div class="modal-footer"><button id="save-product-description-btn" class="btn btn-success">Salvar Alterações</button></div></div></div>
     <div id="sizing-chart-modal" class="modal-overlay"><div class="modal-content" style="max-width: 800px;"><div class="modal-header"><h3 id="sizing-chart-modal-title">Criar/Editar Tabela de Medidas</h3><button class="modal-close-btn"><i data-feather="x"></i></button></div><div class="form-group"><label for="sizing-chart-name">Nome do Modelo (Ex: Rasteirinhas, Bolsas)</label><input type="text" id="sizing-chart-name" placeholder="Ex: Tabela de Rasteirinhas"></div><div id="sizing-chart-editor" style="margin-top: 1.5rem;"></div><div style="margin-top: 1rem; display: flex; gap: 1rem;"><button id="add-sizing-chart-row-btn" class="btn btn-secondary"><i data-feather="plus"></i> Adicionar Linha (Tamanho)</button><button id="add-sizing-chart-col-btn" class="btn btn-secondary"><i data-feather="plus"></i> Adicionar Coluna (Medida)</button></div><div class="modal-footer"><button id="save-sizing-chart-btn" class="btn btn-success">Salvar Modelo</button></div></div></div>
     
-    <!-- NOVO MODAL PARA GERENCIAR PRODUTOS DA VITRINE -->
     <div id="showcase-product-modal" class="modal-overlay">
         <div class="modal-content" style="max-width: 800px;">
             <div class="modal-header">
@@ -373,7 +373,6 @@
                 <input type="text" id="showcase-product-search" class="search-input" placeholder="Buscar produtos para adicionar...">
             </div>
             <div id="showcase-product-list" style="max-height: 400px; overflow-y: auto; border: 1px solid var(--border-color); border-radius: var(--border-radius); padding: 0.5rem;">
-                <!-- A lista de produtos com checkboxes será renderizada aqui pelo JS -->
             </div>
             <div class="modal-footer">
                 <button id="save-showcase-selection-btn" class="btn btn-success">Salvar Seleção</button>
