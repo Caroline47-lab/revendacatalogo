@@ -1,11 +1,11 @@
 /**
  * painel-revendedora.js
- * * VERSÃO COM CARREGAMENTO DINÂMICO DE TEMA
- * - Ao selecionar um tema, a interface de personalização é carregada dinamicamente.
- * - A função loadThemeCustomizationUI busca e injeta o HTML e os scripts do tema.
+ * ARQUITETURA SIMPLIFICADA E RESTAURADA
+ * - Mantém todo o código original de produtos, promoções, etc.
+ * - Adiciona a nova lógica para o modal de configuração de aparência.
  */
 
-// --- VARIÁVEIS GLOBAIS ---
+// --- VARIÁVEIS GLOBAIS (EXISTENTES) ---
 let resellerProducts = [];
 let publishedProductIds = [];
 let resellerProductMargins = {};
@@ -21,7 +21,9 @@ let currentEditingShowcaseId = null;
 let resellerDescriptionModels = [];
 let currentAssociationType = null;
 let currentModelIdToAssociate = null;
-let resellerActiveTheme = 'basic';
+
+// NOVO: Objeto para guardar as configurações de aparência
+let resellerCatalogAppearance = {}; 
 
 const availableTags = ['Lançamento', 'Promoção', 'Mais Vendido', 'Últimas Peças'];
 
@@ -34,7 +36,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             setupEventListeners();
             setupMobileMenu();
             await loadAllPublishedProducts();
-            if (document.querySelector('#reseller-appearance').classList.contains('active')) {
+            if (document.querySelector('#reseller-appearance')?.classList.contains('active')) {
                 setupAppearancePage();
             }
             if (typeof feather !== 'undefined') {
@@ -47,24 +49,90 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 });
 
+// --- CARREGAMENTO DE DADOS ---
+function loadLocalDataForReseller() {
+    // Carrega todos os dados originais
+    const savedPublished = localStorage.getItem('erpPublished');
+    if (savedPublished) publishedProductIds = JSON.parse(savedPublished).map(id => parseInt(id, 10));
+    const savedMargins = localStorage.getItem('resellerMargins');
+    if (savedMargins) resellerProductMargins = JSON.parse(savedMargins);
+    const savedTags = localStorage.getItem('resellerProductTags');
+    if (savedTags) resellerProductTags = JSON.parse(savedTags);
+    const savedResellerActive = localStorage.getItem('resellerActiveProducts');
+    if (savedResellerActive) resellerActiveProductIds = JSON.parse(savedResellerActive).map(id => parseInt(id, 10));
+    const savedSettings = localStorage.getItem('resellerSettings');
+    if (savedSettings) resellerSettings = JSON.parse(savedSettings);
+    const savedPromotions = localStorage.getItem('resellerPromotions');
+    if (savedPromotions) resellerPromotions = JSON.parse(savedPromotions);
+    const savedDescriptions = localStorage.getItem('resellerProductDescriptions');
+    if (savedDescriptions) resellerProductDescriptions = JSON.parse(savedDescriptions);
+    const savedSizingCharts = localStorage.getItem('resellerSizingCharts');
+    if (savedSizingCharts) resellerSizingCharts = JSON.parse(savedSizingCharts);
+    const savedSizingChartLinks = localStorage.getItem('resellerProductSizingChartLinks');
+    if (savedSizingChartLinks) resellerProductSizingChartLinks = JSON.parse(savedSizingChartLinks);
+    const savedShowcase = localStorage.getItem('resellerShowcase');
+    if (savedShowcase) resellerShowcase = JSON.parse(savedShowcase);
+    const savedDescModels = localStorage.getItem('resellerDescriptionModels');
+    if(savedDescModels) resellerDescriptionModels = JSON.parse(savedDescModels);
+
+    // Adiciona o carregamento das configurações de aparência
+    const savedAppearance = localStorage.getItem('resellerCatalogAppearance');
+    if (savedAppearance) {
+        resellerCatalogAppearance = JSON.parse(savedAppearance);
+    } else {
+        // Define valores padrão se não houver nada salvo
+        resellerCatalogAppearance = {
+            primaryColor: '#DB1472',
+            headerBg: '#FFFFFF',
+            logoUrl: 'https://placehold.co/200x80/e2e8f0/cccccc?text=Preview+Logo',
+            bannerUrl: 'https://placehold.co/400x200/e2e8f0/cccccc?text=Preview+Banner'
+        };
+    }
+}
+
+
 // --- CONFIGURAÇÃO DE EVENTOS ---
 function setupEventListeners() {
     setupNavigation();
 
+    // Botão de salvar da página de aparência (salva identidade e URL)
+    document.getElementById('save-settings-btn')?.addEventListener('click', saveGeneralSettings);
+    
+    // Botão para abrir o NOVO modal de configuração de tema
+    document.getElementById('open-theme-config-btn')?.addEventListener('click', () => {
+        loadAppearanceSettingsIntoForm(); // Preenche o modal com dados salvos
+        openModal('theme-config-modal');
+    });
+
+    // Botão para SALVAR as configurações DENTRO do modal de tema
+    document.getElementById('save-theme-config-btn')?.addEventListener('click', () => {
+        saveAppearanceSettings();
+        closeModal('theme-config-modal');
+        showToast('Aparência do catálogo salva com sucesso!', 'success');
+    });
+
+    // Listeners para os uploads de imagem no modal
+    setupImageUpload('appearance-logo-upload', 'appearance-logo-preview');
+    setupImageUpload('appearance-banner-upload', 'appearance-banner-preview');
+
+    // Mantém todos os seus outros event listeners originais
     document.getElementById('apply-mass-margin')?.addEventListener('click', applyMassMargin);
-    document.getElementById('save-settings-btn')?.addEventListener('click', saveAllSettings);
     document.getElementById('generate-link-btn')?.addEventListener('click', generateAndCopyCatalogLink);
     
     document.querySelectorAll('[data-modal-target]').forEach(button => {
-        button.addEventListener('click', () => {
-            const modalId = button.getAttribute('data-modal-target');
+        button.addEventListener('click', (e) => {
+            const modalId = e.currentTarget.getAttribute('data-modal-target');
             openModal(modalId);
         });
     });
     document.querySelectorAll('.modal-close-btn').forEach(btn => {
-        const modalId = btn.closest('.modal-overlay').id;
-        btn.addEventListener('click', () => closeModal(modalId));
+        btn.addEventListener('click', (e) => {
+            const modalId = e.currentTarget.closest('.modal-overlay').id;
+            closeModal(modalId);
+        });
     });
+    
+    // Listeners para todos os botões de salvar dos modais de promoção
     document.getElementById('save-flash-sale-btn')?.addEventListener('click', saveFlashSale);
     document.getElementById('save-stock-limit-btn')?.addEventListener('click', saveStockLimit);
     document.getElementById('save-time-limit-btn')?.addEventListener('click', saveTimeLimit);
@@ -87,6 +155,124 @@ function setupEventListeners() {
     document.getElementById('showcase-product-search')?.addEventListener('keyup', filterShowcaseProducts);
 
     setupDynamicEventListeners();
+}
+
+// --- LÓGICA DE APARÊNCIA (NOVA ABORDAGEM) ---
+
+function setupAppearancePage() {
+    loadIdentitySettings();
+    // Não precisa carregar o form do modal aqui, apenas ao abrir o modal
+}
+
+/**
+ * Salva as configurações GERAIS (identidade e URL).
+ */
+function saveGeneralSettings() {
+    resellerSettings = {
+        ...resellerSettings,
+        brandName: document.getElementById('brand-name-input').value,
+        contactPhone: document.getElementById('contact-phone-input').value,
+        instagram: document.getElementById('instagram-input').value,
+        catalogUrlName: document.getElementById('catalog-url-name').value.trim().toLowerCase().replace(/[^a-z0-9-]/g, ''),
+    };
+    localStorage.setItem('resellerSettings', JSON.stringify(resellerSettings));
+    showToast('Configurações de Identidade e URL salvas!', 'success');
+}
+
+/**
+ * Salva as configurações de APARÊNCIA (cores, imagens) do modal.
+ */
+function saveAppearanceSettings() {
+    resellerCatalogAppearance = {
+        primaryColor: document.getElementById('appearance-primary-color').value,
+        headerBg: document.getElementById('appearance-header-bg').value,
+        logoUrl: document.getElementById('appearance-logo-preview').src,
+        bannerUrl: document.getElementById('appearance-banner-preview').src,
+    };
+    localStorage.setItem('resellerCatalogAppearance', JSON.stringify(resellerCatalogAppearance));
+}
+
+/**
+ * Carrega as configurações de aparência salvas e preenche os campos do MODAL.
+ */
+function loadAppearanceSettingsIntoForm() {
+    const settings = resellerCatalogAppearance;
+    document.getElementById('appearance-primary-color').value = settings.primaryColor || '#DB1472';
+    document.getElementById('appearance-header-bg').value = settings.headerBg || '#FFFFFF';
+    document.getElementById('appearance-logo-preview').src = settings.logoUrl || 'https://placehold.co/200x80/e2e8f0/cccccc?text=Preview+Logo';
+    document.getElementById('appearance-banner-preview').src = settings.bannerUrl || 'https://placehold.co/400x200/e2e8f0/cccccc?text=Preview+Banner';
+}
+
+function loadIdentitySettings() {
+    const settings = resellerSettings;
+    document.getElementById('brand-name-input').value = settings.brandName || '';
+    document.getElementById('contact-phone-input').value = settings.contactPhone || '';
+    document.getElementById('instagram-input').value = settings.instagram || '';
+    document.getElementById('catalog-url-name').value = settings.catalogUrlName || '';
+}
+
+/**
+ * Função auxiliar para lidar com upload de imagem e preview.
+ */
+function setupImageUpload(inputId, previewId) {
+    const input = document.getElementById(inputId);
+    const preview = document.getElementById(previewId);
+    if (!input || !preview) return;
+
+    input.addEventListener('change', (event) => {
+        const file = event.target.files[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                preview.src = e.target.result;
+            }
+            reader.readAsDataURL(file);
+        }
+    });
+}
+
+
+// ===================================================================
+// TODAS AS SUAS FUNÇÕES ORIGINAIS ESTÃO RESTAURADAS E INTACTAS ABAIXO
+// ===================================================================
+
+async function loadAllPublishedProducts() {
+    const loader = document.getElementById('reseller-product-list-loader');
+    if (loader) loader.classList.add('visible');
+    
+    resellerProducts = []; 
+    let currentPage = 1;
+    let hasMore = true;
+    try {
+        while(hasMore) {
+            // Assumindo que realApiFetch existe em servicos.js
+            const data = await realApiFetch(currentPage, 100, ''); 
+            if (!data.data || data.data.length === 0) {
+                hasMore = false;
+                break;
+            }
+            const publishedInPage = data.data.filter(p => publishedProductIds.includes(parseInt(p.id, 10)));
+            if (publishedInPage.length > 0) {
+                 const processed = publishedInPage.map(p => ({ 
+                    id: parseInt(p.id, 10), 
+                    nome: p.nome || 'Nome não informado', 
+                    preco_original: parseFloat(p.preco || 0), 
+                    imagem: (typeof p.imagem === 'string' ? p.imagem.split(',')[0].trim() : null) 
+                }));
+                resellerProducts.push(...processed);
+            }
+            hasMore = data.hasNext;
+            currentPage++;
+        }
+    } catch (error) {
+        console.error("Erro ao buscar produtos:", error);
+        showToast("Erro ao carregar seus produtos.", "error");
+    } finally {
+        if(document.getElementById('reseller-products').classList.contains('active')) {
+            renderResellerProductsTable(); 
+        }
+        if(loader) loader.classList.remove('visible');
+    }
 }
 
 function setupNavigation() {
@@ -124,13 +310,12 @@ function setupDynamicEventListeners() {
     if (!mainContent) return;
 
     mainContent.addEventListener('click', (e) => {
-        const target = e.target.closest('button, .theme-card');
+        const target = e.target.closest('button');
         if (!target) return;
 
         const { 
             productId, chartId, showcaseId, 
-            descModelId, associateChartId, associateDescId,
-            themeId
+            descModelId, associateChartId, associateDescId
         } = target.dataset;
 
         if (target.matches('.edit-margin-btn')) showResellerProductEditModal(productId);
@@ -143,7 +328,6 @@ function setupDynamicEventListeners() {
         if (associateChartId) openAssociationModal(associateChartId, 'sizingChart');
         if (associateDescId) openAssociationModal(associateDescId, 'description');
         if (showcaseId) openShowcaseModal(showcaseId);
-        if (themeId) selectTheme(themeId);
     });
 
     mainContent.addEventListener('change', (e) => {
@@ -185,155 +369,6 @@ function closeModal(modalId) {
     if (modal) modal.classList.remove('active');
 }
 
-function loadLocalDataForReseller() {
-    const savedPublished = localStorage.getItem('erpPublished');
-    if (savedPublished) publishedProductIds = JSON.parse(savedPublished).map(id => parseInt(id, 10));
-    const savedMargins = localStorage.getItem('resellerMargins');
-    if (savedMargins) resellerProductMargins = JSON.parse(savedMargins);
-    const savedTags = localStorage.getItem('resellerProductTags');
-    if (savedTags) resellerProductTags = JSON.parse(savedTags);
-    const savedResellerActive = localStorage.getItem('resellerActiveProducts');
-    if (savedResellerActive) resellerActiveProductIds = JSON.parse(savedResellerActive).map(id => parseInt(id, 10));
-    const savedSettings = localStorage.getItem('resellerSettings');
-    if (savedSettings) resellerSettings = JSON.parse(savedSettings);
-    const savedPromotions = localStorage.getItem('resellerPromotions');
-    if (savedPromotions) resellerPromotions = JSON.parse(savedPromotions);
-    const savedDescriptions = localStorage.getItem('resellerProductDescriptions');
-    if (savedDescriptions) resellerProductDescriptions = JSON.parse(savedDescriptions);
-    const savedSizingCharts = localStorage.getItem('resellerSizingCharts');
-    if (savedSizingCharts) resellerSizingCharts = JSON.parse(savedSizingCharts);
-    const savedSizingChartLinks = localStorage.getItem('resellerProductSizingChartLinks');
-    if (savedSizingChartLinks) resellerProductSizingChartLinks = JSON.parse(savedSizingChartLinks);
-    const savedShowcase = localStorage.getItem('resellerShowcase');
-    if (savedShowcase) resellerShowcase = JSON.parse(savedShowcase);
-    const savedDescModels = localStorage.getItem('resellerDescriptionModels');
-    if(savedDescModels) resellerDescriptionModels = JSON.parse(savedDescModels);
-    const savedTheme = localStorage.getItem('resellerActiveTheme');
-    if(savedTheme) resellerActiveTheme = savedTheme;
-}
-
-async function loadAllPublishedProducts() {
-    const loader = document.getElementById('reseller-product-list-loader');
-    if (loader) loader.classList.add('visible');
-    
-    resellerProducts = []; 
-    let currentPage = 1;
-    let hasMore = true;
-    try {
-        loadLocalDataForReseller();
-        while(hasMore) {
-            const data = await realApiFetch(currentPage, 100, ''); 
-            if (!data.data || data.data.length === 0) {
-                hasMore = false;
-                break;
-            }
-            const publishedInPage = data.data.filter(p => publishedProductIds.includes(parseInt(p.id, 10)));
-            if (publishedInPage.length > 0) {
-                 const processed = publishedInPage.map(p => ({ 
-                    id: parseInt(p.id, 10), 
-                    nome: p.nome || 'Nome não informado', 
-                    preco_original: parseFloat(p.preco || 0), 
-                    imagem: (typeof p.imagem === 'string' ? p.imagem.split(',')[0].trim() : null) 
-                }));
-                resellerProducts.push(...processed);
-            }
-            hasMore = data.hasNext;
-            currentPage++;
-        }
-    } catch (error) {
-        console.error("Erro ao buscar produtos:", error);
-        showToast("Erro ao carregar seus produtos.", "error");
-    } finally {
-        renderResellerProductsTable(); 
-        if(loader) loader.classList.remove('visible');
-    }
-}
-
-// --- LÓGICA DE APARÊNCIA E TEMAS (ATUALIZADA) ---
-
-function setupAppearancePage() {
-    loadIdentitySettings();
-    updateThemeGallery();
-    loadThemeCustomizationUI(resellerActiveTheme); // Carrega a personalização do tema ativo
-}
-
-function selectTheme(themeId) {
-    resellerActiveTheme = themeId;
-    updateThemeGallery();
-    loadThemeCustomizationUI(themeId); // Carrega a nova interface de personalização
-    showToast(`Tema "${themeId}" selecionado. Personalize abaixo.`, 'success');
-}
-
-function updateThemeGallery() {
-    const themeCards = document.querySelectorAll('.theme-card');
-    themeCards.forEach(card => {
-        card.classList.toggle('active', card.dataset.themeId === resellerActiveTheme);
-    });
-}
-
-async function loadThemeCustomizationUI(themeId) {
-    const contentArea = document.getElementById('theme-customization-content-area');
-    if (!contentArea) return;
-
-    contentArea.innerHTML = '<div class="loading-indicator visible"><div class="spinner"></div></div>';
-
-    try {
-        const response = await fetch(`temas/${themeId}/theme-settings.html`);
-        if (!response.ok) throw new Error(`Configurações para o tema "${themeId}" não encontradas.`);
-        
-        const html = await response.text();
-        
-        const parser = new DOMParser();
-        const doc = parser.parseFromString(html, 'text/html');
-        
-        contentArea.innerHTML = doc.body.innerHTML;
-        const styles = doc.head.querySelectorAll('style, link[rel="stylesheet"]');
-        styles.forEach(style => document.head.appendChild(style.cloneNode(true)));
-
-        const scripts = doc.body.querySelectorAll('script');
-        scripts.forEach(script => {
-            const newScript = document.createElement('script');
-            if (script.src) {
-                newScript.src = script.src;
-                newScript.defer = true; 
-            } else {
-                newScript.textContent = script.innerHTML;
-            }
-            document.body.appendChild(newScript);
-        });
-
-    } catch (error) {
-        console.error(error);
-        contentArea.innerHTML = `<div class="placeholder-card">${error.message}</div>`;
-        showToast(error.message, 'error');
-    }
-}
-
-function saveAllSettings() {
-    resellerSettings = {
-        ...resellerSettings,
-        brandName: document.getElementById('brand-name-input').value,
-        contactPhone: document.getElementById('contact-phone-input').value,
-        instagram: document.getElementById('instagram-input').value,
-        catalogUrlName: document.getElementById('catalog-url-name').value.trim().toLowerCase().replace(/[^a-z0-9-]/g, ''),
-    };
-    localStorage.setItem('resellerSettings', JSON.stringify(resellerSettings));
-    
-    localStorage.setItem('resellerActiveTheme', resellerActiveTheme);
-
-    showToast('Configurações gerais salvas com sucesso!', 'success');
-}
-
-function loadIdentitySettings() {
-    const settings = resellerSettings;
-    document.getElementById('brand-name-input').value = settings.brandName || '';
-    document.getElementById('contact-phone-input').value = settings.contactPhone || '';
-    document.getElementById('instagram-input').value = settings.instagram || '';
-    document.getElementById('catalog-url-name').value = settings.catalogUrlName || '';
-}
-
-// --- DEMAIS FUNÇÕES (PRODUTOS, PROMOÇÕES, VITRINE, DESCRIÇÕES, ETC.) ---
-
 function renderResellerProductsTable() {
     const tbody = document.getElementById('reseller-products-table-body');
     if (!tbody) return;
@@ -365,12 +400,10 @@ function renderResellerProductsTable() {
     feather.replace();
 }
 
-function setupPromotionsPage() {
-    // ...código futuro...
-}
+function setupPromotionsPage() {}
 
-function setupShowcasePage() {
-    updateShowcaseCounts();
+function setupShowcasePage() { 
+    updateShowcaseCounts(); 
 }
 
 function updateShowcaseCounts() {
@@ -420,8 +453,8 @@ function renderShowcaseProductList(searchTerm = '') {
     });
 }
 
-function filterShowcaseProducts(event) {
-    renderShowcaseProductList(event.target.value);
+function filterShowcaseProducts(event) { 
+    renderShowcaseProductList(event.target.value); 
 }
 
 function saveShowcaseSelection() {
