@@ -19,6 +19,9 @@ let resellerSizingCharts = [];
 let resellerProductSizingChartLinks = {}; 
 let resellerShowcase = {};
 let currentEditingShowcaseId = null;
+let resellerDescriptionModels = [];
+let currentAssociationType = null;
+let currentModelIdToAssociate = null;
 
 const availableTags = ['Lançamento', 'Promoção', 'Mais Vendido', 'Últimas Peças'];
 
@@ -43,10 +46,8 @@ document.addEventListener('DOMContentLoaded', async () => {
 
 // --- CONFIGURAÇÃO DE EVENTOS ---
 function setupEventListeners() {
-    // Navegação principal
     setupNavigation();
 
-    // Botões gerais
     document.getElementById('apply-mass-margin')?.addEventListener('click', applyMassMargin);
     document.getElementById('save-settings-btn')?.addEventListener('click', saveAppearanceSettings);
     document.getElementById('generate-link-btn')?.addEventListener('click', generateAndCopyCatalogLink);
@@ -54,22 +55,16 @@ function setupEventListeners() {
     document.querySelectorAll('.banner-upload').forEach(input => {
         input.addEventListener('change', (e) => handleImageUpload(e, `banner-preview-${e.target.dataset.bannerId}`, `banner-${e.target.dataset.bannerId}`));
     });
-
-    // Botões para abrir modais de promoção
     document.querySelectorAll('[data-modal-target]').forEach(button => {
         button.addEventListener('click', () => {
             const modalId = button.getAttribute('data-modal-target');
             openModal(modalId);
         });
     });
-
-    // Botões para fechar todos os modais
     document.querySelectorAll('.modal-close-btn').forEach(btn => {
         const modalId = btn.closest('.modal-overlay').id;
         btn.addEventListener('click', () => closeModal(modalId));
     });
-
-    // Botões de salvar promoções
     document.getElementById('save-flash-sale-btn')?.addEventListener('click', saveFlashSale);
     document.getElementById('save-stock-limit-btn')?.addEventListener('click', saveStockLimit);
     document.getElementById('save-time-limit-btn')?.addEventListener('click', saveTimeLimit);
@@ -79,21 +74,18 @@ function setupEventListeners() {
     document.getElementById('save-first-purchase-btn')?.addEventListener('click', saveFirstPurchaseCoupon);
     document.getElementById('save-vip-btn')?.addEventListener('click', saveVipCoupon);
     document.getElementById('save-seasonal-btn')?.addEventListener('click', saveSeasonalSale);
-
-    // Botões da página de Descrições
     document.getElementById('add-sizing-chart-btn')?.addEventListener('click', () => openSizingChartModal());
     document.getElementById('save-sizing-chart-btn')?.addEventListener('click', saveSizingChart);
     document.getElementById('add-sizing-chart-row-btn')?.addEventListener('click', addSizingChartRow);
     document.getElementById('add-sizing-chart-col-btn')?.addEventListener('click', addSizingChartColumn);
     document.getElementById('save-product-description-btn')?.addEventListener('click', saveProductDescription);
-
-    // Botão para salvar seleção da vitrine
+    document.getElementById('add-description-model-btn')?.addEventListener('click', () => openDescriptionModelModal());
+    document.getElementById('save-description-model-btn')?.addEventListener('click', saveDescriptionModel);
+    document.getElementById('save-association-btn')?.addEventListener('click', saveAssociation);
+    document.getElementById('associate-product-search')?.addEventListener('keyup', filterAssociationProducts);
     document.getElementById('save-showcase-selection-btn')?.addEventListener('click', saveShowcaseSelection);
-    
-    // Busca de produtos no modal da vitrine
     document.getElementById('showcase-product-search')?.addEventListener('keyup', filterShowcaseProducts);
 
-    // Delegação de Eventos para Tabelas e Seções Dinâmicas
     setupDynamicEventListeners();
 }
 
@@ -132,35 +124,29 @@ function setupDynamicEventListeners() {
     if (!mainContent) return;
 
     mainContent.addEventListener('click', (e) => {
-        const target = e.target;
-        const productRowButton = target.closest('.edit-margin-btn, .edit-tags-btn, .edit-desc-btn');
-        const chartRowButton = target.closest('.edit-chart-btn, .delete-chart-btn');
-        const showcaseButton = target.closest('[data-showcase-id]');
+        const target = e.target.closest('button');
+        if (!target) return;
 
-        if (productRowButton) {
-            const productId = parseInt(productRowButton.dataset.productId, 10);
-            if (productRowButton.classList.contains('edit-margin-btn')) showResellerProductEditModal(productId);
-            else if (productRowButton.classList.contains('edit-tags-btn')) showResellerTagsModal(productId);
-            else if (productRowButton.classList.contains('edit-desc-btn')) openProductDescriptionModal(productId);
-        }
+        const { 
+            productId, chartId, showcaseId, 
+            descModelId, associateChartId, associateDescId 
+        } = target.dataset;
 
-        if (chartRowButton) {
-            const chartId = chartRowButton.dataset.chartId;
-            if (chartRowButton.classList.contains('edit-chart-btn')) openSizingChartModal(chartId);
-            else if (chartRowButton.classList.contains('delete-chart-btn')) deleteSizingChart(chartId);
-        }
-        
-        if (showcaseButton && showcaseButton.tagName === 'BUTTON') {
-             const showcaseId = showcaseButton.dataset.showcaseId;
-             openShowcaseModal(showcaseId);
-        }
+        if (target.matches('.edit-margin-btn')) showResellerProductEditModal(productId);
+        if (target.matches('.edit-tags-btn')) showResellerTagsModal(productId);
+        if (target.matches('.edit-desc-btn')) openProductDescriptionModal(productId);
+        if (target.matches('.edit-chart-btn')) openSizingChartModal(chartId);
+        if (target.matches('.delete-chart-btn')) deleteSizingChart(chartId);
+        if (target.matches('.edit-desc-model-btn')) openDescriptionModelModal(descModelId);
+        if (target.matches('.delete-desc-model-btn')) deleteDescriptionModel(descModelId);
+        if (associateChartId) openAssociationModal(associateChartId, 'sizingChart');
+        if (associateDescId) openAssociationModal(associateDescId, 'description');
+        if (showcaseId) openShowcaseModal(showcaseId);
     });
 
     mainContent.addEventListener('change', (e) => {
-        const target = e.target;
-        if (target.classList.contains('activate-toggle')) {
-            const productId = parseInt(target.dataset.productId, 10);
-            toggleResellerProductActive(productId);
+        if (e.target.matches('.activate-toggle')) {
+            toggleResellerProductActive(parseInt(e.target.dataset.productId, 10));
         }
     });
 }
@@ -197,37 +183,29 @@ function closeModal(modalId) {
     if (modal) modal.classList.remove('active');
 }
 
-// --- CARREGAMENTO DE DADOS ---
 function loadLocalDataForReseller() {
     const savedPublished = localStorage.getItem('erpPublished');
     if (savedPublished) publishedProductIds = JSON.parse(savedPublished).map(id => parseInt(id, 10));
-    
     const savedMargins = localStorage.getItem('resellerMargins');
     if (savedMargins) resellerProductMargins = JSON.parse(savedMargins);
-    
     const savedTags = localStorage.getItem('resellerProductTags');
     if (savedTags) resellerProductTags = JSON.parse(savedTags);
-    
     const savedResellerActive = localStorage.getItem('resellerActiveProducts');
     if (savedResellerActive) resellerActiveProductIds = JSON.parse(savedResellerActive).map(id => parseInt(id, 10));
-    
     const savedSettings = localStorage.getItem('resellerSettings');
     if (savedSettings) resellerSettings = JSON.parse(savedSettings);
-    
     const savedPromotions = localStorage.getItem('resellerPromotions');
     if (savedPromotions) resellerPromotions = JSON.parse(savedPromotions);
-    
     const savedDescriptions = localStorage.getItem('resellerProductDescriptions');
     if (savedDescriptions) resellerProductDescriptions = JSON.parse(savedDescriptions);
-    
     const savedSizingCharts = localStorage.getItem('resellerSizingCharts');
     if (savedSizingCharts) resellerSizingCharts = JSON.parse(savedSizingCharts);
-    
     const savedSizingChartLinks = localStorage.getItem('resellerProductSizingChartLinks');
     if (savedSizingChartLinks) resellerProductSizingChartLinks = JSON.parse(savedSizingChartLinks);
-    
     const savedShowcase = localStorage.getItem('resellerShowcase');
     if (savedShowcase) resellerShowcase = JSON.parse(savedShowcase);
+    const savedDescModels = localStorage.getItem('resellerDescriptionModels');
+    if(savedDescModels) resellerDescriptionModels = JSON.parse(savedDescModels);
 }
 
 async function loadAllPublishedProducts() {
@@ -266,8 +244,6 @@ async function loadAllPublishedProducts() {
         if(loader) loader.classList.remove('visible');
     }
 }
-
-// --- LÓGICA DAS PÁGINAS ---
 
 function renderResellerProductsTable() {
     const tbody = document.getElementById('reseller-products-table-body');
@@ -335,7 +311,6 @@ function saveAppearanceSettings() {
 
 function setupPromotionsPage() {
     const { freeShipping, firstPurchase, vipCoupon, seasonalSale, stockLimit } = resellerPromotions;
-
     if (freeShipping) document.getElementById('free-shipping-min-value').value = freeShipping.minValue || '';
     if (firstPurchase) {
         document.getElementById('first-purchase-code').value = firstPurchase.code || 'BEMVINDA10';
@@ -356,8 +331,6 @@ function setupPromotionsPage() {
         document.getElementById('stock-limit-message').value = stockLimit.message || 'ÚLTIMAS PEÇAS!';
     }
 }
-
-// --- LÓGICA DA VITRINE ---
 
 function setupShowcasePage() {
     updateShowcaseCounts();
@@ -381,9 +354,7 @@ function openShowcaseModal(showcaseId) {
     const titleEl = document.getElementById('showcase-modal-title');
     const showcaseCard = document.querySelector(`[data-showcase-id="${showcaseId}"]`).closest('.settings-section');
     const cardTitle = showcaseCard.querySelector('h2').textContent;
-    
     titleEl.textContent = `Gerenciar: ${cardTitle}`;
-    
     renderShowcaseProductList();
     openModal('showcase-product-modal');
 }
@@ -391,18 +362,14 @@ function openShowcaseModal(showcaseId) {
 function renderShowcaseProductList(searchTerm = '') {
     const container = document.getElementById('showcase-product-list');
     if (!container) return;
-    
     container.innerHTML = '';
     const term = searchTerm.toLowerCase();
     const selectedProductIds = resellerShowcase[currentEditingShowcaseId] || [];
-
     const filteredProducts = resellerProducts.filter(p => p.nome.toLowerCase().includes(term));
-
     if (filteredProducts.length === 0) {
         container.innerHTML = `<p style="text-align:center; padding: 1rem; color: var(--text-light);">Nenhum produto encontrado.</p>`;
         return;
     }
-
     filteredProducts.forEach(p => {
         const isChecked = selectedProductIds.includes(p.id);
         const itemHTML = `
@@ -422,23 +389,44 @@ function filterShowcaseProducts(event) {
 
 function saveShowcaseSelection() {
     if (!currentEditingShowcaseId) return;
-
     const selectedIds = Array.from(document.querySelectorAll('.showcase-product-checkbox:checked')).map(cb => parseInt(cb.value, 10));
     resellerShowcase[currentEditingShowcaseId] = selectedIds;
-
     localStorage.setItem('resellerShowcase', JSON.stringify(resellerShowcase));
-    
     closeModal('showcase-product-modal');
     showToast('Vitrine atualizada com sucesso!', 'success');
     updateShowcaseCounts();
     currentEditingShowcaseId = null;
 }
 
-
-// --- LÓGICA DA PÁGINA DE DESCRIÇÕES ---
 function setupDescriptionsPage() {
+    renderDescriptionModelsList();
     renderSizingChartManager();
     renderProductDescriptionList();
+}
+
+function renderDescriptionModelsList() {
+    const container = document.getElementById('description-models-list');
+    if (!container) return;
+    if (resellerDescriptionModels.length === 0) {
+        container.innerHTML = `<p style="text-align: center; padding: 1rem; color: var(--text-light);">Nenhum modelo de descrição criado.</p>`;
+        return;
+    }
+    let tableHTML = `<table class="product-table"><thead><tr><th>Nome do Modelo</th><th>Ações</th></tr></thead><tbody>`;
+    resellerDescriptionModels.forEach(model => {
+        tableHTML += `
+            <tr>
+                <td>${model.name}</td>
+                <td class="actions-cell">
+                    <button class="btn btn-primary" data-associate-desc-id="${model.id}" style="padding: 0.25rem 0.5rem;" title="Associar a Produtos"><i data-feather="link"></i></button>
+                    <button class="btn edit-desc-model-btn" data-desc-model-id="${model.id}" style="padding: 0.25rem 0.5rem;" title="Editar"><i data-feather="edit"></i></button>
+                    <button class="btn btn-danger delete-desc-model-btn" data-desc-model-id="${model.id}" style="padding: 0.25rem 0.5rem;" title="Excluir"><i data-feather="trash-2"></i></button>
+                </td>
+            </tr>
+        `;
+    });
+    tableHTML += `</tbody></table>`;
+    container.innerHTML = tableHTML;
+    feather.replace();
 }
 
 function renderSizingChartManager() {
@@ -454,6 +442,7 @@ function renderSizingChartManager() {
             <tr>
                 <td>${chart.name}</td>
                 <td class="actions-cell">
+                    <button class="btn btn-primary" data-associate-chart-id="${chart.id}" style="padding: 0.25rem 0.5rem;" title="Associar a Produtos"><i data-feather="link"></i></button>
                     <button class="btn edit-chart-btn" data-chart-id="${chart.id}" style="padding: 0.25rem 0.5rem;" title="Editar"><i data-feather="edit"></i></button>
                     <button class="btn btn-danger delete-chart-btn" data-chart-id="${chart.id}" style="padding: 0.25rem 0.5rem;" title="Excluir"><i data-feather="trash-2"></i></button>
                 </td>
@@ -463,6 +452,140 @@ function renderSizingChartManager() {
     tableHTML += `</tbody></table>`;
     container.innerHTML = tableHTML;
     feather.replace();
+}
+
+function openDescriptionModelModal(modelId = null) {
+    const modal = document.getElementById('description-model-modal');
+    const title = document.getElementById('description-model-modal-title');
+    const nameInput = document.getElementById('description-model-name');
+    const contentTextarea = document.getElementById('description-model-content');
+    modal.dataset.editingId = modelId || '';
+
+    if (modelId) {
+        const model = resellerDescriptionModels.find(m => m.id === modelId);
+        if (!model) return;
+        title.textContent = "Editar Modelo de Descrição";
+        nameInput.value = model.name;
+        contentTextarea.value = model.content;
+    } else {
+        title.textContent = "Criar Novo Modelo de Descrição";
+        nameInput.value = '';
+        contentTextarea.value = '';
+    }
+    openModal('description-model-modal');
+}
+
+function saveDescriptionModel() {
+    const modal = document.getElementById('description-model-modal');
+    const modelId = modal.dataset.editingId;
+    const name = document.getElementById('description-model-name').value.trim();
+    const content = document.getElementById('description-model-content').value.trim();
+
+    if (!name || !content) {
+        showToast("Nome e conteúdo do modelo são obrigatórios.", "error");
+        return;
+    }
+
+    if (modelId) {
+        const index = resellerDescriptionModels.findIndex(m => m.id === modelId);
+        if (index > -1) {
+            resellerDescriptionModels[index] = { ...resellerDescriptionModels[index], name, content };
+        }
+    } else {
+        resellerDescriptionModels.push({ id: `desc_${Date.now()}`, name, content });
+    }
+
+    localStorage.setItem('resellerDescriptionModels', JSON.stringify(resellerDescriptionModels));
+    showToast("Modelo de descrição salvo com sucesso!", "success");
+    closeModal('description-model-modal');
+    renderDescriptionModelsList();
+}
+
+function deleteDescriptionModel(modelId) {
+    resellerDescriptionModels = resellerDescriptionModels.filter(m => m.id !== modelId);
+    localStorage.setItem('resellerDescriptionModels', JSON.stringify(resellerDescriptionModels));
+    showToast("Modelo de descrição excluído.", "success");
+    renderDescriptionModelsList();
+}
+
+function openAssociationModal(modelId, type) {
+    currentModelIdToAssociate = modelId;
+    currentAssociationType = type;
+
+    const titleEl = document.getElementById('associate-modal-title');
+    let modelName = '';
+    if (type === 'description') {
+        const model = resellerDescriptionModels.find(m => m.id === modelId);
+        modelName = model ? model.name : '';
+        titleEl.textContent = `Associar Descrição: "${modelName}"`;
+    } else if (type === 'sizingChart') {
+        const model = resellerSizingCharts.find(c => c.id === modelId);
+        modelName = model ? model.name : '';
+        titleEl.textContent = `Associar Tabela: "${modelName}"`;
+    }
+    
+    renderAssociationProductList();
+    openModal('associate-products-modal');
+}
+
+function renderAssociationProductList(searchTerm = '') {
+    const container = document.getElementById('associate-product-list');
+    if (!container) return;
+    
+    container.innerHTML = '';
+    const term = searchTerm.toLowerCase();
+    const filteredProducts = resellerProducts.filter(p => p.nome.toLowerCase().includes(term));
+
+    if (filteredProducts.length === 0) {
+        container.innerHTML = `<p style="text-align:center; padding: 1rem; color: var(--text-light);">Nenhum produto encontrado.</p>`;
+        return;
+    }
+
+    filteredProducts.forEach(p => {
+        let isChecked = false;
+        if (currentAssociationType === 'description') {
+            const descModel = resellerDescriptionModels.find(m => m.id === currentModelIdToAssociate);
+            isChecked = descModel && resellerProductDescriptions[p.id] === descModel.content;
+        } else if (currentAssociationType === 'sizingChart') {
+            isChecked = resellerProductSizingChartLinks[p.id] === currentModelIdToAssociate;
+        }
+
+        const itemHTML = `
+            <label style="display: flex; align-items: center; gap: 1rem; padding: 0.75rem; border-bottom: 1px solid var(--border-color); cursor: pointer;">
+                <input type="checkbox" value="${p.id}" class="association-product-checkbox" ${isChecked ? 'checked' : ''}>
+                <img src="${proxyImageUrl(p.imagem)}" class="product-image">
+                <span>${p.nome}</span>
+            </label>
+        `;
+        container.innerHTML += itemHTML;
+    });
+}
+
+function filterAssociationProducts(event) {
+    renderAssociationProductList(event.target.value);
+}
+
+function saveAssociation() {
+    const selectedProductIds = Array.from(document.querySelectorAll('.association-product-checkbox:checked')).map(cb => parseInt(cb.value, 10));
+    
+    if (currentAssociationType === 'description') {
+        const model = resellerDescriptionModels.find(m => m.id === currentModelIdToAssociate);
+        if (model) {
+            selectedProductIds.forEach(productId => {
+                resellerProductDescriptions[productId] = model.content;
+            });
+            localStorage.setItem('resellerProductDescriptions', JSON.stringify(resellerProductDescriptions));
+        }
+    } else if (currentAssociationType === 'sizingChart') {
+        selectedProductIds.forEach(productId => {
+            resellerProductSizingChartLinks[productId] = currentModelIdToAssociate;
+        });
+        localStorage.setItem('resellerProductSizingChartLinks', JSON.stringify(resellerProductSizingChartLinks));
+    }
+
+    showToast("Associação salva com sucesso!", "success");
+    closeModal('associate-products-modal');
+    renderProductDescriptionList();
 }
 
 function renderProductDescriptionList() {
@@ -523,33 +646,26 @@ function renderSizingChartEditor(headers, rows) {
     });
     table += `</tbody></table>`;
     editor.innerHTML = table;
-    editor.querySelector('.remove-row-btn')?.addEventListener('click', (e) => {
-        e.target.closest('tr').remove();
+    editor.querySelectorAll('.remove-row-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => e.target.closest('tr').remove());
     });
     feather.replace();
 }
 
-// --- CORREÇÃO APLICADA AQUI ---
 function addSizingChartRow() {
     const tableBody = document.querySelector('#sizing-chart-editor table tbody');
     if (!tableBody) return;
     const headerRow = document.querySelector('#sizing-chart-editor table thead tr');
     if(!headerRow) return;
-
-    const colCount = headerRow.children.length - 1; // -1 para a coluna de ações
+    const colCount = headerRow.children.length - 1;
     const newRow = tableBody.insertRow();
-    
     for (let i = 0; i < colCount; i++) {
-        const newCell = newRow.insertCell();
-        newCell.innerHTML = `<input type="text" class="search-input cell-input" value="">`;
+        newRow.insertCell().innerHTML = `<input type="text" class="search-input cell-input" value="">`;
     }
-
     const actionCell = newRow.insertCell();
     actionCell.className = 'actions-cell';
     actionCell.innerHTML = `<button class="btn btn-danger btn-sm remove-row-btn"><i data-feather="trash-2"></i></button>`;
-    actionCell.querySelector('.remove-row-btn').addEventListener('click', (e) => {
-        e.target.closest('tr').remove();
-    });
+    actionCell.querySelector('.remove-row-btn').addEventListener('click', (e) => e.target.closest('tr').remove());
     feather.replace();
 }
 
@@ -558,19 +674,16 @@ function addSizingChartColumn() {
     if (!table) return;
     const headerRow = table.querySelector('thead tr');
     const bodyRows = table.querySelectorAll('tbody tr');
-
     if (headerRow) {
         const newHeaderCell = document.createElement('th');
         newHeaderCell.innerHTML = `<input type="text" class="search-input header-input" value="Nova Medida">`;
         headerRow.insertBefore(newHeaderCell, headerRow.lastChild);
     }
-
     bodyRows.forEach(row => {
-        const newCell = row.insertCell(row.cells.length - 1); // Insere antes da célula de ação
+        const newCell = row.insertCell(row.cells.length - 1);
         newCell.innerHTML = `<input type="text" class="search-input cell-input" value="">`;
     });
 }
-
 
 function saveSizingChart() {
     const modal = document.getElementById('sizing-chart-modal');
@@ -583,9 +696,7 @@ function saveSizingChart() {
     );
     if (chartId) {
         const index = resellerSizingCharts.findIndex(c => c.id === chartId);
-        if(index > -1) {
-            resellerSizingCharts[index] = { ...resellerSizingCharts[index], name, headers, rows };
-        }
+        if(index > -1) resellerSizingCharts[index] = { ...resellerSizingCharts[index], name, headers, rows };
     } else {
         resellerSizingCharts.push({ id: `chart_${Date.now()}`, name, headers, rows });
     }
@@ -611,7 +722,7 @@ function deleteSizingChart(chartId) {
 
 function openProductDescriptionModal(productId) {
     const modal = document.getElementById('product-description-modal');
-    const product = resellerProducts.find(p => p.id === productId);
+    const product = resellerProducts.find(p => p.id === parseInt(productId));
     if (!product) return;
     modal.dataset.editingId = productId;
     document.getElementById('product-description-modal-title').textContent = `Editar: ${product.nome}`;
@@ -666,10 +777,8 @@ function handleImageUpload(event, previewElementId, settingsKey) {
     const reader = new FileReader();
     reader.onload = (e) => {
         const previewElement = document.getElementById(previewElementId);
-        if (previewElement) {
-            if(previewElement.tagName === 'IMG') {
-                previewElement.src = e.target.result;
-            }
+        if (previewElement && previewElement.tagName === 'IMG') {
+            previewElement.src = e.target.result;
         }
         resellerSettings[settingsKey] = e.target.result;
     };
@@ -698,12 +807,12 @@ function toggleResellerProductActive(productId) {
     } else {
         resellerActiveProductIds.push(productId);
     }
-    localStorage.setItem('resellerActiveProducts', JSON.stringify(resellerActiveProductIds));
+    localStorage.setItem('resellerActiveProductIds', JSON.stringify(resellerActiveProductIds));
     showToast('Visibilidade do produto atualizada!', 'success');
 }
 
 function showResellerProductEditModal(productId) {
-    const product = resellerProducts.find(p => p.id === productId);
+    const product = resellerProducts.find(p => p.id === parseInt(productId));
     if (!product) return;
     document.getElementById('modal-reseller-product-name').textContent = `Editar Margem: ${product.nome}`;
     document.getElementById('reseller-margin-input').value = resellerProductMargins[productId] || 30;
@@ -722,7 +831,7 @@ function saveResellerMargin(productId) {
 }
 
 function showResellerTagsModal(productId) {
-    const product = resellerProducts.find(p => p.id === productId);
+    const product = resellerProducts.find(p => p.id === parseInt(productId));
     if (!product) return;
     document.getElementById('modal-tags-product-name').textContent = `Editar Tags: ${product.nome}`;
     const container = document.getElementById('tags-selection-container');
