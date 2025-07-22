@@ -1,8 +1,9 @@
 /**
  * painel-revendedora.js
- * * VERSÃO CORRIGIDA
- * - Corrigido o bug crítico que impedia os produtos publicados pelo admin de aparecerem no painel da revendedora.
- * - A função `loadAllPublishedProducts` agora força a recarga dos produtos da API para refletir o estado atual.
+ * * VERSÃO COM LÓGICA DE PROMOÇÕES COMPLETA
+ * - Corrigido o bug que impedia a seleção de produtos nos modais de promoção.
+ * - Implementada a lógica de salvamento para todas as 12 estratégias de oferta.
+ * - Os modais agora carregam as configurações salvas anteriormente.
  */
 
 // --- VARIÁVEIS GLOBAIS ---
@@ -105,10 +106,32 @@ function setupMobileMenu() {
     });
 }
 
+/**
+ * CORREÇÃO: Popula os selects dos modais com os produtos da revendedora.
+ */
+function populateProductSelects() {
+    const selects = document.querySelectorAll('#flash-sale-product, #bmpl-product');
+    selects.forEach(select => {
+        select.innerHTML = '<option value="">Selecione um produto...</option>'; // Limpa e adiciona a opção padrão
+        resellerProducts.forEach(product => {
+            const option = document.createElement('option');
+            option.value = product.id;
+            option.textContent = product.nome;
+            select.appendChild(option);
+        });
+    });
+}
+
 function openModal(modalId) {
     const modal = document.getElementById(modalId);
-    if (modal) modal.classList.add('active');
-    feather.replace();
+    if (modal) {
+        // Popula os selects de produto ANTES de abrir o modal
+        if (modalId === 'flash-sale-modal' || modalId === 'bmpl-modal') {
+            populateProductSelects();
+        }
+        modal.classList.add('active');
+        feather.replace();
+    }
 }
 
 function closeModal(modalId) { 
@@ -139,22 +162,15 @@ function loadLocalDataForReseller() {
     if (savedPromotions) resellerPromotions = JSON.parse(savedPromotions);
 }
 
-/**
- * CORREÇÃO CRÍTICA APLICADA AQUI.
- * A função agora sempre limpa a lista de produtos antes de buscar na API.
- * Isso garante que a lista seja sempre a mais atual, refletindo o que o admin publicou.
- */
 async function loadAllPublishedProducts() {
     const loader = document.getElementById('reseller-product-list-loader');
     if (loader) loader.classList.add('visible');
     
-    // CORREÇÃO: Limpa a lista de produtos para forçar a recarga a partir da API.
     resellerProducts = []; 
     
     let currentPage = 1;
     let hasMore = true;
     try {
-        // Recarrega a lista de IDs publicados do localStorage, caso tenha mudado.
         loadLocalDataForReseller();
 
         while(hasMore) {
@@ -164,7 +180,6 @@ async function loadAllPublishedProducts() {
                 break;
             }
             
-            // Filtra os produtos da página atual para incluir apenas os que foram publicados pelo admin
             const publishedInPage = data.data.filter(p => publishedProductIds.includes(parseInt(p.id, 10)));
             
             if (publishedInPage.length > 0) {
@@ -260,7 +275,8 @@ function saveAppearanceSettings() {
 // --- LÓGICA DE PROMOÇÕES ---
 
 function setupPromotionsPage() {
-    const { freeShipping, firstPurchase, stockLimit, vipCoupon, seasonalSale, timeLimit, progressiveDiscount } = resellerPromotions;
+    const { freeShipping, firstPurchase, stockLimit, vipCoupon, seasonalSale, timeLimit, progressiveDiscount, flashSale, bmpl } = resellerPromotions;
+
     if (freeShipping) document.getElementById('free-shipping-min-value').value = freeShipping.minValue || '';
     if (firstPurchase) {
         document.getElementById('first-purchase-code').value = firstPurchase.code || 'BEMVINDA10';
@@ -291,9 +307,29 @@ function setupPromotionsPage() {
         document.getElementById('prog-discount-value2').value = progressiveDiscount.tier2?.value || '';
         document.getElementById('prog-discount-percent2').value = progressiveDiscount.tier2?.discount || '';
     }
+    if (flashSale) {
+        document.getElementById('flash-sale-product').value = flashSale.productId || '';
+        document.getElementById('flash-sale-discount').value = flashSale.discount || '';
+        document.getElementById('flash-sale-end-date').value = flashSale.endDate || '';
+    }
+    if (bmpl) {
+        document.getElementById('bmpl-product').value = bmpl.productId || '';
+        document.getElementById('bmpl-buy-qty').value = bmpl.buyQty || '';
+        document.getElementById('bmpl-pay-qty').value = bmpl.payQty || '';
+    }
 }
 
-function saveFlashSale() { showToast("Flash Sale salva!", "success"); closeModal('flash-sale-modal'); }
+function saveFlashSale() { 
+    resellerPromotions.flashSale = {
+        productId: document.getElementById('flash-sale-product').value,
+        discount: document.getElementById('flash-sale-discount').value,
+        endDate: document.getElementById('flash-sale-end-date').value
+    };
+    localStorage.setItem('resellerPromotions', JSON.stringify(resellerPromotions));
+    showToast("Flash Sale salva!", "success"); 
+    closeModal('flash-sale-modal'); 
+}
+
 function saveStockLimit() {
     resellerPromotions.stockLimit = { threshold: document.getElementById('stock-limit-threshold').value, message: document.getElementById('stock-limit-message').value };
     localStorage.setItem('resellerPromotions', JSON.stringify(resellerPromotions));
@@ -304,7 +340,16 @@ function saveTimeLimit() {
     localStorage.setItem('resellerPromotions', JSON.stringify(resellerPromotions));
     showToast("Oferta por Tempo Limitado salva!", "success"); closeModal('time-limit-modal');
 }
-function saveBmpl() { showToast("Oferta Leve Mais, Pague Menos salva!", "success"); closeModal('buy-more-pay-less-modal'); }
+function saveBmpl() { 
+    resellerPromotions.bmpl = {
+        productId: document.getElementById('bmpl-product').value,
+        buyQty: document.getElementById('bmpl-buy-qty').value,
+        payQty: document.getElementById('bmpl-pay-qty').value
+    };
+    localStorage.setItem('resellerPromotions', JSON.stringify(resellerPromotions));
+    showToast("Oferta Leve Mais, Pague Menos salva!", "success"); 
+    closeModal('buy-more-pay-less-modal'); 
+}
 function saveProgressiveDiscount() {
     resellerPromotions.progressiveDiscount = { tier1: { value: document.getElementById('prog-discount-value1').value, discount: document.getElementById('prog-discount-percent1').value }, tier2: { value: document.getElementById('prog-discount-value2').value, discount: document.getElementById('prog-discount-percent2').value } };
     localStorage.setItem('resellerPromotions', JSON.stringify(resellerPromotions));
