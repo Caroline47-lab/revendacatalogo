@@ -11,7 +11,6 @@
     
     <script src="https://unpkg.com/feather-icons"></script>
 
-    <!-- O CSS é o mesmo do arquivo original, pois define o estilo base para os painéis -->
     <style>
         :root {
             --primary-color: #DB1472;
@@ -59,15 +58,20 @@
         .page-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; flex-wrap: wrap; gap: 1rem; }
         .page-header h1 { font-size: 1.75rem; font-weight: 700; }
         
+        /* NOVO ESTILO PARA O BOTÃO DE VOLTAR */
+        .page-subheader {
+            margin-bottom: 1.5rem;
+        }
+        
         .mobile-header-controls { display: none; }
         #menu-toggle-empresa { background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 0.5rem; padding: 0.5rem; cursor: pointer; }
 
-        .btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 0.6rem 1.25rem; border-radius: 0.5rem; border: none; font-weight: 600; font-size: 0.9rem; cursor: pointer; transition: all 0.2s ease; }
+        .btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 0.6rem 1.25rem; border-radius: 0.5rem; border: none; font-weight: 600; font-size: 0.9rem; cursor: pointer; transition: all 0.2s ease; text-decoration: none; }
         .btn:disabled { background-color: #cbd5e1; cursor: not-allowed; }
         .btn-primary { background-color: var(--primary-color); color: white; }
         .btn-primary:hover:not(:disabled) { opacity: 0.9; }
-        .btn-secondary { background-color: #334155; color: white; }
-        .btn-secondary:hover:not(:disabled) { opacity: 0.9; }
+        .btn-secondary { background-color: #64748b; color: white; }
+        .btn-secondary:hover:not(:disabled) { background-color: var(--text-color); }
         .btn-success { background-color: var(--success-color); color: white; }
         .btn-success:hover:not(:disabled) { opacity: 0.9; }
         .btn-danger { background-color: var(--danger-color); color: white; }
@@ -153,7 +157,6 @@
 </head>
 <body>
 
-    <!-- VISÃO DO PAINEL DA EMPRESA -->
     <div id="empresa-view" class="view active">
         <div class="app-container">
             <aside class="sidebar">
@@ -168,6 +171,10 @@
                     <li class="nav-item"><a class="nav-link" data-page="sync"><i data-feather="refresh-cw"></i> Sincronização</a></li>
                 </ul>
                 <div class="sidebar-footer">
+                    <!-- BOTÃO SAIR ADICIONADO -->
+                    <a href="index.html" class="btn btn-danger" style="width: 100%; margin-bottom: 1rem;">
+                        <i data-feather="log-out"></i> Sair
+                    </a>
                     <p>&copy; 2025 - ERP CJOTA</p>
                 </div>
             </aside>
@@ -187,6 +194,9 @@
                     </div>
                 </section>
                 <section id="products" class="page">
+                    <div class="page-subheader">
+                        <button class="btn btn-secondary back-to-dashboard-btn"><i data-feather="arrow-left"></i> Voltar para Visão Geral</button>
+                    </div>
                     <div class="page-controls"><input type="text" id="product-search-input" class="search-input" placeholder="Buscar por nome ou SKU..."></div>
                     <div class="table-container">
                         <table class="product-table">
@@ -204,6 +214,9 @@
                     </div>
                 </section>
                  <section id="categories" class="page">
+                    <div class="page-subheader">
+                        <button class="btn btn-secondary back-to-dashboard-btn"><i data-feather="arrow-left"></i> Voltar para Visão Geral</button>
+                    </div>
                     <div class="table-container">
                         <table class="product-table">
                             <thead><tr><th>Nome da Categoria</th><th>Publicar no Catálogo</th></tr></thead>
@@ -212,20 +225,17 @@
                     </div>
                 </section>
                 <section id="abc-curve" class="page">
-                    <div class="settings-section">
-                        <h2>Curva A <span style="font-size: 0.9rem; color: var(--text-light); font-weight: 500;">(Produtos mais importantes)</span></h2>
-                        <div id="curve-a-list"></div>
+                    <div class="page-subheader">
+                        <button class="btn btn-secondary back-to-dashboard-btn"><i data-feather="arrow-left"></i> Voltar para Visão Geral</button>
                     </div>
-                    <div class="settings-section">
-                        <h2>Curva B <span style="font-size: 0.9rem; color: var(--text-light); font-weight: 500;">(Produtos intermediários)</span></h2>
-                        <div id="curve-b-list"></div>
-                    </div>
-                    <div class="settings-section">
-                        <h2>Curva C <span style="font-size: 0.9rem; color: var(--text-light); font-weight: 500;">(Produtos com menor giro)</span></h2>
-                        <div id="curve-c-list"></div>
+                    <div id="abc-curve-content">
+                        <!-- Conteúdo da Curva ABC será renderizado aqui pelo JS -->
                     </div>
                 </section>
                 <section id="catalog" class="page">
+                    <div class="page-subheader">
+                        <button class="btn btn-secondary back-to-dashboard-btn"><i data-feather="arrow-left"></i> Voltar para Visão Geral</button>
+                    </div>
                     <div class="table-container">
                         <table class="product-table">
                             <thead><tr><th>Imagem</th><th>Nome</th><th>Preço</th><th>Variações Disponíveis</th></tr></thead>
@@ -234,6 +244,9 @@
                     </div>
                 </section>
                 <section id="resellers" class="page">
+                    <div class="page-subheader">
+                        <button class="btn btn-secondary back-to-dashboard-btn"><i data-feather="arrow-left"></i> Voltar para Visão Geral</button>
+                    </div>
                     <div class="table-container">
                         <table class="product-table">
                             <thead><tr><th>Nome</th><th>Documento</th><th>Telefone</th><th>Status</th><th>Ações</th></tr></thead>
@@ -242,8 +255,11 @@
                     </div>
                 </section>
                 <section id="sync" class="page">
+                    <div class="page-subheader">
+                        <button class="btn btn-secondary back-to-dashboard-btn"><i data-feather="arrow-left"></i> Voltar para Visão Geral</button>
+                    </div>
                     <div class="stat-card">
-                        <p>A sincronização agora é feita de forma automática ao carregar a lista de produtos. Use o botão abaixo para forçar uma recarga completa, limpando os dados atuais.</p>
+                        <p>A sincronização agora é feita de forma automática ao carregar a lista de produtos. Use o botão abaixo para forçar uma recarga completa.</p>
                         <div style="margin-top: 1.5rem; display: flex; gap: 1rem; flex-wrap: wrap;">
                             <button id="reload-products-btn" class="btn btn-primary"><i data-feather="refresh-cw"></i> Recarregar Produtos</button>
                             <button id="test-connection-btn" class="btn btn-secondary">Testar Conexão</button>
