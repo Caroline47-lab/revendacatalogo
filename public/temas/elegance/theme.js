@@ -92,15 +92,108 @@ function buildEleganceLayout() {
         feather.replace();
     }
 
-    // AVISA QUE O LAYOUT ESTÁ PRONTO
-    document.dispatchEvent(new CustomEvent('theme:ready'));
+    // CORREÇÃO: CHAMA DIRETAMENTE A FUNÇÃO DE INICIALIZAÇÃO DO CATÁLOGO
+    if (typeof initializeCatalog === 'function') {
+        initializeCatalog();
+    } else {
+        console.error('Função initializeCatalog() não encontrada. O catalogo.js foi carregado?');
+    }
 }
 
 /**
  * Aplica as configurações salvas no localStorage para a pré-visualização.
  */
 function applyPreviewSettings() {
-    // ... (código existente para aplicar as configurações)
-}
+    const settingsJSON = localStorage.getItem('theme_preview_settings');
+    if (!settingsJSON) return;
 
-// ... (restante do código)
+    const settings = JSON.parse(settingsJSON);
+    
+    // --- Barra de Mensagens ---
+    const topBarWrapper = document.getElementById('top-bar-wrapper');
+    if (topBarWrapper) {
+        if (settings.topbarActive) {
+            topBarWrapper.style.display = 'block';
+            topBarWrapper.style.backgroundColor = settings.topbarBgColor;
+            topBarWrapper.style.color = settings.topbarTextColor;
+            const messages = [settings.topbarText1, settings.topbarText2, settings.topbarText3].filter(Boolean);
+            if (messages.length > 0) {
+                const marqueeContent = [...messages, ...messages].map(msg => `<span class="mx-4">${msg}</span>`).join('');
+                document.getElementById('catalog-top-bar-container').innerHTML = marqueeContent;
+            } else {
+                 topBarWrapper.style.display = 'none';
+            }
+        } else {
+            topBarWrapper.style.display = 'none';
+        }
+    }
+
+    // --- Cores do Cabeçalho ---
+    const headerWrapper = document.getElementById('header-wrapper');
+    if (headerWrapper) headerWrapper.style.backgroundColor = settings.headerBg;
+    
+    // --- Logo ---
+    const logoImg = document.getElementById('catalog-logo');
+    if (logoImg) {
+        const isMobile = window.innerWidth < 768;
+        const logoToShow = isMobile ? settings.logoMobile : settings.logoDesktop;
+        if (logoToShow) logoImg.src = logoToShow;
+    }
+
+    // --- Ícones ---
+    const cartIcon = document.querySelector('#cart-button i');
+    if (cartIcon) {
+        cartIcon.setAttribute('data-feather', settings.useBagIcon ? 'shopping-bag' : 'shopping-cart');
+        cartIcon.style.color = settings.headerIconColor;
+    }
+    const menuIcon = document.querySelector('#catalog-menu-toggle i');
+    if (menuIcon) menuIcon.style.color = settings.headerIconColor;
+    const searchIcon = document.querySelector('#search-icon-wrapper i');
+    if (searchIcon) searchIcon.style.color = settings.headerIconColor;
+
+    // --- Menu e Navegação ---
+    const nav = document.getElementById('theme-navigation');
+    if (nav) {
+        nav.style.justifyContent = settings.menuAlignment;
+        if (settings.menuIsSticky) {
+            headerWrapper.classList.add('sticky-header');
+        } else {
+            headerWrapper.classList.remove('sticky-header');
+        }
+    }
+
+    // --- Corpo da Loja ---
+    const mainElement = document.querySelector('main');
+    if (mainElement) mainElement.style.backgroundColor = settings.bodyBgColor;
+
+    const banner = document.getElementById('catalog-banner');
+    if (banner) {
+        const isMobile = window.innerWidth < 768;
+        const bannerToShow = isMobile ? settings.bannerMobile : settings.bannerDesktop;
+        if (bannerToShow) {
+            banner.style.backgroundImage = `url(${bannerToShow})`;
+        }
+    }
+
+    // --- Estilos Dinâmicos (Cores de Hover, Títulos, Cards) ---
+    const dynamicStyleId = 'theme-dynamic-styles';
+    let dynamicStyle = document.getElementById(dynamicStyleId);
+    if (!dynamicStyle) {
+        dynamicStyle = document.createElement('style');
+        dynamicStyle.id = dynamicStyleId;
+        document.head.appendChild(dynamicStyle);
+    }
+    dynamicStyle.innerHTML = `
+        .theme-menu-link { color: ${settings.menuLinkColor}; }
+        .theme-menu-link:hover { color: ${settings.menuLinkHoverColor}; }
+        #filter-title { color: ${settings.sectionTitleColor}; }
+        .product-card { 
+            border-radius: ${settings.cardBorderRadius};
+            box-shadow: ${settings.cardHasShadow ? 'var(--shadow)' : 'none'};
+        }
+    `;
+
+    if (typeof feather !== 'undefined') {
+        feather.replace();
+    }
+}
