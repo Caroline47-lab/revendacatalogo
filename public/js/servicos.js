@@ -1,15 +1,40 @@
 /**
  * servicos.js
- * Centraliza a comunicação com a API da FacilZap e outros serviços.
- * VERSÃO CORRIGIDA: Removido o erro de sintaxe (um '}' extra) e a função
- * realApiFetch foi tornada mais robusta para lidar com falhas na API.
+ * Centraliza a comunicação com a API.
+ * VERSÃO CORRIGIDA: Adicionada validação do API_TOKEN para evitar falhas silenciosas.
+ * Agora, se o token não for configurado, um erro visível será exibido na tela.
  */
 
 // --- CONSTANTES DA API ---
 const API_BASE_URL = "https://api.facilzap.app.br/v1";
-// IMPORTANTE: Substitua pelo seu token real. Por segurança, em produção,
-// isso deveria vir de uma variável de ambiente no backend (Netlify Function).
+// IMPORTANTE: Substitua "SEU_TOKEN_AQUI" pelo seu token real da FacilZap.
 const API_TOKEN = "SEU_TOKEN_AQUI";
+
+/**
+ * Exibe uma barra de erro global no topo da página.
+ * @param {string} message A mensagem de erro a ser exibida.
+ */
+function showGlobalError(message) {
+    let errorBanner = document.getElementById('global-error-banner');
+    if (!errorBanner) {
+        errorBanner = document.createElement('div');
+        errorBanner.id = 'global-error-banner';
+        // Estilos para tornar o banner bem visível
+        errorBanner.style.backgroundColor = '#ef4444'; // Cor de perigo
+        errorBanner.style.color = 'white';
+        errorBanner.style.padding = '1rem';
+        errorBanner.style.textAlign = 'center';
+        errorBanner.style.fontWeight = 'bold';
+        errorBanner.style.position = 'fixed';
+        errorBanner.style.top = '0';
+        errorBanner.style.left = '0';
+        errorBanner.style.width = '100%';
+        errorBanner.style.zIndex = '9999';
+        // Adiciona o banner no início do body
+        document.body.prepend(errorBanner);
+    }
+    errorBanner.innerHTML = message;
+}
 
 /**
  * Busca produtos da API da FacilZap de forma segura e robusta.
@@ -19,6 +44,14 @@ const API_TOKEN = "SEU_TOKEN_AQUI";
  * @returns {Promise<Object>} Um objeto contendo os dados dos produtos e informações de paginação.
  */
 async function realApiFetch(page = 1, limit = 20, search = '') {
+    // VERIFICAÇÃO CRÍTICA: Checa se o token foi alterado.
+    if (API_TOKEN === "SEU_TOKEN_AQUI" || !API_TOKEN) {
+        const errorMessage = 'ERRO CRÍTICO: O Token da API não foi configurado no arquivo js/servicos.js. Por favor, substitua "SEU_TOKEN_AQUI" pelo seu token real.';
+        console.error(errorMessage);
+        showGlobalError(errorMessage); // Mostra o erro na tela para o usuário.
+        return { data: [], hasNext: false }; // Retorna vazio para não quebrar o resto do código.
+    }
+
     const url = new URL(`${API_BASE_URL}/produtos`);
     url.searchParams.append('page', page);
     url.searchParams.append('limit', limit);
@@ -36,42 +69,28 @@ async function realApiFetch(page = 1, limit = 20, search = '') {
         });
 
         if (!response.ok) {
-            // Se a resposta não for bem-sucedida, lança um erro com o status
+            console.error(`Erro na API: Status ${response.status} - ${response.statusText}`);
+            // Se o erro for de autenticação, exibe uma mensagem específica.
+            if (response.status === 401 || response.status === 403) {
+                 showGlobalError('Erro de Autenticação: Seu Token da API é inválido ou expirou. Verifique o arquivo js/servicos.js.');
+            }
             throw new Error(`Erro na API: Status ${response.status}`);
         }
 
         const data = await response.json();
 
-        // Garante que a resposta sempre tenha a estrutura esperada para não quebrar o app
         return {
-            data: data.data || [], // Retorna um array vazio se data.data for nulo/undefined
-            hasNext: data.hasNext || false // Retorna false se hasNext for nulo/undefined
+            data: data.data || [],
+            hasNext: data.hasNext || false
         };
 
     } catch (error) {
         console.error("Falha ao buscar dados da API:", error);
-        // Em caso de falha na rede ou erro, retorna uma estrutura vazia
         return {
             data: [],
             hasNext: false
         };
     }
-}
-
-/**
- * Cria um proxy para as imagens para evitar problemas de CORS e otimizar o carregamento.
- * @param {string} imageUrl - A URL original da imagem.
- * @returns {string} A URL da imagem através do proxy ou um placeholder.
- */
-function proxyImageUrl(imageUrl) {
-    if (!imageUrl) {
-        return 'https://placehold.co/300x300/e2e8f0/cccccc?text=Sem+Imagem';
-    }
-    // Em um ambiente de produção, isso apontaria para uma Netlify Function ou outro proxy.
-    // Para desenvolvimento local, um serviço de proxy de CORS pode ser usado, mas com cuidado.
-    // A URL abaixo é apenas um exemplo e pode ser instável.
-    // return `https://cors-anywhere.herokuapp.com/${imageUrl}`;
-    return imageUrl; // Retornando a URL original por enquanto.
 }
 
 /**
@@ -84,23 +103,12 @@ function showToast(message, type = 'info') {
     if (!toast) return;
 
     toast.textContent = message;
+    toast.style.backgroundColor = type === 'success' ? '#10b981' : type === 'error' ? '#ef4444' : '#3b82f6';
     
-    // Remove classes de tipo anteriores
-    toast.classList.remove('success', 'error', 'info');
-
-    // Adiciona a classe do tipo atual
-    if (type === 'success') {
-        toast.style.backgroundColor = '#10b981';
-    } else if (type === 'error') {
-        toast.style.backgroundColor = '#ef4444';
-    } else {
-        toast.style.backgroundColor = '#3b82f6';
-    }
-    
-    toast.classList.add('show');
+    toast.style.bottom = '20px';
     setTimeout(() => {
-        toast.classList.remove('show');
+        toast.style.bottom = '-100px';
     }, 3000);
 }
 
-// O '}' extra que quebrava o script foi removido daqui.
+// ... (outras funções de serviço, se houver)
