@@ -1,10 +1,9 @@
 /**
  * painel-revendedora.js
- * * VERSÃO CORRIGIDA E ESTABILIZADA
- * - Corrigido o bug crítico que impedia o funcionamento de todos os botões e o carregamento dos produtos.
- * - A função de inicialização de eventos foi reescrita para garantir que todos os botões sejam funcionais.
- * - Implementada a delegação de eventos para as tabelas dinâmicas, garantindo que os botões de ação sempre funcionem.
- * - Implementadas todas as funções auxiliares que estavam faltando.
+ * * VERSÃO COM LÓGICA DA VITRINE IMPLEMENTADA
+ * - Adicionada a lógica para gerenciar seções da vitrine (Lançamentos, etc.).
+ * - O modal de gerenciamento de produtos agora é funcional.
+ * - As seleções de produtos para cada vitrine são salvas no localStorage.
  */
 
 // --- VARIÁVEIS GLOBAIS ---
@@ -18,6 +17,8 @@ let resellerPromotions = {};
 let resellerProductDescriptions = {}; 
 let resellerSizingCharts = []; 
 let resellerProductSizingChartLinks = {}; 
+let resellerShowcase = {}; // NOVO: Armazena os produtos de cada vitrine
+let currentEditingShowcaseId = null; // NOVO: Controla qual vitrine está sendo editada
 
 const availableTags = ['Lançamento', 'Promoção', 'Mais Vendido', 'Últimas Peças'];
 
@@ -40,12 +41,12 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 });
 
-// --- CONFIGURAÇÃO DE EVENTOS (Reescrita para garantir funcionalidade) ---
+// --- CONFIGURAÇÃO DE EVENTOS ---
 function setupEventListeners() {
     // Navegação principal
     setupNavigation();
 
-    // Botões gerais (que existem fora de páginas específicas)
+    // Botões gerais
     document.getElementById('apply-mass-margin')?.addEventListener('click', applyMassMargin);
     document.getElementById('save-settings-btn')?.addEventListener('click', saveAppearanceSettings);
     document.getElementById('generate-link-btn')?.addEventListener('click', generateAndCopyCatalogLink);
@@ -54,7 +55,7 @@ function setupEventListeners() {
         input.addEventListener('change', (e) => handleImageUpload(e, `banner-preview-${e.target.dataset.bannerId}`, `banner-${e.target.dataset.bannerId}`));
     });
 
-    // Botões para abrir modais
+    // Botões para abrir modais de promoção
     document.querySelectorAll('[data-modal-target]').forEach(button => {
         button.addEventListener('click', () => {
             const modalId = button.getAttribute('data-modal-target');
@@ -86,8 +87,14 @@ function setupEventListeners() {
     document.getElementById('add-sizing-chart-col-btn')?.addEventListener('click', addSizingChartColumn);
     document.getElementById('save-product-description-btn')?.addEventListener('click', saveProductDescription);
 
-    // Delegação de Eventos para Tabelas Dinâmicas
-    setupTableEventListeners();
+    // NOVO: Botão para salvar seleção da vitrine
+    document.getElementById('save-showcase-selection-btn')?.addEventListener('click', saveShowcaseSelection);
+    
+    // NOVO: Busca de produtos no modal da vitrine
+    document.getElementById('showcase-product-search')?.addEventListener('keyup', filterShowcaseProducts);
+
+    // Delegação de Eventos para Tabelas e Seções Dinâmicas
+    setupDynamicEventListeners();
 }
 
 function setupNavigation() {
@@ -114,12 +121,13 @@ function setupNavigation() {
         if(pageId === 'reseller-appearance') loadAppearanceSettings();
         if(pageId === 'reseller-promotions') setupPromotionsPage();
         if(pageId === 'reseller-descriptions') setupDescriptionsPage();
+        if(pageId === 'reseller-showcase') setupShowcasePage();
         
         feather.replace();
     });
 }
 
-function setupTableEventListeners() {
+function setupDynamicEventListeners() {
     const mainContent = document.querySelector('.main-content');
     if (!mainContent) return;
 
@@ -127,25 +135,24 @@ function setupTableEventListeners() {
         const target = e.target;
         const productRowButton = target.closest('.edit-margin-btn, .edit-tags-btn, .edit-desc-btn');
         const chartRowButton = target.closest('.edit-chart-btn, .delete-chart-btn');
-        
+        const showcaseButton = target.closest('[data-showcase-id]');
+
         if (productRowButton) {
             const productId = parseInt(productRowButton.dataset.productId, 10);
-            if (productRowButton.classList.contains('edit-margin-btn')) {
-                showResellerProductEditModal(productId);
-            } else if (productRowButton.classList.contains('edit-tags-btn')) {
-                showResellerTagsModal(productId);
-            } else if (productRowButton.classList.contains('edit-desc-btn')) {
-                openProductDescriptionModal(productId);
-            }
+            if (productRowButton.classList.contains('edit-margin-btn')) showResellerProductEditModal(productId);
+            else if (productRowButton.classList.contains('edit-tags-btn')) showResellerTagsModal(productId);
+            else if (productRowButton.classList.contains('edit-desc-btn')) openProductDescriptionModal(productId);
         }
 
         if (chartRowButton) {
             const chartId = chartRowButton.dataset.chartId;
-            if (chartRowButton.classList.contains('edit-chart-btn')) {
-                openSizingChartModal(chartId);
-            } else if (chartRowButton.classList.contains('delete-chart-btn')) {
-                deleteSizingChart(chartId);
-            }
+            if (chartRowButton.classList.contains('edit-chart-btn')) openSizingChartModal(chartId);
+            else if (chartRowButton.classList.contains('delete-chart-btn')) deleteSizingChart(chartId);
+        }
+        
+        if (showcaseButton && showcaseButton.tagName === 'BUTTON') {
+             const showcaseId = showcaseButton.dataset.showcaseId;
+             openShowcaseModal(showcaseId);
         }
     });
 
@@ -194,22 +201,33 @@ function closeModal(modalId) {
 function loadLocalDataForReseller() {
     const savedPublished = localStorage.getItem('erpPublished');
     if (savedPublished) publishedProductIds = JSON.parse(savedPublished).map(id => parseInt(id, 10));
+    
     const savedMargins = localStorage.getItem('resellerMargins');
     if (savedMargins) resellerProductMargins = JSON.parse(savedMargins);
+    
     const savedTags = localStorage.getItem('resellerProductTags');
     if (savedTags) resellerProductTags = JSON.parse(savedTags);
+    
     const savedResellerActive = localStorage.getItem('resellerActiveProducts');
     if (savedResellerActive) resellerActiveProductIds = JSON.parse(savedResellerActive).map(id => parseInt(id, 10));
+    
     const savedSettings = localStorage.getItem('resellerSettings');
     if (savedSettings) resellerSettings = JSON.parse(savedSettings);
+    
     const savedPromotions = localStorage.getItem('resellerPromotions');
     if (savedPromotions) resellerPromotions = JSON.parse(savedPromotions);
+    
     const savedDescriptions = localStorage.getItem('resellerProductDescriptions');
     if (savedDescriptions) resellerProductDescriptions = JSON.parse(savedDescriptions);
+    
     const savedSizingCharts = localStorage.getItem('resellerSizingCharts');
     if (savedSizingCharts) resellerSizingCharts = JSON.parse(savedSizingCharts);
+    
     const savedSizingChartLinks = localStorage.getItem('resellerProductSizingChartLinks');
     if (savedSizingChartLinks) resellerProductSizingChartLinks = JSON.parse(savedSizingChartLinks);
+    
+    const savedShowcase = localStorage.getItem('resellerShowcase');
+    if (savedShowcase) resellerShowcase = JSON.parse(savedShowcase);
 }
 
 async function loadAllPublishedProducts() {
@@ -284,106 +302,140 @@ function renderResellerProductsTable() {
 
 function loadAppearanceSettings() {
     const settings = resellerSettings;
-    const brandNameInput = document.getElementById('brand-name-input');
-    if (brandNameInput) brandNameInput.value = settings.brandName || '';
-    // ... (adicione verificações para todos os outros elementos)
+    document.getElementById('brand-name-input').value = settings.brandName || '';
+    document.getElementById('contact-phone-input').value = settings.contactPhone || '';
+    document.getElementById('instagram-input').value = settings.instagram || '';
+    document.getElementById('top-bar-msg1-input').value = settings.topBarMsg1 || '';
+    document.getElementById('top-bar-msg2-input').value = settings.topBarMsg2 || '';
+    document.getElementById('top-bar-msg3-input').value = settings.topBarMsg3 || '';
+    document.getElementById('primary-color-input').value = settings.primaryColor || '#DB1472';
+    document.getElementById('secondary-color-input').value = settings.secondaryColor || '#F8B81F';
+    document.getElementById('logo-preview').src = settings.logoUrl || 'https://placehold.co/100x100/e2e8f0/cccccc?text=Logo';
+    document.getElementById('catalog-url-name').value = settings.catalogUrlName || '';
 }
 
 function saveAppearanceSettings() {
-    resellerSettings.brandName = document.getElementById('brand-name-input')?.value;
-    // ... (adicione verificações para todos os outros elementos)
+    resellerSettings = {
+        brandName: document.getElementById('brand-name-input').value,
+        contactPhone: document.getElementById('contact-phone-input').value,
+        instagram: document.getElementById('instagram-input').value,
+        topBarMsg1: document.getElementById('top-bar-msg1-input').value,
+        topBarMsg2: document.getElementById('top-bar-msg2-input').value,
+        topBarMsg3: document.getElementById('top-bar-msg3-input').value,
+        primaryColor: document.getElementById('primary-color-input').value,
+        secondaryColor: document.getElementById('secondary-color-input').value,
+        logoUrl: document.getElementById('logo-preview').src,
+        'banner-desktop-main': resellerSettings['banner-desktop-main'],
+        'banner-mobile-main': resellerSettings['banner-mobile-main'],
+        catalogUrlName: document.getElementById('catalog-url-name').value.trim().toLowerCase().replace(/[^a-z0-9-]/g, ''),
+    };
     localStorage.setItem('resellerSettings', JSON.stringify(resellerSettings));
     showToast('Configurações de aparência salvas!', 'success');
 }
 
-// --- LÓGICA DE PROMOÇÕES ---
 function setupPromotionsPage() {
-    const { freeShipping, firstPurchase, stockLimit, vipCoupon, seasonalSale, timeLimit, progressiveDiscount, flashSale, bmpl } = resellerPromotions;
+    // Carrega os dados salvos nos modais quando a página é aberta
+    const { freeShipping, firstPurchase, vipCoupon, seasonalSale, stockLimit, timeLimit, progressiveDiscount, flashSale, bmpl } = resellerPromotions;
+
     if (freeShipping) document.getElementById('free-shipping-min-value').value = freeShipping.minValue || '';
     if (firstPurchase) {
         document.getElementById('first-purchase-code').value = firstPurchase.code || 'BEMVINDA10';
         document.getElementById('first-purchase-discount').value = firstPurchase.discount || '10';
     }
-    // ... (código para carregar as outras promoções)
+    if (vipCoupon) {
+        document.getElementById('vip-code').value = vipCoupon.code || '';
+        document.getElementById('vip-discount').value = vipCoupon.discount || '';
+    }
+    if (seasonalSale) {
+        document.getElementById('seasonal-name').value = seasonalSale.name || '';
+        document.getElementById('seasonal-discount').value = seasonalSale.discount || '';
+        document.getElementById('seasonal-start-date').value = seasonalSale.startDate || '';
+        document.getElementById('seasonal-end-date').value = seasonalSale.endDate || '';
+    }
+     if (stockLimit) {
+        document.getElementById('stock-limit-threshold').value = stockLimit.threshold || '';
+        document.getElementById('stock-limit-message').value = stockLimit.message || 'ÚLTIMAS PEÇAS!';
+    }
 }
 
-function populateProductSelects() {
-    const selects = document.querySelectorAll('#flash-sale-product, #bmpl-product');
-    selects.forEach(select => {
-        select.innerHTML = '<option value="">Selecione um produto...</option>';
-        resellerProducts.forEach(product => {
-            const option = document.createElement('option');
-            option.value = product.id;
-            option.textContent = product.nome;
-            select.appendChild(option);
-        });
+// --- LÓGICA DA VITRINE ---
+
+function setupShowcasePage() {
+    updateShowcaseCounts();
+}
+
+function updateShowcaseCounts() {
+    const container = document.getElementById('showcase-sections-container');
+    if (!container) return;
+    container.querySelectorAll('[data-showcase-id]').forEach(button => {
+        const showcaseId = button.dataset.showcaseId;
+        const count = resellerShowcase[showcaseId]?.length || 0;
+        const badge = button.closest('.settings-section').querySelector('.product-count-badge');
+        if (badge) {
+            badge.textContent = `${count} produto${count !== 1 ? 's' : ''}`;
+        }
     });
 }
 
-function saveFlashSale() { 
-    resellerPromotions.flashSale = {
-        productId: document.getElementById('flash-sale-product').value,
-        discount: document.getElementById('flash-sale-discount').value,
-        endDate: document.getElementById('flash-sale-end-date').value
-    };
-    localStorage.setItem('resellerPromotions', JSON.stringify(resellerPromotions));
-    showToast("Flash Sale salva!", "success"); 
-    closeModal('flash-sale-modal'); 
+function openShowcaseModal(showcaseId) {
+    currentEditingShowcaseId = showcaseId;
+    const modal = document.getElementById('showcase-product-modal');
+    const titleEl = document.getElementById('showcase-modal-title');
+    const showcaseCard = document.querySelector(`[data-showcase-id="${showcaseId}"]`).closest('.settings-section');
+    const cardTitle = showcaseCard.querySelector('h2').textContent;
+    
+    titleEl.textContent = `Gerenciar: ${cardTitle}`;
+    
+    renderShowcaseProductList();
+    openModal('showcase-product-modal');
 }
 
-function saveStockLimit() {
-    resellerPromotions.stockLimit = { threshold: document.getElementById('stock-limit-threshold').value, message: document.getElementById('stock-limit-message').value };
-    localStorage.setItem('resellerPromotions', JSON.stringify(resellerPromotions));
-    showToast("Alerta de Estoque Limitado salvo!", "success"); closeModal('stock-limit-modal');
+function renderShowcaseProductList(searchTerm = '') {
+    const container = document.getElementById('showcase-product-list');
+    if (!container) return;
+    
+    container.innerHTML = '';
+    const term = searchTerm.toLowerCase();
+    const selectedProductIds = resellerShowcase[currentEditingShowcaseId] || [];
+
+    const filteredProducts = resellerProducts.filter(p => p.nome.toLowerCase().includes(term));
+
+    if (filteredProducts.length === 0) {
+        container.innerHTML = `<p style="text-align:center; padding: 1rem; color: var(--text-light);">Nenhum produto encontrado.</p>`;
+        return;
+    }
+
+    filteredProducts.forEach(p => {
+        const isChecked = selectedProductIds.includes(p.id);
+        const itemHTML = `
+            <label style="display: flex; align-items: center; gap: 1rem; padding: 0.75rem; border-bottom: 1px solid var(--border-color); cursor: pointer;">
+                <input type="checkbox" value="${p.id}" class="showcase-product-checkbox" ${isChecked ? 'checked' : ''}>
+                <img src="${proxyImageUrl(p.imagem)}" class="product-image">
+                <span>${p.nome}</span>
+            </label>
+        `;
+        container.innerHTML += itemHTML;
+    });
 }
-function saveTimeLimit() {
-    resellerPromotions.timeLimit = { target: document.getElementById('time-limit-target').value, discount: document.getElementById('time-limit-discount').value, duration: document.getElementById('time-limit-duration').value };
-    localStorage.setItem('resellerPromotions', JSON.stringify(resellerPromotions));
-    showToast("Oferta por Tempo Limitado salva!", "success"); closeModal('time-limit-modal');
+
+function filterShowcaseProducts(event) {
+    renderShowcaseProductList(event.target.value);
 }
-function saveBmpl() { 
-    resellerPromotions.bmpl = {
-        productId: document.getElementById('bmpl-product').value,
-        buyQty: document.getElementById('bmpl-buy-qty').value,
-        payQty: document.getElementById('bmpl-pay-qty').value
-    };
-    localStorage.setItem('resellerPromotions', JSON.stringify(resellerPromotions));
-    showToast("Oferta Leve Mais, Pague Menos salva!", "success"); 
-    closeModal('buy-more-pay-less-modal'); 
+
+function saveShowcaseSelection() {
+    if (!currentEditingShowcaseId) return;
+
+    const selectedIds = Array.from(document.querySelectorAll('.showcase-product-checkbox:checked')).map(cb => parseInt(cb.value, 10));
+    resellerShowcase[currentEditingShowcaseId] = selectedIds;
+
+    localStorage.setItem('resellerShowcase', JSON.stringify(resellerShowcase));
+    
+    closeModal('showcase-product-modal');
+    showToast('Vitrine atualizada com sucesso!', 'success');
+    updateShowcaseCounts();
+    currentEditingShowcaseId = null;
 }
-function saveProgressiveDiscount() {
-    resellerPromotions.progressiveDiscount = { tier1: { value: document.getElementById('prog-discount-value1').value, discount: document.getElementById('prog-discount-percent1').value }, tier2: { value: document.getElementById('prog-discount-value2').value, discount: document.getElementById('prog-discount-percent2').value } };
-    localStorage.setItem('resellerPromotions', JSON.stringify(resellerPromotions));
-    showToast("Desconto Progressivo salvo!", "success"); closeModal('progressive-discount-modal');
-}
-function saveFreeShipping() {
-    const minValue = document.getElementById('free-shipping-min-value').value;
-    if (!minValue || parseFloat(minValue) <= 0) { showToast("Insira um valor mínimo válido.", "error"); return; }
-    resellerPromotions.freeShipping = { active: true, minValue: parseFloat(minValue) };
-    localStorage.setItem('resellerPromotions', JSON.stringify(resellerPromotions));
-    showToast("Frete Grátis salvo!", "success"); closeModal('free-shipping-modal');
-}
-function saveFirstPurchaseCoupon() {
-    const code = document.getElementById('first-purchase-code').value.trim().toUpperCase();
-    const discount = document.getElementById('first-purchase-discount').value;
-    if (!code || !discount) { showToast("Preencha todos os campos.", "error"); return; }
-    resellerPromotions.firstPurchase = { active: true, code: code, discount: parseInt(discount) };
-    localStorage.setItem('resellerPromotions', JSON.stringify(resellerPromotions));
-    showToast("Cupom de Primeira Compra salvo!", "success"); closeModal('first-purchase-modal');
-}
-function saveVipCoupon() {
-    const code = document.getElementById('vip-code').value.trim().toUpperCase();
-    const discount = document.getElementById('vip-discount').value;
-    if (!code || !discount) { showToast("Preencha todos os campos.", "error"); return; }
-    resellerPromotions.vipCoupon = { active: true, code: code, discount: parseInt(discount) };
-    localStorage.setItem('resellerPromotions', JSON.stringify(resellerPromotions));
-    showToast("Cupom VIP salvo!", "success"); closeModal('vip-customer-modal');
-}
-function saveSeasonalSale() {
-    resellerPromotions.seasonalSale = { name: document.getElementById('seasonal-name').value, discount: document.getElementById('seasonal-discount').value, startDate: document.getElementById('seasonal-start-date').value, endDate: document.getElementById('seasonal-end-date').value };
-    localStorage.setItem('resellerPromotions', JSON.stringify(resellerPromotions));
-    showToast("Liquidação Sazonal salva!", "success"); closeModal('seasonal-sale-modal');
-}
+
 
 // --- LÓGICA DA PÁGINA DE DESCRIÇÕES ---
 function setupDescriptionsPage() {
@@ -456,69 +508,12 @@ function openSizingChartModal(chartId = null) {
     openModal('sizing-chart-modal');
 }
 
-function renderSizingChartEditor(headers, rows) {
-    const editor = document.getElementById('sizing-chart-editor');
-    let table = `<table class="product-table"><thead><tr>`;
-    headers.forEach((header, index) => {
-        table += `<th><input type="text" class="search-input header-input" value="${header}" data-col-index="${index}"></th>`;
-    });
-    table += `<th></th></tr></thead><tbody>`;
-    rows.forEach((row, rowIndex) => {
-        table += `<tr>`;
-        row.forEach((cell, colIndex) => {
-            table += `<td><input type="text" class="search-input cell-input" value="${cell}" data-row-index="${rowIndex}" data-col-index="${colIndex}"></td>`;
-        });
-        table += `<td class="actions-cell"><button class="btn btn-danger btn-sm remove-row-btn"><i data-feather="trash-2"></i></button></td>`;
-        table += `</tr>`;
-    });
-    table += `</tbody></table>`;
-    editor.innerHTML = table;
-    editor.addEventListener('click', (e) => {
-        const removeButton = e.target.closest('.remove-row-btn');
-        if (removeButton) {
-            removeSizingChartRow(removeButton);
-        }
-    });
-    feather.replace();
-}
-
-function addSizingChartRow() {
-    const table = document.querySelector('#sizing-chart-editor table tbody');
-    if (!table) return;
-    const colCount = table.closest('table').querySelector('thead tr').children.length - 1;
-    const newRow = table.insertRow();
-    for (let i = 0; i < colCount; i++) {
-        newRow.insertCell().innerHTML = `<input type="text" class="search-input cell-input">`;
-    }
-    const actionCell = newRow.insertCell();
-    actionCell.className = 'actions-cell';
-    actionCell.innerHTML = `<button class="btn btn-danger btn-sm remove-row-btn"><i data-feather="trash-2"></i></button>`;
-    feather.replace();
-}
-
-function addSizingChartColumn() {
-    const table = document.querySelector('#sizing-chart-editor table');
-    if (!table) return;
-    const headerRow = table.querySelector('thead tr');
-    const newHeader = document.createElement('th');
-    newHeader.innerHTML = `<input type="text" class="search-input header-input" value="Nova Medida">`;
-    headerRow.insertBefore(newHeader, headerRow.lastChild);
-    table.querySelectorAll('tbody tr').forEach(row => {
-        const newCell = row.insertCell(row.cells.length - 1);
-        newCell.innerHTML = `<input type="text" class="search-input cell-input">`;
-    });
-}
-
-function removeSizingChartRow(button) {
-    button.closest('tr').remove();
-}
-
 function saveSizingChart() {
     const modal = document.getElementById('sizing-chart-modal');
     const chartId = modal.dataset.editingId;
     const name = document.getElementById('sizing-chart-name').value.trim();
     if (!name) { showToast("O nome do modelo não pode ser vazio.", "error"); return; }
-    const headers = Array.from(document.querySelectorAll('.header-input')).map(input => input.value);
+    const headers = Array.from(document.querySelectorAll('#sizing-chart-editor .header-input')).map(input => input.value);
     const rows = Array.from(document.querySelectorAll('#sizing-chart-editor tbody tr')).map(tr => 
         Array.from(tr.querySelectorAll('.cell-input')).map(input => input.value)
     );
@@ -585,7 +580,6 @@ function saveProductDescription() {
     renderProductDescriptionList();
 }
 
-// --- Funções auxiliares ---
 function applyMassMargin() {
     const massMarginInput = document.getElementById('mass-margin-input');
     if (!massMarginInput) return;
@@ -607,7 +601,9 @@ function handleImageUpload(event, previewElementId, settingsKey) {
     reader.onload = (e) => {
         const previewElement = document.getElementById(previewElementId);
         if (previewElement) {
-            previewElement.src = e.target.result;
+            if(previewElement.tagName === 'IMG') {
+                previewElement.src = e.target.result;
+            }
         }
         resellerSettings[settingsKey] = e.target.result;
     };
@@ -615,11 +611,9 @@ function handleImageUpload(event, previewElementId, settingsKey) {
 }
 
 function generateAndCopyCatalogLink() {
-    const urlNameInput = document.getElementById('catalog-url-name');
-    if (!urlNameInput) return;
-    const urlName = urlNameInput.value.trim().toLowerCase().replace(/[^a-z0-9-]/g, '');
+    const urlName = resellerSettings.catalogUrlName || '';
     if (!urlName) {
-        showToast('Por favor, insira um nome para a URL da sua loja.', 'error');
+        showToast('Defina um nome para a URL da sua loja na aba "Aparência".', 'error');
         return;
     }
     const finalUrl = `${window.location.origin}/catalogo/index.html?loja=${urlName}`;
@@ -638,7 +632,7 @@ function toggleResellerProductActive(productId) {
     } else {
         resellerActiveProductIds.push(productId);
     }
-    localStorage.setItem('resellerActiveProductIds', JSON.stringify(resellerActiveProductIds));
+    localStorage.setItem('resellerActiveProducts', JSON.stringify(resellerActiveProductIds));
     showToast('Visibilidade do produto atualizada!', 'success');
 }
 
@@ -647,8 +641,7 @@ function showResellerProductEditModal(productId) {
     if (!product) return;
     document.getElementById('modal-reseller-product-name').textContent = `Editar Margem: ${product.nome}`;
     document.getElementById('reseller-margin-input').value = resellerProductMargins[productId] || 30;
-    const saveBtn = document.getElementById('save-reseller-margin-btn');
-    if(saveBtn) saveBtn.onclick = () => saveResellerMargin(productId);
+    document.getElementById('save-reseller-margin-btn').onclick = () => saveResellerMargin(productId);
     openModal('reseller-product-edit-modal');
 }
 
@@ -673,8 +666,7 @@ function showResellerTagsModal(productId) {
         const isChecked = currentTags.includes(tag);
         container.innerHTML += `<label><input type="checkbox" class="tag-checkbox" value="${tag}" ${isChecked ? 'checked' : ''}> ${tag}</label>`;
     });
-    const saveBtn = document.getElementById('save-reseller-tags-btn');
-    if(saveBtn) saveBtn.onclick = () => saveResellerTags(productId);
+    document.getElementById('save-reseller-tags-btn').onclick = () => saveResellerTags(productId);
     openModal('reseller-tags-modal');
 }
 
@@ -684,4 +676,126 @@ function saveResellerTags(productId) {
     localStorage.setItem('resellerProductTags', JSON.stringify(resellerProductTags));
     closeModal('reseller-tags-modal');
     showToast('Tags atualizadas!', 'success');
+}
+
+function populateProductSelects() {
+    const selects = document.querySelectorAll('#flash-sale-product, #bmpl-product');
+    selects.forEach(select => {
+        select.innerHTML = '<option value="">Selecione um produto...</option>';
+        resellerProducts.forEach(product => {
+            const option = document.createElement('option');
+            option.value = product.id;
+            option.textContent = product.nome;
+            select.appendChild(option);
+        });
+    });
+}
+
+function saveFlashSale() { 
+    resellerPromotions.flashSale = {
+        productId: document.getElementById('flash-sale-product').value,
+        discount: document.getElementById('flash-sale-discount').value,
+        endDate: document.getElementById('flash-sale-end-date').value
+    };
+    localStorage.setItem('resellerPromotions', JSON.stringify(resellerPromotions));
+    showToast("Flash Sale salva!", "success"); 
+    closeModal('flash-sale-modal'); 
+}
+
+function saveStockLimit() {
+    resellerPromotions.stockLimit = { 
+        threshold: document.getElementById('stock-limit-threshold').value, 
+        message: document.getElementById('stock-limit-message').value 
+    };
+    localStorage.setItem('resellerPromotions', JSON.stringify(resellerPromotions));
+    showToast("Alerta de Estoque Limitado salvo!", "success"); 
+    closeModal('stock-limit-modal');
+}
+
+function saveTimeLimit() {
+    resellerPromotions.timeLimit = { 
+        target: document.getElementById('time-limit-target').value, 
+        discount: document.getElementById('time-limit-discount').value, 
+        duration: document.getElementById('time-limit-duration').value 
+    };
+    localStorage.setItem('resellerPromotions', JSON.stringify(resellerPromotions));
+    showToast("Oferta por Tempo Limitado salva!", "success"); 
+    closeModal('time-limit-modal');
+}
+
+function saveBmpl() { 
+    resellerPromotions.bmpl = {
+        productId: document.getElementById('bmpl-product').value,
+        buyQty: document.getElementById('bmpl-buy-qty').value,
+        payQty: document.getElementById('bmpl-pay-qty').value
+    };
+    localStorage.setItem('resellerPromotions', JSON.stringify(resellerPromotions));
+    showToast("Oferta Leve Mais, Pague Menos salva!", "success"); 
+    closeModal('buy-more-pay-less-modal'); 
+}
+
+function saveProgressiveDiscount() {
+    resellerPromotions.progressiveDiscount = { 
+        tier1: { 
+            value: document.getElementById('prog-discount-value1').value, 
+            discount: document.getElementById('prog-discount-percent1').value 
+        }, 
+        tier2: { 
+            value: document.getElementById('prog-discount-value2').value, 
+            discount: document.getElementById('prog-discount-percent2').value 
+        } 
+    };
+    localStorage.setItem('resellerPromotions', JSON.stringify(resellerPromotions));
+    showToast("Desconto Progressivo salvo!", "success"); 
+    closeModal('progressive-discount-modal');
+}
+
+function saveFreeShipping() {
+    const minValue = document.getElementById('free-shipping-min-value').value;
+    if (!minValue || parseFloat(minValue) <= 0) { 
+        showToast("Insira um valor mínimo válido.", "error"); 
+        return; 
+    }
+    resellerPromotions.freeShipping = { active: true, minValue: parseFloat(minValue) };
+    localStorage.setItem('resellerPromotions', JSON.stringify(resellerPromotions));
+    showToast("Frete Grátis salvo!", "success"); 
+    closeModal('free-shipping-modal');
+}
+
+function saveFirstPurchaseCoupon() {
+    const code = document.getElementById('first-purchase-code').value.trim().toUpperCase();
+    const discount = document.getElementById('first-purchase-discount').value;
+    if (!code || !discount) { 
+        showToast("Preencha todos os campos.", "error"); 
+        return; 
+    }
+    resellerPromotions.firstPurchase = { active: true, code: code, discount: parseInt(discount) };
+    localStorage.setItem('resellerPromotions', JSON.stringify(resellerPromotions));
+    showToast("Cupom de Primeira Compra salvo!", "success"); 
+    closeModal('first-purchase-modal');
+}
+
+function saveVipCoupon() {
+    const code = document.getElementById('vip-code').value.trim().toUpperCase();
+    const discount = document.getElementById('vip-discount').value;
+    if (!code || !discount) { 
+        showToast("Preencha todos os campos.", "error"); 
+        return; 
+    }
+    resellerPromotions.vipCoupon = { active: true, code: code, discount: parseInt(discount) };
+    localStorage.setItem('resellerPromotions', JSON.stringify(resellerPromotions));
+    showToast("Cupom VIP salvo!", "success"); 
+    closeModal('vip-customer-modal');
+}
+
+function saveSeasonalSale() {
+    resellerPromotions.seasonalSale = { 
+        name: document.getElementById('seasonal-name').value, 
+        discount: document.getElementById('seasonal-discount').value, 
+        startDate: document.getElementById('seasonal-start-date').value, 
+        endDate: document.getElementById('seasonal-end-date').value 
+    };
+    localStorage.setItem('resellerPromotions', JSON.stringify(resellerPromotions));
+    showToast("Liquidação Sazonal salva!", "success"); 
+    closeModal('seasonal-sale-modal');
 }
