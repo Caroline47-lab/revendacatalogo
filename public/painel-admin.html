@@ -58,7 +58,6 @@
         .page-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; flex-wrap: wrap; gap: 1rem; }
         .page-header h1 { font-size: 1.75rem; font-weight: 700; }
         
-        /* NOVO ESTILO PARA O BOTÃO DE VOLTAR */
         .page-subheader {
             margin-bottom: 1.5rem;
         }
@@ -139,6 +138,8 @@
         .pagination-controls { display: flex; justify-content: center; align-items: center; gap: 1rem; margin-top: 1.5rem; }
         .pagination-controls .page-info { font-weight: 600; }
 
+        .placeholder-card { text-align: center; padding: 2rem; border: 2px dashed var(--border-color); border-radius: var(--border-radius); color: var(--text-light); }
+
         @media (max-width: 768px) {
             .sidebar { position: fixed; top: 0; left: 0; height: 100%; transform: translateX(-100%); }
             .sidebar.open { transform: translateX(0); box-shadow: 5px 0 15px rgba(0,0,0,0.1); }
@@ -168,10 +169,13 @@
                     <li class="nav-item"><a class="nav-link" data-page="abc-curve"><i data-feather="trending-up"></i> Curva ABC</a></li>
                     <li class="nav-item"><a class="nav-link" data-page="catalog"><i data-feather="book-open"></i> Catálogo Revenda</a></li>
                     <li class="nav-item"><a class="nav-link" data-page="resellers"><i data-feather="users"></i> Gerenciar Revendedoras</a></li>
+                    <!-- NOVOS MENUS -->
+                    <li class="nav-item"><a class="nav-link" data-page="payments"><i data-feather="dollar-sign"></i> Pagamentos</a></li>
+                    <li class="nav-item"><a class="nav-link" data-page="shipping"><i data-feather="truck"></i> Envios</a></li>
+                    <!-- FIM NOVOS MENUS -->
                     <li class="nav-item"><a class="nav-link" data-page="sync"><i data-feather="refresh-cw"></i> Sincronização</a></li>
                 </ul>
                 <div class="sidebar-footer">
-                    <!-- BOTÃO SAIR ADICIONADO -->
                     <a href="index.html" class="btn btn-danger" style="width: 100%; margin-bottom: 1rem;">
                         <i data-feather="log-out"></i> Sair
                     </a>
@@ -229,7 +233,7 @@
                         <button class="btn btn-secondary back-to-dashboard-btn"><i data-feather="arrow-left"></i> Voltar para Visão Geral</button>
                     </div>
                     <div id="abc-curve-content">
-                        <!-- Conteúdo da Curva ABC será renderizado aqui pelo JS -->
+                        <div class="stat-card"><p>Funcionalidade de Curva ABC em desenvolvimento.</p></div>
                     </div>
                 </section>
                 <section id="catalog" class="page">
@@ -254,6 +258,20 @@
                         </table>
                     </div>
                 </section>
+
+                <!-- NOVAS PÁGINAS -->
+                <section id="payments" class="page">
+                    <div class="stat-card">
+                        <p class="placeholder-card">Em breve, o módulo de integração com meios de pagamento será implantado aqui.</p>
+                    </div>
+                </section>
+                <section id="shipping" class="page">
+                    <div class="stat-card">
+                        <p class="placeholder-card">Em breve, o módulo de integração com meios de envio será implantado aqui.</p>
+                    </div>
+                </section>
+                <!-- FIM DAS NOVAS PÁGINAS -->
+
                 <section id="sync" class="page">
                     <div class="page-subheader">
                         <button class="btn btn-secondary back-to-dashboard-btn"><i data-feather="arrow-left"></i> Voltar para Visão Geral</button>
