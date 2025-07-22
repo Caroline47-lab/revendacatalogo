@@ -96,8 +96,8 @@
         #toast { position: fixed; bottom: -100px; left: 50%; transform: translateX(-50%); background-color: #333; color: white; padding: 1rem 1.5rem; border-radius: 0.5rem; transition: bottom 0.5s ease; z-index: 2000; box-shadow: var(--shadow); }
         
         .page-controls { margin-bottom: 1.5rem; }
-        .search-input, .form-group select, .form-group input { width: 100%; padding: 0.75rem 1rem; border: 1px solid var(--border-color); border-radius: 0.5rem; font-size: 0.9rem; background-color: var(--card-bg); transition: border-color 0.2s, box-shadow 0.2s; }
-        .search-input:focus, .form-group select:focus, .form-group input:focus { outline: none; border-color: var(--primary-color); box-shadow: 0 0 0 2px rgba(219, 20, 114, 0.2); }
+        .search-input, .form-group select, .form-group input, .form-group textarea { width: 100%; padding: 0.75rem 1rem; border: 1px solid var(--border-color); border-radius: 0.5rem; font-size: 0.9rem; background-color: var(--card-bg); transition: border-color 0.2s, box-shadow 0.2s; }
+        .search-input:focus, .form-group select:focus, .form-group input:focus, .form-group textarea:focus { outline: none; border-color: var(--primary-color); box-shadow: 0 0 0 2px rgba(219, 20, 114, 0.2); }
         
         .settings-section { background-color: var(--card-bg); padding: 1.5rem; border-radius: var(--border-radius); box-shadow: var(--shadow); margin-bottom: 2rem; }
         .settings-section h2 { font-size: 1.25rem; font-weight: 700; margin-bottom: 1.5rem; border-bottom: 1px solid var(--border-color); padding-bottom: 1rem; display: flex; align-items: center; gap: 0.5rem; }
@@ -153,7 +153,6 @@
                     <li class="nav-item"><a class="nav-link active" data-page="reseller-products"><i data-feather="tag"></i> Produtos</a></li>
                     <li class="nav-item"><a class="nav-link" data-page="reseller-promotions"><i data-feather="gift"></i> Promoções</a></li>
                     <li class="nav-item"><a class="nav-link" data-page="reseller-showcase"><i data-feather="star"></i> Organizar Vitrine</a></li>
-                    <!-- NOVO MENU -->
                     <li class="nav-item"><a class="nav-link" data-page="reseller-descriptions"><i data-feather="file-text"></i> Descrições</a></li>
                     <li class="nav-item"><a class="nav-link" data-page="reseller-sales"><i data-feather="dollar-sign"></i> Vendas</a></li>
                     <li class="nav-item"><a class="nav-link" data-page="reseller-appearance"><i data-feather="layout"></i> Aparência</a></li>
@@ -174,7 +173,6 @@
                     <h1 id="revendedor-page-title">Meus Produtos</h1>
                 </div>
                 <section id="reseller-products" class="page active">
-                    <!-- Conteúdo da página de produtos -->
                     <div class="table-container">
                         <table class="product-table">
                             <thead><tr><th>Imagem</th><th>Nome</th><th>Preço Base</th><th>Sua Margem (%)</th><th>Preço Final</th><th>Ativar no Catálogo</th><th>Ações</th></tr></thead>
@@ -187,14 +185,13 @@
                 </section>
                 
                 <section id="reseller-promotions" class="page">
-                    <!-- Conteúdo da página de promoções -->
+                    <!-- Conteúdo da página de promoções será renderizado aqui -->
                 </section>
 
                 <section id="reseller-showcase" class="page">
-                    <!-- Conteúdo da página de vitrine -->
+                    <!-- Conteúdo da página de vitrine será renderizado aqui -->
                 </section>
 
-                <!-- NOVA PÁGINA: DESCRIÇÕES E TABELAS DE MEDIDAS -->
                 <section id="reseller-descriptions" class="page">
                     <div class="settings-section">
                         <div style="display: flex; justify-content: space-between; align-items: center;">
@@ -228,18 +225,16 @@
                 </section>
 
                 <section id="reseller-sales" class="page">
-                    <!-- Conteúdo da página de vendas -->
+                     <!-- Conteúdo da página de vendas será renderizado aqui -->
                 </section>
                 <section id="reseller-appearance" class="page">
-                    <!-- Conteúdo da página de aparência -->
+                     <!-- Conteúdo da página de aparência será renderizado aqui -->
                 </section>
             </main>
         </div>
     </div>
     
     <!-- MODAIS -->
-    
-    <!-- NOVO: Modal para Descrição do Produto -->
     <div id="product-description-modal" class="modal-overlay">
         <div class="modal-content">
             <div class="modal-header">
@@ -248,13 +243,12 @@
             </div>
             <div class="form-group">
                 <label for="product-description-textarea">Descrição do Produto</label>
-                <textarea id="product-description-textarea" placeholder="Descreva os detalhes, materiais e diferenciais do produto..."></textarea>
+                <textarea id="product-description-textarea" class="form-group textarea" placeholder="Descreva os detalhes, materiais e diferenciais do produto..."></textarea>
             </div>
             <div class="form-group">
                 <label for="product-sizing-chart-select">Associar Tabela de Medidas</label>
                 <select id="product-sizing-chart-select">
                     <option value="">Nenhuma</option>
-                    <!-- Opções de tabelas serão populadas pelo JS -->
                 </select>
             </div>
             <div class="modal-footer">
@@ -263,7 +257,6 @@
         </div>
     </div>
 
-    <!-- NOVO: Modal para Tabela de Medidas -->
     <div id="sizing-chart-modal" class="modal-overlay">
         <div class="modal-content" style="max-width: 800px;">
             <div class="modal-header">
@@ -275,7 +268,7 @@
                 <input type="text" id="sizing-chart-name" placeholder="Ex: Tabela de Rasteirinhas">
             </div>
             <div id="sizing-chart-editor" style="margin-top: 1.5rem;">
-                <!-- O editor da tabela (linhas e colunas) será construído aqui pelo JS -->
+                <!-- O editor da tabela será construído aqui pelo JS -->
             </div>
             <div style="margin-top: 1rem; display: flex; gap: 1rem;">
                  <button id="add-sizing-chart-row-btn" class="btn btn-secondary"><i data-feather="plus"></i> Adicionar Linha (Tamanho)</button>
@@ -287,6 +280,17 @@
         </div>
     </div>
     
-    <!-- Outros modais existentes... -->
+    <div id="toast"></div>
+
+    <!-- 
+      ================================================================
+      == CORREÇÃO APLICADA AQUI ==
+      Garantindo que o 'servicos.js' (a caixa de ferramentas) seja 
+      carregado ANTES do 'painel-revendedora.js' (que usa as ferramentas).
+      Essa é a correção principal que resolve o problema.
+      ================================================================
+    -->
+    <script src="js/servicos.js"></script>
+    <script src="js/painel-revendedora.js"></script>
 </body>
 </html>
