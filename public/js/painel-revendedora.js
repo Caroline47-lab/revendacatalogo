@@ -1,9 +1,9 @@
 /**
  * painel-revendedora.js
- * * VERSÃO COM LÓGICA DA VITRINE IMPLEMENTADA
- * - Adicionada a lógica para gerenciar seções da vitrine (Lançamentos, etc.).
- * - O modal de gerenciamento de produtos agora é funcional.
- * - As seleções de produtos para cada vitrine são salvas no localStorage.
+ * * VERSÃO COM LÓGICA DA VITRINE E CORREÇÕES
+ * - Adicionada a lógica para gerenciar seções da vitrine.
+ * - Corrigido o erro de função 'addSizingChartRow' não definida.
+ * - Adicionada a função 'addSizingChartColumn' que também estava faltando.
  */
 
 // --- VARIÁVEIS GLOBAIS ---
@@ -17,8 +17,8 @@ let resellerPromotions = {};
 let resellerProductDescriptions = {}; 
 let resellerSizingCharts = []; 
 let resellerProductSizingChartLinks = {}; 
-let resellerShowcase = {}; // NOVO: Armazena os produtos de cada vitrine
-let currentEditingShowcaseId = null; // NOVO: Controla qual vitrine está sendo editada
+let resellerShowcase = {};
+let currentEditingShowcaseId = null;
 
 const availableTags = ['Lançamento', 'Promoção', 'Mais Vendido', 'Últimas Peças'];
 
@@ -87,10 +87,10 @@ function setupEventListeners() {
     document.getElementById('add-sizing-chart-col-btn')?.addEventListener('click', addSizingChartColumn);
     document.getElementById('save-product-description-btn')?.addEventListener('click', saveProductDescription);
 
-    // NOVO: Botão para salvar seleção da vitrine
+    // Botão para salvar seleção da vitrine
     document.getElementById('save-showcase-selection-btn')?.addEventListener('click', saveShowcaseSelection);
     
-    // NOVO: Busca de produtos no modal da vitrine
+    // Busca de produtos no modal da vitrine
     document.getElementById('showcase-product-search')?.addEventListener('keyup', filterShowcaseProducts);
 
     // Delegação de Eventos para Tabelas e Seções Dinâmicas
@@ -334,8 +334,7 @@ function saveAppearanceSettings() {
 }
 
 function setupPromotionsPage() {
-    // Carrega os dados salvos nos modais quando a página é aberta
-    const { freeShipping, firstPurchase, vipCoupon, seasonalSale, stockLimit, timeLimit, progressiveDiscount, flashSale, bmpl } = resellerPromotions;
+    const { freeShipping, firstPurchase, vipCoupon, seasonalSale, stockLimit } = resellerPromotions;
 
     if (freeShipping) document.getElementById('free-shipping-min-value').value = freeShipping.minValue || '';
     if (firstPurchase) {
@@ -379,7 +378,6 @@ function updateShowcaseCounts() {
 
 function openShowcaseModal(showcaseId) {
     currentEditingShowcaseId = showcaseId;
-    const modal = document.getElementById('showcase-product-modal');
     const titleEl = document.getElementById('showcase-modal-title');
     const showcaseCard = document.querySelector(`[data-showcase-id="${showcaseId}"]`).closest('.settings-section');
     const cardTitle = showcaseCard.querySelector('h2').textContent;
@@ -508,6 +506,72 @@ function openSizingChartModal(chartId = null) {
     openModal('sizing-chart-modal');
 }
 
+function renderSizingChartEditor(headers, rows) {
+    const editor = document.getElementById('sizing-chart-editor');
+    let table = `<table class="product-table"><thead><tr>`;
+    headers.forEach((header, index) => {
+        table += `<th><input type="text" class="search-input header-input" value="${header}" data-col-index="${index}"></th>`;
+    });
+    table += `<th></th></tr></thead><tbody>`;
+    rows.forEach((row, rowIndex) => {
+        table += `<tr data-row-index="${rowIndex}">`;
+        row.forEach((cell, colIndex) => {
+            table += `<td><input type="text" class="search-input cell-input" value="${cell}" data-col-index="${colIndex}"></td>`;
+        });
+        table += `<td class="actions-cell"><button class="btn btn-danger btn-sm remove-row-btn"><i data-feather="trash-2"></i></button></td>`;
+        table += `</tr>`;
+    });
+    table += `</tbody></table>`;
+    editor.innerHTML = table;
+    editor.querySelector('.remove-row-btn')?.addEventListener('click', (e) => {
+        e.target.closest('tr').remove();
+    });
+    feather.replace();
+}
+
+// --- CORREÇÃO APLICADA AQUI ---
+function addSizingChartRow() {
+    const tableBody = document.querySelector('#sizing-chart-editor table tbody');
+    if (!tableBody) return;
+    const headerRow = document.querySelector('#sizing-chart-editor table thead tr');
+    if(!headerRow) return;
+
+    const colCount = headerRow.children.length - 1; // -1 para a coluna de ações
+    const newRow = tableBody.insertRow();
+    
+    for (let i = 0; i < colCount; i++) {
+        const newCell = newRow.insertCell();
+        newCell.innerHTML = `<input type="text" class="search-input cell-input" value="">`;
+    }
+
+    const actionCell = newRow.insertCell();
+    actionCell.className = 'actions-cell';
+    actionCell.innerHTML = `<button class="btn btn-danger btn-sm remove-row-btn"><i data-feather="trash-2"></i></button>`;
+    actionCell.querySelector('.remove-row-btn').addEventListener('click', (e) => {
+        e.target.closest('tr').remove();
+    });
+    feather.replace();
+}
+
+function addSizingChartColumn() {
+    const table = document.querySelector('#sizing-chart-editor table');
+    if (!table) return;
+    const headerRow = table.querySelector('thead tr');
+    const bodyRows = table.querySelectorAll('tbody tr');
+
+    if (headerRow) {
+        const newHeaderCell = document.createElement('th');
+        newHeaderCell.innerHTML = `<input type="text" class="search-input header-input" value="Nova Medida">`;
+        headerRow.insertBefore(newHeaderCell, headerRow.lastChild);
+    }
+
+    bodyRows.forEach(row => {
+        const newCell = row.insertCell(row.cells.length - 1); // Insere antes da célula de ação
+        newCell.innerHTML = `<input type="text" class="search-input cell-input" value="">`;
+    });
+}
+
+
 function saveSizingChart() {
     const modal = document.getElementById('sizing-chart-modal');
     const chartId = modal.dataset.editingId;
@@ -519,7 +583,9 @@ function saveSizingChart() {
     );
     if (chartId) {
         const index = resellerSizingCharts.findIndex(c => c.id === chartId);
-        resellerSizingCharts[index] = { ...resellerSizingCharts[index], name, headers, rows };
+        if(index > -1) {
+            resellerSizingCharts[index] = { ...resellerSizingCharts[index], name, headers, rows };
+        }
     } else {
         resellerSizingCharts.push({ id: `chart_${Date.now()}`, name, headers, rows });
     }
