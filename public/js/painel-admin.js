@@ -1,8 +1,7 @@
 /**
  * painel-admin.js
  * * Versão completa restaurada.
- * - CORREÇÃO: Apenas a lógica do menu mobile foi ajustada para funcionar corretamente.
- * - RESTAURAÇÃO: Todo o código original, incluindo as funções que foram apagadas, foi restaurado.
+ * - CORREÇÃO FINAL: Função do menu mobile reescrita com uma lógica simples e segura para garantir o funcionamento sem quebrar outros botões.
  */
 
 // --- VARIÁVEIS GLOBAIS DOS PAINÉIS ---
@@ -46,12 +45,11 @@ const PRODUCTS_PER_PAGE = 20;
 
 // --- INICIALIZAÇÃO DOS PAINÉIS ---
 document.addEventListener('DOMContentLoaded', () => {
-    // Verifica se estamos na página principal dos painéis antes de rodar
     if (document.getElementById('empresa-view')) {
         setupViewSwitcher();
         setupEmpresaPanel();
         setupRevendedorPanel();
-        setupMobileMenu(); // CORREÇÃO: Chamada da função do menu
+        setupMobileMenu();
         feather.replace();
     }
 });
@@ -65,7 +63,6 @@ function setupViewSwitcher() {
     });
     document.getElementById('view-catalog-btn').addEventListener('click', (e) => { 
         e.preventDefault(); 
-        // Abre o catálogo em uma nova aba
         window.open('catalogo/index.html', '_blank');
     });
     
@@ -82,58 +79,46 @@ function switchView(viewId) {
     }
 }
 
-// CORREÇÃO: Função do menu mobile reescrita com uma abordagem mais simples e robusta (delegação de eventos).
+// CORREÇÃO: Função do menu mobile reescrita para ser mais simples e direta.
 function setupMobileMenu() {
+    const toggleEmpresa = document.getElementById('menu-toggle-empresa');
     const sidebarEmpresa = document.querySelector('#empresa-view .sidebar');
+    const toggleRevendedor = document.getElementById('menu-toggle-revendedor');
     const sidebarRevendedor = document.querySelector('#revendedor-view .sidebar');
 
-    document.body.addEventListener('click', function(e) {
-        const toggleEmpresaBtn = e.target.closest('#menu-toggle-empresa');
-        const toggleRevendedorBtn = e.target.closest('#menu-toggle-revendedor');
-        const navLink = e.target.closest('.nav-link');
-
-        // Se clicou no botão de menu da empresa
-        if (toggleEmpresaBtn) {
-            e.preventDefault();
+    if (toggleEmpresa && sidebarEmpresa) {
+        toggleEmpresa.addEventListener('click', (e) => {
+            e.stopPropagation(); // Impede que o clique se propague para outros elementos
             sidebarEmpresa.classList.toggle('open');
-            if (sidebarRevendedor) sidebarRevendedor.classList.remove('open'); // Fecha o outro menu
-            return;
-        }
+            if (sidebarRevendedor) sidebarRevendedor.classList.remove('open');
+        });
+    }
 
-        // Se clicou no botão de menu da revendedora
-        if (toggleRevendedorBtn) {
-            e.preventDefault();
+    if (toggleRevendedor && sidebarRevendedor) {
+        toggleRevendedor.addEventListener('click', (e) => {
+            e.stopPropagation(); // Impede que o clique se propague para outros elementos
             sidebarRevendedor.classList.toggle('open');
-            if (sidebarEmpresa) sidebarEmpresa.classList.remove('open'); // Fecha o outro menu
-            return;
-        }
+            if (sidebarEmpresa) sidebarEmpresa.classList.remove('open');
+        });
+    }
 
-        // Se clicou em um link de navegação dentro de um menu aberto
-        if (navLink) {
-            if (sidebarEmpresa && sidebarEmpresa.contains(navLink)) {
-                setTimeout(() => sidebarEmpresa.classList.remove('open'), 150);
+    // Listener para fechar os menus se clicar em qualquer lugar fora deles
+    document.addEventListener('click', (e) => {
+        // Verifica se o menu da empresa está aberto e se o clique foi fora dele e do seu botão
+        if (sidebarEmpresa && sidebarEmpresa.classList.contains('open')) {
+            if (!sidebarEmpresa.contains(e.target) && e.target !== toggleEmpresa && !toggleEmpresa.contains(e.target)) {
+                sidebarEmpresa.classList.remove('open');
             }
-            if (sidebarRevendedor && sidebarRevendedor.contains(navLink)) {
-                setTimeout(() => sidebarRevendedor.classList.remove('open'), 150);
+        }
+        // Verifica se o menu da revendedora está aberto e se o clique foi fora dele e do seu botão
+        if (sidebarRevendedor && sidebarRevendedor.classList.contains('open')) {
+            if (!sidebarRevendedor.contains(e.target) && e.target !== toggleRevendedor && !toggleRevendedor.contains(e.target)) {
+                sidebarRevendedor.classList.remove('open');
             }
-            // Não retorna aqui para permitir que a navegação da página continue
         }
-
-        // Se clicou fora de um menu aberto, fecha-o
-        if (sidebarEmpresa && sidebarEmpresa.classList.contains('open') && !sidebarEmpresa.contains(e.target)) {
-            sidebarEmpresa.classList.remove('open');
-        }
-        if (sidebarRevendedor && sidebarRevendedor.classList.contains('open') && !sidebarRevendedor.contains(e.target)) {
-            sidebarRevendedor.classList.remove('open');
-        }
-    });
-
-    // Fecha os menus ao redimensionar a tela
-    window.addEventListener('resize', function() {
-        if (sidebarEmpresa) sidebarEmpresa.classList.remove('open');
-        if (sidebarRevendedor) sidebarRevendedor.classList.remove('open');
     });
 }
+
 
 function closeModal(modalId) { 
     const modal = document.getElementById(modalId);
@@ -1032,4 +1017,3 @@ function debugMenuElements() {
     console.log('Sidebar Revendedor:', document.querySelector('#revendedor-view .sidebar'));
     console.log('========================');
 }
-" in the document. Explain why the selected code is not working as expect
