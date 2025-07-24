@@ -86,7 +86,7 @@ function setupEventListeners() {
     
     document.querySelectorAll('[data-modal-target]').forEach(button => {
         button.addEventListener('click', (e) => {
-            if (e.currentTarget.id === 'open-theme-config-btn') return;
+            // CORREÇÃO: A linha que bloqueava o botão foi removida.
             const modalId = button.getAttribute('data-modal-target');
             openModal(modalId);
         });
