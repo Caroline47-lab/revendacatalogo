@@ -1,8 +1,8 @@
 /**
  * painel-revendedora.js
  * VERSÃO FINAL: Código original do usuário preservado.
- * Adicionada a nova lógica para o modal de configuração de aparência,
- * sem remover as funcionalidades existentes de produtos, promoções, etc.
+ * Adicionada a nova lógica para o modal de configuração de aparência e
+ * corrigidos os problemas de inicialização e eventos.
  */
 
 // --- VARIÁVEIS GLOBAIS ---
@@ -82,7 +82,7 @@ function setupEventListeners() {
 
     // SEU CÓDIGO DE EVENTOS ORIGINAL (INTACTO)
     document.getElementById('apply-mass-margin')?.addEventListener('click', applyMassMargin);
-    document.getElementById('save-settings-btn')?.addEventListener('click', saveGeneralSettings); // MODIFICADO: Chamando a função correta
+    document.getElementById('save-settings-btn')?.addEventListener('click', saveGeneralSettings);
     document.getElementById('generate-link-btn')?.addEventListener('click', generateAndCopyCatalogLink);
     
     document.querySelectorAll('[data-modal-target]').forEach(button => {
@@ -154,7 +154,7 @@ function setupDynamicEventListeners() {
     if (!mainContent) return;
 
     mainContent.addEventListener('click', (e) => {
-        const target = e.target.closest('button, .theme-card');
+        const target = e.target.closest('button');
         if (!target) return;
 
         const { 
@@ -237,8 +237,6 @@ function loadLocalDataForReseller() {
     if (savedShowcase) resellerShowcase = JSON.parse(savedShowcase);
     const savedDescModels = localStorage.getItem('resellerDescriptionModels');
     if(savedDescModels) resellerDescriptionModels = JSON.parse(savedDescModels);
-    const savedTheme = localStorage.getItem('resellerActiveTheme');
-    if(savedTheme) resellerActiveTheme = savedTheme;
     
     // ADICIONA O CARREGAMENTO DAS NOVAS CONFIGURAÇÕES DE APARÊNCIA
     const savedThemeSettings = localStorage.getItem('themeSettings');
@@ -257,7 +255,6 @@ async function loadAllPublishedProducts() {
     let currentPage = 1;
     let hasMore = true;
     try {
-        // A chamada para loadLocalDataForReseller() já acontece no DOMContentLoaded
         while(hasMore) {
             const data = await realApiFetch(currentPage, 100, ''); 
             if (!data.data || data.data.length === 0) {
@@ -281,7 +278,10 @@ async function loadAllPublishedProducts() {
         console.error("Erro ao buscar produtos:", error);
         showToast("Erro ao carregar seus produtos.", "error");
     } finally {
-        renderResellerProductsTable(); 
+        // CORREÇÃO: A renderização da tabela só ocorre se a página de produtos estiver ativa.
+        if (document.querySelector('#reseller-products')?.classList.contains('active')) {
+            renderResellerProductsTable();
+        }
         if(loader) loader.classList.remove('visible');
     }
 }
@@ -290,10 +290,8 @@ async function loadAllPublishedProducts() {
 
 function setupAppearancePage() {
     loadIdentitySettings();
-    // A lógica de carregar os dados no formulário do modal agora é chamada ao clicar no botão de abrir
 }
 
-// FUNÇÃO ANTIGA 'saveAllSettings' RENOMEADA PARA SER MAIS ESPECÍFICA
 function saveGeneralSettings() {
     resellerSettings = {
         ...resellerSettings,
@@ -306,7 +304,6 @@ function saveGeneralSettings() {
     showToast('Configurações gerais salvas com sucesso!', 'success');
 }
 
-// NOVA FUNÇÃO PARA SALVAR TODAS AS CONFIGURAÇÕES DO MODAL DE APARÊNCIA
 function saveThemeSettings() {
     themeSettings = {
         cabecalho: {
@@ -348,21 +345,18 @@ function saveThemeSettings() {
                 mensagem: document.getElementById('wpp-produto-msg').value,
             }
         },
-        // Adicionar outras seções aqui quando forem criadas no HTML
     };
     
     localStorage.setItem('themeSettings', JSON.stringify(themeSettings));
     showToast('Configurações de aparência salvas com sucesso!', 'success');
 }
 
-// NOVA FUNÇÃO PARA CARREGAR AS CONFIGURAÇÕES NO FORMULÁRIO DO MODAL
 function loadThemeSettingsIntoForm() {
     const settings = themeSettings || {};
     const getValue = (path, defaultValue = '') => {
         return path.split('.').reduce((obj, key) => (obj && obj[key] !== undefined) ? obj[key] : defaultValue, settings);
     }
 
-    // Preenche a aba Cabeçalho
     document.getElementById('logo-width-desktop').value = getValue('cabecalho.logo.width_desktop', '180');
     document.getElementById('logo-width-mobile').value = getValue('cabecalho.logo.width_mobile', '120');
     document.getElementById('contatos-whatsapp').value = getValue('cabecalho.contatos.whatsapp');
@@ -375,8 +369,6 @@ function loadThemeSettingsIntoForm() {
     document.getElementById('tarja-active').checked = getValue('cabecalho.banner_tarja.active', false);
     document.getElementById('tarja-link').value = getValue('cabecalho.banner_tarja.link');
     document.getElementById('tarja-fundo').value = getValue('cabecalho.banner_tarja.fundo', '#DB1472');
-
-    // Preenche a aba Produtos
     document.getElementById('qtd-listagens-active').checked = getValue('produtos.qtd_listagens.active', false);
     document.getElementById('carrossel-active').checked = getValue('produtos.carrossel.active', false);
     document.getElementById('carrossel-qtd-desktop').value = getValue('produtos.carrossel.qtd_desktop', '5');
@@ -385,11 +377,6 @@ function loadThemeSettingsIntoForm() {
     document.getElementById('wpp-produto-numero').value = getValue('produtos.wpp_produto.numero');
     document.getElementById('wpp-produto-msg').value = getValue('produtos.wpp_produto.mensagem', 'Olá, tenho interesse neste produto: {produto}');
 }
-
-// FUNÇÕES ANTIGAS DE TEMA REMOVIDAS POIS SÃO OBSOLETAS
-// function selectTheme(themeId) { ... }
-// function updateThemeGallery() { ... }
-// async function loadThemeCustomizationUI(themeId) { ... }
 
 function loadIdentitySettings() {
     const settings = resellerSettings;
