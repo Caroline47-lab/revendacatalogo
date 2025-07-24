@@ -127,6 +127,8 @@
             display: flex;
             border-bottom: 1px solid var(--border-color);
             margin-bottom: 1.5rem;
+            flex-wrap: nowrap;
+            overflow-x: auto;
         }
         .theme-modal-tab {
             padding: 0.75rem 1.25rem;
@@ -135,6 +137,7 @@
             margin-bottom: -1px;
             color: var(--text-light);
             font-weight: 600;
+            white-space: nowrap;
         }
         .theme-modal-tab.active {
             color: var(--primary-color);
@@ -169,7 +172,6 @@
             .product-table tr td:last-child { border-bottom: none; }
             .product-table td:before { content: attr(data-label); position: absolute; left: 0.75rem; width: 45%; padding-right: 1rem; text-align: left; font-weight: 600; color: var(--text-color); }
             .product-table .actions-cell { justify-content: flex-end; }
-            .theme-modal-tabs { flex-wrap: wrap; }
         }
     </style>
 </head>
@@ -205,8 +207,85 @@
                     <h1 id="revendedor-page-title">Aparência e Config.</h1>
                 </div>
                 
-                <!-- O conteúdo das outras páginas foi omitido para focar na página de Aparência -->
+                <!-- SEÇÕES RESTAURADAS -->
+                <section id="reseller-products" class="page">
+                    <div class="page-controls" style="background: var(--card-bg); padding: 1rem; border-radius: var(--border-radius); box-shadow: var(--shadow); display: flex; gap: 1rem; align-items: center; flex-wrap: wrap;">
+                        <div class="form-group" style="flex-grow: 1; margin-bottom: 0;">
+                            <label for="mass-margin-input" style="margin-bottom: 0.25rem;">Aplicar margem em massa (%):</label>
+                            <input type="number" id="mass-margin-input" class="search-input" placeholder="Ex: 40">
+                        </div>
+                        <button id="apply-mass-margin" class="btn btn-primary" style="align-self: flex-end;">Aplicar</button>
+                    </div>
+                    <div class="table-container" style="margin-top: 1.5rem;">
+                        <table class="product-table">
+                            <thead><tr><th>Imagem</th><th>Nome</th><th>Preço Base</th><th>Sua Margem (%)</th><th>Preço Final</th><th>Ativar</th><th>Ações</th></tr></thead>
+                            <tbody id="reseller-products-table-body"></tbody>
+                        </table>
+                    </div>
+                    <div id="reseller-product-list-loader" class="loading-indicator">
+                        <div class="spinner"></div>
+                    </div>
+                </section>
                 
+                <section id="reseller-promotions" class="page">
+                    <div class="promo-grid">
+                        <div class="promo-card"><div class="promo-card-header"><i data-feather="zap" class="promo-card-icon"></i><h3 class="promo-card-title">Flash Sale</h3></div><p class="promo-card-desc">Oferta com grande desconto para um produto por tempo limitado.</p><div class="promo-card-footer"><button class="btn btn-primary w-full" data-modal-target="flash-sale-modal">Configurar</button></div></div>
+                        <div class="promo-card"><div class="promo-card-header"><i data-feather="truck" class="promo-card-icon"></i><h3 class="promo-card-title">Frete Grátis</h3></div><p class="promo-card-desc">Ofereça frete grátis para compras acima de um valor.</p><div class="promo-card-footer"><button class="btn btn-primary w-full" data-modal-target="free-shipping-modal">Configurar</button></div></div>
+                        <div class="promo-card"><div class="promo-card-header"><i data-feather="award" class="promo-card-icon"></i><h3 class="promo-card-title">Cupom de Desconto</h3></div><p class="promo-card-desc">Crie um cupom (ex: BEMVINDA10) para seus clientes.</p><div class="promo-card-footer"><button class="btn btn-primary w-full" data-modal-target="coupon-modal">Configurar</button></div></div>
+                    </div>
+                </section>
+
+                <section id="reseller-showcase" class="page">
+                    <div class="settings-section">
+                        <h2><i data-feather="star"></i> Vitrine: Lançamentos</h2>
+                        <p style="color: var(--text-light); margin-top: -1rem; margin-bottom: 1.5rem;">Selecione os produtos que devem aparecer na seção "Lançamentos" do seu catálogo.</p>
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <span id="showcase-lancamentos-count" class="product-count-badge" style="color: var(--text-light); font-weight: 500;">0 produtos selecionados</span>
+                            <button class="btn btn-primary" data-showcase-id="lancamentos"><i data-feather="edit"></i> Gerenciar Produtos</button>
+                        </div>
+                    </div>
+                    <div class="settings-section">
+                        <h2><i data-feather="trending-up"></i> Vitrine: Mais Vendidos</h2>
+                        <p style="color: var(--text-light); margin-top: -1rem; margin-bottom: 1.5rem;">Destaque os produtos mais populares na seção "Mais Vendidos".</p>
+                         <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <span id="showcase-mais-vendidos-count" class="product-count-badge" style="color: var(--text-light); font-weight: 500;">0 produtos selecionados</span>
+                            <button class="btn btn-primary" data-showcase-id="mais-vendidos"><i data-feather="edit"></i> Gerenciar Produtos</button>
+                        </div>
+                    </div>
+                </section>
+
+                <section id="reseller-descriptions" class="page">
+                    <div class="settings-section">
+                        <h2><i data-feather="file-text"></i> Modelos de Descrição</h2>
+                        <p style="color: var(--text-light); margin-top: -1rem; margin-bottom: 1.5rem;">Crie descrições padrão para aplicar em vários produtos de uma só vez.</p>
+                        <div id="description-models-list"></div>
+                        <div class="modal-footer" style="justify-content: flex-start; padding-top: 1rem; border-top: 1px solid var(--border-color); margin-top: 1.5rem;">
+                            <button id="add-description-model-btn" class="btn btn-secondary"><i data-feather="plus"></i> Criar Novo Modelo de Descrição</button>
+                        </div>
+                    </div>
+                    <div class="settings-section">
+                        <h2><i data-feather="grid"></i> Modelos de Tabela de Medidas</h2>
+                        <p style="color: var(--text-light); margin-top: -1rem; margin-bottom: 1.5rem;">Crie tabelas de medidas (tamanho, cm, etc.) para associar aos seus produtos.</p>
+                        <div id="sizing-charts-list"></div>
+                         <div class="modal-footer" style="justify-content: flex-start; padding-top: 1rem; border-top: 1px solid var(--border-color); margin-top: 1.5rem;">
+                            <button id="add-sizing-chart-btn" class="btn btn-secondary"><i data-feather="plus"></i> Criar Nova Tabela de Medidas</button>
+                        </div>
+                    </div>
+                </section>
+
+                <section id="reseller-sales" class="page">
+                     <div class="settings-section"><h2><i data-feather="dollar-sign"></i> Vendas e Pedidos</h2><p class="placeholder-card">Em breve...</p></div>
+                </section>
+
+                <section id="reseller-payments" class="page">
+                    <div class="settings-section"><h2><i data-feather="credit-card"></i> Meios de Pagamento</h2><p class="placeholder-card">Em breve...</p></div>
+                </section>
+
+                <section id="reseller-shipping" class="page">
+                     <div class="settings-section"><h2><i data-feather="truck"></i> Meios de Envio</h2><p class="placeholder-card">Em breve...</p></div>
+                </section>
+                <!-- FIM DAS SEÇÕES RESTAURADAS -->
+
                 <section id="reseller-appearance" class="page active">
                     <div class="settings-section">
                         <div style="display: flex; justify-content: space-between; align-items: center; gap: 1rem; flex-wrap: wrap;">
