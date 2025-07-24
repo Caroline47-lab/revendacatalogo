@@ -21,7 +21,6 @@ let currentEditingShowcaseId = null;
 let resellerDescriptionModels = [];
 let currentAssociationType = null;
 let currentModelIdToAssociate = null;
-let resellerActiveTheme = 'basic'; // Mantido para compatibilidade, mas a nova lógica usa themeSettings
 
 // NOVO: Objeto para guardar as configurações de aparência do catálogo
 let themeSettings = {}; 
