@@ -150,7 +150,7 @@
                     <li class="nav-item"><a class="nav-link" data-page="reseller-showcase"><i data-feather="star"></i> Organizar Vitrine</a></li>
                     <li class="nav-item"><a class="nav-link" data-page="reseller-descriptions"><i data-feather="file-text"></i> Descrições</a></li>
                     <li class="nav-item"><a class="nav-link" data-page="reseller-sales"><i data-feather="dollar-sign"></i> Vendas</a></li>
-                    <li class="nav-item"><a class="nav-link" data-page="reseller-appearance"><i data-feather="layout"></i> Aparência e Configuração</a></li>
+                    <li class="nav-item"><a class="nav-link" data-page="reseller-appearance"><i data-feather="layout"></i> Aparência e Config.</a></li>
                     <li class="nav-item"><a class="nav-link" data-page="reseller-payments"><i data-feather="credit-card"></i> Pagamentos</a></li>
                     <li class="nav-item"><a class="nav-link" data-page="reseller-shipping"><i data-feather="truck"></i> Envios</a></li>
                     <li class="nav-item" style="border-top: 1px solid var(--border-color); margin-top: 1rem; padding-top: 1rem;"><a href="catalogo/index.html" target="_blank" id="view-catalog-btn" class="nav-link" style="color: var(--primary-color);"><i data-feather="eye"></i> Ver Catálogo</a></li>
@@ -171,7 +171,6 @@
                 </div>
                 
                 <section id="reseller-products" class="page active">
-                    <!-- SEÇÃO DE PRODUTOS INTACTA -->
                     <div class="page-controls" style="background: var(--card-bg); padding: 1rem; border-radius: var(--border-radius); box-shadow: var(--shadow); display: flex; gap: 1rem; align-items: center; flex-wrap: wrap;">
                         <div class="form-group" style="flex-grow: 1; margin-bottom: 0;">
                             <label for="mass-margin-input" style="margin-bottom: 0.25rem;">Aplicar margem em massa (%):</label>
@@ -181,7 +180,7 @@
                     </div>
                     <div class="table-container" style="margin-top: 1.5rem;">
                         <table class="product-table">
-                            <thead><tr><th>Imagem</th><th>Nome</th><th>Preço Base</th><th>Sua Margem (%)</th><th>Preço Final</th><th>Ativar no Catálogo</th><th>Ações</th></tr></thead>
+                            <thead><tr><th>Imagem</th><th>Nome</th><th>Preço Base</th><th>Sua Margem (%)</th><th>Preço Final</th><th>Ativar</th><th>Ações</th></tr></thead>
                             <tbody id="reseller-products-table-body"></tbody>
                         </table>
                     </div>
@@ -191,26 +190,60 @@
                 </section>
                 
                 <section id="reseller-promotions" class="page">
-                    <!-- SEÇÃO DE PROMOÇÕES INTACTA -->
                     <div class="promo-grid">
                         <div class="promo-card"><div class="promo-card-header"><i data-feather="zap" class="promo-card-icon"></i><h3 class="promo-card-title">Flash Sale</h3></div><p class="promo-card-desc">Oferta com grande desconto para um produto por tempo limitado.</p><div class="promo-card-footer"><button class="btn btn-primary w-full" data-modal-target="flash-sale-modal">Configurar</button></div></div>
-                        <div class="promo-card"><div class="promo-card-header"><i data-feather="clock" class="promo-card-icon"></i><h3 class="promo-card-title">Oferta por Tempo Limitado</h3></div><p class="promo-card-desc">Adicione um cronômetro de contagem regressiva a um produto.</p><div class="promo-card-footer"><button class="btn btn-primary w-full" data-modal-target="time-limit-modal">Configurar</button></div></div>
-                        <div class="promo-card"><div class="promo-card-header"><i data-feather="package" class="promo-card-icon"></i><h3 class="promo-card-title">Leve Mais, Pague Menos</h3></div><p class="promo-card-desc">Ex: Leve 3, Pague 2. Incentive a compra de mais unidades.</p><div class="promo-card-footer"><button class="btn btn-primary w-full" data-modal-target="buy-more-pay-less-modal">Configurar</button></div></div>
-                        <div class="promo-card"><div class="promo-card-header"><i data-feather="trending-up" class="promo-card-icon"></i><h3 class="promo-card-title">Desconto Progressivo</h3></div><p class="promo-card-desc">Aumente o desconto conforme o valor do carrinho aumenta.</p><div class="promo-card-footer"><button class="btn btn-primary w-full" data-modal-target="progressive-discount-modal">Configurar</button></div></div>
                         <div class="promo-card"><div class="promo-card-header"><i data-feather="truck" class="promo-card-icon"></i><h3 class="promo-card-title">Frete Grátis</h3></div><p class="promo-card-desc">Ofereça frete grátis para compras acima de um valor.</p><div class="promo-card-footer"><button class="btn btn-primary w-full" data-modal-target="free-shipping-modal">Configurar</button></div></div>
-                        <div class="promo-card"><div class="promo-card-header"><i data-feather="award" class="promo-card-icon"></i><h3 class="promo-card-title">Cupom de Primeira Compra</h3></div><p class="promo-card-desc">Atraia novos clientes com um cupom de desconto exclusivo.</p><div class="promo-card-footer"><button class="btn btn-primary w-full" data-modal-target="first-purchase-modal">Configurar</button></div></div>
-                        <div class="promo-card"><div class="promo-card-header"><i data-feather="star" class="promo-card-icon"></i><h3 class="promo-card-title">Cupom para Clientes VIP</h3></div><p class="promo-card-desc">Crie um cupom especial para seus clientes mais fiéis.</p><div class="promo-card-footer"><button class="btn btn-primary w-full" data-modal-target="vip-customer-modal">Configurar</button></div></div>
-                        <div class="promo-card"><div class="promo-card-header"><i data-feather="tag" class="promo-card-icon"></i><h3 class="promo-card-title">Liquidação Sazonal</h3></div><p class="promo-card-desc">Crie uma grande promoção com data de início e fim.</p><div class="promo-card-footer"><button class="btn btn-primary w-full" data-modal-target="seasonal-sale-modal">Configurar</button></div></div>
-                        <div class="promo-card"><div class="promo-card-header"><i data-feather="alert-triangle" class="promo-card-icon"></i><h3 class="promo-card-title">Alerta de Estoque Limitado</h3></div><p class="promo-card-desc">Mostre um aviso quando o estoque de um produto estiver baixo.</p><div class="promo-card-footer"><button class="btn btn-primary w-full" data-modal-target="stock-limit-modal">Configurar</button></div></div>
+                        <div class="promo-card"><div class="promo-card-header"><i data-feather="award" class="promo-card-icon"></i><h3 class="promo-card-title">Cupom de Desconto</h3></div><p class="promo-card-desc">Crie um cupom (ex: BEMVINDA10) para seus clientes.</p><div class="promo-card-footer"><button class="btn btn-primary w-full" data-modal-target="coupon-modal">Configurar</button></div></div>
+                        <!-- Mais promoções podem ser adicionadas aqui no futuro -->
                     </div>
                 </section>
 
+                <!-- =================================================================== -->
+                <!-- PÁGINA "ORGANIZAR VITRINE" RECONSTRUÍDA -->
+                <!-- =================================================================== -->
                 <section id="reseller-showcase" class="page">
-                    <!-- SEÇÃO DE VITRINE INTACTA -->
+                    <div class="settings-section">
+                        <h2><i data-feather="star"></i> Vitrine: Lançamentos</h2>
+                        <p style="color: var(--text-light); margin-top: -1rem; margin-bottom: 1.5rem;">Selecione os produtos que devem aparecer na seção "Lançamentos" do seu catálogo.</p>
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <span id="showcase-lancamentos-count" class="product-count-badge" style="color: var(--text-light); font-weight: 500;">0 produtos selecionados</span>
+                            <button class="btn btn-primary" data-showcase-id="lancamentos"><i data-feather="edit"></i> Gerenciar Produtos</button>
+                        </div>
+                    </div>
+                    <div class="settings-section">
+                        <h2><i data-feather="trending-up"></i> Vitrine: Mais Vendidos</h2>
+                        <p style="color: var(--text-light); margin-top: -1rem; margin-bottom: 1.5rem;">Destaque os produtos mais populares na seção "Mais Vendidos".</p>
+                         <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <span id="showcase-mais-vendidos-count" class="product-count-badge" style="color: var(--text-light); font-weight: 500;">0 produtos selecionados</span>
+                            <button class="btn btn-primary" data-showcase-id="mais-vendidos"><i data-feather="edit"></i> Gerenciar Produtos</button>
+                        </div>
+                    </div>
                 </section>
 
+                <!-- =================================================================== -->
+                <!-- PÁGINA "DESCRIÇÕES" RECONSTRUÍDA -->
+                <!-- =================================================================== -->
                 <section id="reseller-descriptions" class="page">
-                    <!-- SEÇÃO DE DESCRIÇÕES INTACTA -->
+                    <div class="settings-section">
+                        <h2><i data-feather="file-text"></i> Modelos de Descrição</h2>
+                        <p style="color: var(--text-light); margin-top: -1rem; margin-bottom: 1.5rem;">Crie descrições padrão para aplicar em vários produtos de uma só vez.</p>
+                        <div id="description-models-list">
+                            <!-- A lista de modelos será renderizada aqui pelo JS -->
+                        </div>
+                        <div class="modal-footer" style="justify-content: flex-start; padding-top: 1rem; border-top: 1px solid var(--border-color); margin-top: 1.5rem;">
+                            <button id="add-description-model-btn" class="btn btn-secondary"><i data-feather="plus"></i> Criar Novo Modelo de Descrição</button>
+                        </div>
+                    </div>
+                    <div class="settings-section">
+                        <h2><i data-feather="grid"></i> Modelos de Tabela de Medidas</h2>
+                        <p style="color: var(--text-light); margin-top: -1rem; margin-bottom: 1.5rem;">Crie tabelas de medidas (tamanho, cm, etc.) para associar aos seus produtos.</p>
+                        <div id="sizing-charts-list">
+                            <!-- A lista de tabelas será renderizada aqui pelo JS -->
+                        </div>
+                         <div class="modal-footer" style="justify-content: flex-start; padding-top: 1rem; border-top: 1px solid var(--border-color); margin-top: 1.5rem;">
+                            <button id="add-sizing-chart-btn" class="btn btn-secondary"><i data-feather="plus"></i> Criar Nova Tabela de Medidas</button>
+                        </div>
+                    </div>
                 </section>
 
                 <section id="reseller-sales" class="page">
@@ -224,11 +257,7 @@
                      <div class="settings-section"><h2><i data-feather="truck"></i> Meios de Envio</h2><p class="placeholder-card">Em breve...</p></div>
                 </section>
 
-                <!-- =================================================================== -->
-                <!-- NOVA ESTRUTURA DA PÁGINA DE APARÊNCIA -->
-                <!-- =================================================================== -->
                 <section id="reseller-appearance" class="page">
-                    <!-- Card para abrir as configurações de personalização -->
                     <div class="settings-section">
                         <div style="display: flex; justify-content: space-between; align-items: center; gap: 1rem; flex-wrap: wrap;">
                             <div>
@@ -238,8 +267,6 @@
                             <button id="open-theme-config-btn" class="btn btn-primary"><i data-feather="settings"></i> Configurar Aparência</button>
                         </div>
                     </div>
-
-                    <!-- Seção de Identidade da Loja (permanece na página principal) -->
                     <div class="settings-section">
                         <h2><i data-feather="user"></i> Identidade da Loja</h2>
                         <p style="color: var(--text-light); margin-top: -1rem; margin-bottom: 1.5rem;">Informações que aparecerão no rodapé e links de contato.</p>
@@ -249,20 +276,8 @@
                             <div class="form-group"><label for="instagram-input">Seu Instagram</label><input type="text" id="instagram-input" placeholder="@seulogin"></div>
                         </div>
                     </div>
-                    
-                    <!-- Seção de URL (permanece na página principal) -->
-                    <div class="settings-section">
-                        <h2><i data-feather="link"></i> URL da Loja</h2>
-                         <p style="color: var(--text-light); margin-top: -1rem; margin-bottom: 1.5rem;">Crie um link único para seu catálogo.</p>
-                        <div class="form-grid">
-                            <div class="form-group"><label for="catalog-url-name">Nome para a URL</label><input type="text" id="catalog-url-name" placeholder="Ex: sapatos-da-ana"></div>
-                        </div>
-                        <div class="modal-footer" style="margin-top:0; justify-content: flex-start; padding-top: 1rem;"><button id="generate-link-btn" class="btn btn-secondary">Copiar Link do Catálogo</button></div>
-                    </div>
-
-                    <!-- Botão de Salvar Geral -->
-                    <div class="settings-section" style="display: flex; justify-content: flex-end;">
-                        <button id="save-settings-btn" class="btn btn-success"><i data-feather="save"></i> Salvar Alterações de Identidade e URL</button>
+                    <div class="modal-footer" style="background: var(--card-bg); padding: 1.5rem; border-radius: var(--border-radius); box-shadow: var(--shadow); display: flex; justify-content: flex-end;">
+                        <button id="save-settings-btn" class="btn btn-success"><i data-feather="save"></i> Salvar Alterações de Identidade</button>
                     </div>
                 </section>
             </main>
@@ -270,67 +285,129 @@
     </div>
     
     <!-- =================================================================== -->
-    <!-- TODOS OS SEUS MODAIS ORIGINAIS ESTÃO AQUI, INTACTOS -->
+    <!-- MODAIS -->
     <!-- =================================================================== -->
-    <div id="reseller-product-edit-modal" class="modal-overlay"><!-- ... (conteúdo do modal) ... --></div>
-    <div id="reseller-tags-modal" class="modal-overlay"><!-- ... (conteúdo do modal) ... --></div>
-    <div id="flash-sale-modal" class="modal-overlay"><!-- ... (conteúdo do modal) ... --></div>
-    <div id="time-limit-modal" class="modal-overlay"><!-- ... (conteúdo do modal) ... --></div>
-    <div id="buy-more-pay-less-modal" class="modal-overlay"><!-- ... (conteúdo do modal) ... --></div>
-    <div id="progressive-discount-modal" class="modal-overlay"><!-- ... (conteúdo do modal) ... --></div>
-    <div id="free-shipping-modal" class="modal-overlay"><!-- ... (conteúdo do modal) ... --></div>
-    <div id="first-purchase-modal" class="modal-overlay"><!-- ... (conteúdo do modal) ... --></div>
-    <div id="vip-customer-modal" class="modal-overlay"><!-- ... (conteúdo do modal) ... --></div>
-    <div id="seasonal-sale-modal" class="modal-overlay"><!-- ... (conteúdo do modal) ... --></div>
-    <div id="stock-limit-modal" class="modal-overlay"><!-- ... (conteúdo do modal) ... --></div>
-    <div id="product-description-modal" class="modal-overlay"><!-- ... (conteúdo do modal) ... --></div>
-    <div id="sizing-chart-modal" class="modal-overlay"><!-- ... (conteúdo do modal) ... --></div>
-    <div id="showcase-product-modal" class="modal-overlay"><!-- ... (conteúdo do modal) ... --></div>
-    <div id="description-model-modal" class="modal-overlay"><!-- ... (conteúdo do modal) ... --></div>
-    <div id="associate-products-modal" class="modal-overlay"><!-- ... (conteúdo do modal) ... --></div>
 
-    <!-- =================================================================== -->
-    <!-- NOVO MODAL PARA CONFIGURAÇÃO DA APARÊNCIA -->
-    <!-- =================================================================== -->
-    <div id="theme-config-modal" class="modal-overlay">
-        <div class="modal-content" style="max-width: 800px;">
+    <!-- Modal para editar margem e tags (individual) -->
+    <div id="reseller-product-edit-modal" class="modal-overlay">
+        <div class="modal-content">
             <div class="modal-header">
-                <h3>Configurações de Aparência do Catálogo</h3>
-                <button class="modal-close-btn" data-modal-target="theme-config-modal"><i data-feather="x"></i></button>
+                <h3 id="modal-reseller-product-name">Editar Produto</h3>
+                <button class="modal-close-btn"><i data-feather="x"></i></button>
             </div>
-            <div class="settings-section" style="box-shadow: none; padding: 0;">
-                <h2 style="font-size: 1.1rem;"><i data-feather="palette"></i> Cores Principais</h2>
-                <p style="color: var(--text-light); margin-top: -1rem; margin-bottom: 1.5rem;">Defina a paleta de cores que será usada em toda a sua loja.</p>
-                <div class="form-grid">
-                    <div class="form-group">
-                        <label for="appearance-primary-color">Cor Principal (Títulos, Botões)</label>
-                        <input type="color" id="appearance-primary-color" value="#DB1472">
-                    </div>
-                    <div class="form-group">
-                        <label for="appearance-header-bg">Cor de Fundo do Cabeçalho</label>
-                        <input type="color" id="appearance-header-bg" value="#FFFFFF">
-                    </div>
-                </div>
+            <div class="form-group">
+                <label for="reseller-margin-input">Sua Margem de Lucro (%)</label>
+                <input type="number" id="reseller-margin-input" class="search-input">
             </div>
-            <div class="settings-section" style="box-shadow: none; padding: 0; margin-top: 2rem;">
-                <h2 style="font-size: 1.1rem;"><i data-feather="image"></i> Imagens da Marca</h2>
-                <p style="color: var(--text-light); margin-top: -1rem; margin-bottom: 1.5rem;">Faça o upload da sua logo e de um banner principal para o topo da loja.</p>
-                <div class="form-grid">
-                    <div class="form-group">
-                        <label for="appearance-logo-upload">Logo da Loja</label>
-                        <input type="file" id="appearance-logo-upload" accept="image/*" class="form-group input">
-                        <img src="https://placehold.co/200x80/e2e8f0/cccccc?text=Preview+Logo" id="appearance-logo-preview" class="image-preview">
-                    </div>
-                    <div class="form-group">
-                        <label for="appearance-banner-upload">Banner Principal</label>
-                        <input type="file" id="appearance-banner-upload" accept="image/*" class="form-group input">
-                        <img src="https://placehold.co/400x200/e2e8f0/cccccc?text=Preview+Banner" id="appearance-banner-preview" class="image-preview">
-                    </div>
+            <div class="form-group" style="margin-top: 1rem;">
+                <label>Tags do Produto</label>
+                <div id="tags-selection-container" style="display: flex; flex-direction: column; gap: 0.5rem;">
+                    <!-- Checkboxes de tags serão inseridos aqui pelo JS -->
                 </div>
             </div>
             <div class="modal-footer">
-                <button id="save-theme-config-btn" class="btn btn-success"><i data-feather="save"></i> Salvar Aparência</button>
+                <button id="save-reseller-margin-btn" class="btn btn-success"><i data-feather="save"></i> Salvar</button>
             </div>
+        </div>
+    </div>
+
+    <!-- Modal para Flash Sale (CORRIGIDO) -->
+    <div id="flash-sale-modal" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-header"><h3>Configurar Flash Sale</h3><button class="modal-close-btn"><i data-feather="x"></i></button></div>
+            <div class="form-group"><label for="flash-sale-product">Selecione o Produto</label><select id="flash-sale-product" class="search-input"></select></div>
+            <div class="form-group" style="margin-top: 1rem;"><label for="flash-sale-discount">Desconto (%)</label><input type="number" id="flash-sale-discount" class="search-input" placeholder="Ex: 20"></div>
+            <div class="form-group" style="margin-top: 1rem;"><label for="flash-sale-end-date">Data de Término</label><input type="datetime-local" id="flash-sale-end-date" class="search-input"></div>
+            <div class="modal-footer"><button id="save-flash-sale-btn" class="btn btn-success">Salvar Promoção</button></div>
+        </div>
+    </div>
+
+    <!-- Modal para Frete Grátis (CORRIGIDO) -->
+    <div id="free-shipping-modal" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-header"><h3>Configurar Frete Grátis</h3><button class="modal-close-btn"><i data-feather="x"></i></button></div>
+            <div class="form-group"><label for="free-shipping-min-value">Valor Mínimo do Pedido para Frete Grátis</label><input type="number" id="free-shipping-min-value" class="search-input" placeholder="Ex: 150"></div>
+            <div class="modal-footer"><button id="save-free-shipping-btn" class="btn btn-success">Salvar Promoção</button></div>
+        </div>
+    </div>
+
+    <!-- Modal para Cupom de Desconto (CORRIGIDO) -->
+    <div id="coupon-modal" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-header"><h3>Configurar Cupom de Desconto</h3><button class="modal-close-btn"><i data-feather="x"></i></button></div>
+            <div class="form-group"><label for="coupon-code">Código do Cupom</label><input type="text" id="coupon-code" class="search-input" placeholder="Ex: BEMVINDA10"></div>
+            <div class="form-group" style="margin-top: 1rem;"><label for="coupon-discount">Valor do Desconto</label>
+                <div style="display: flex; gap: 1rem;">
+                    <input type="number" id="coupon-discount-value" class="search-input" placeholder="10">
+                    <select id="coupon-discount-type" class="search-input" style="width: 120px;"><option value="percent">%</option><option value="fixed">R$</option></select>
+                </div>
+            </div>
+            <div class="modal-footer"><button id="save-coupon-btn" class="btn btn-success">Salvar Cupom</button></div>
+        </div>
+    </div>
+
+    <!-- Modal para Aparência (Existente) -->
+    <div id="theme-config-modal" class="modal-overlay">
+        <div class="modal-content" style="max-width: 800px;">
+            <div class="modal-header"><h3>Configurações de Aparência do Catálogo</h3><button class="modal-close-btn"><i data-feather="x"></i></button></div>
+            <div class="settings-section" style="box-shadow: none; padding: 0;">
+                <h2 style="font-size: 1.1rem;"><i data-feather="droplet"></i> Cores Principais</h2>
+                <div class="form-grid"><div class="form-group"><label for="appearance-primary-color">Cor Principal (Títulos, Botões)</label><input type="color" id="appearance-primary-color" value="#DB1472"></div><div class="form-group"><label for="appearance-header-bg">Cor de Fundo do Cabeçalho</label><input type="color" id="appearance-header-bg" value="#FFFFFF"></div></div>
+            </div>
+            <div class="settings-section" style="box-shadow: none; padding: 0; margin-top: 2rem;">
+                <h2 style="font-size: 1.1rem;"><i data-feather="image"></i> Imagens da Marca</h2>
+                <div class="form-grid"><div class="form-group"><label for="appearance-logo-upload">Logo da Loja</label><input type="file" id="appearance-logo-upload" accept="image/*" class="search-input"><img src="https://placehold.co/200x80/e2e8f0/cccccc?text=Preview+Logo" id="appearance-logo-preview" class="image-preview"></div><div class="form-group"><label for="appearance-banner-upload">Banner Principal</label><input type="file" id="appearance-banner-upload" accept="image/*" class="search-input"><img src="https://placehold.co/400x200/e2e8f0/cccccc?text=Preview+Banner" id="appearance-banner-preview" class="image-preview"></div></div>
+            </div>
+            <div class="modal-footer"><button id="save-theme-config-btn" class="btn btn-success"><i data-feather="save"></i> Salvar Aparência</button></div>
+        </div>
+    </div>
+
+    <!-- Modal para Organizar Vitrine (NOVO E REUTILIZÁVEL) -->
+    <div id="showcase-product-modal" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-header"><h3 id="showcase-modal-title">Gerenciar Vitrine</h3><button class="modal-close-btn"><i data-feather="x"></i></button></div>
+            <input type="text" id="showcase-product-search" class="search-input" placeholder="Buscar produtos para adicionar...">
+            <div id="showcase-product-list" style="margin-top: 1rem; max-height: 40vh; overflow-y: auto; border: 1px solid var(--border-color); border-radius: 0.5rem;">
+                <!-- Lista de produtos para seleção -->
+            </div>
+            <div class="modal-footer"><button id="save-showcase-selection-btn" class="btn btn-success">Salvar Seleção</button></div>
+        </div>
+    </div>
+
+    <!-- Modal para Modelos de Descrição (NOVO) -->
+    <div id="description-model-modal" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-header"><h3 id="description-model-modal-title">Criar Modelo de Descrição</h3><button class="modal-close-btn"><i data-feather="x"></i></button></div>
+            <div class="form-group"><label for="description-model-name">Nome do Modelo</label><input type="text" id="description-model-name" class="search-input" placeholder="Ex: Descrição Padrão Sapatos"></div>
+            <div class="form-group" style="margin-top: 1rem;"><label for="description-model-content">Conteúdo da Descrição</label><textarea id="description-model-content" class="search-input" rows="5"></textarea></div>
+            <div class="modal-footer"><button id="save-description-model-btn" class="btn btn-success">Salvar Modelo</button></div>
+        </div>
+    </div>
+
+    <!-- Modal para Tabela de Medidas (NOVO) -->
+    <div id="sizing-chart-modal" class="modal-overlay">
+        <div class="modal-content" style="max-width: 800px;">
+            <div class="modal-header"><h3 id="sizing-chart-modal-title">Criar Tabela de Medidas</h3><button class="modal-close-btn"><i data-feather="x"></i></button></div>
+            <div class="form-group"><label for="sizing-chart-name">Nome do Modelo da Tabela</label><input type="text" id="sizing-chart-name" class="search-input" placeholder="Ex: Tabela de Calçados Femininos"></div>
+            <div id="sizing-chart-editor" class="table-container" style="margin-top: 1rem;">
+                <!-- Editor da tabela será renderizado aqui -->
+            </div>
+            <div class="modal-footer" style="justify-content: space-between;">
+                <div><button id="add-sizing-chart-row-btn" class="btn btn-secondary"><i data-feather="plus"></i> Linha</button><button id="add-sizing-chart-col-btn" class="btn btn-secondary" style="margin-left: 0.5rem;"><i data-feather="plus"></i> Coluna</button></div>
+                <button id="save-sizing-chart-btn" class="btn btn-success">Salvar Tabela</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal para Associar Modelos a Produtos (NOVO E REUTILIZÁVEL) -->
+    <div id="associate-products-modal" class="modal-overlay">
+         <div class="modal-content">
+            <div class="modal-header"><h3 id="associate-modal-title">Associar Modelo a Produtos</h3><button class="modal-close-btn"><i data-feather="x"></i></button></div>
+            <input type="text" id="associate-product-search" class="search-input" placeholder="Buscar produtos para associar...">
+            <div id="associate-product-list" style="margin-top: 1rem; max-height: 40vh; overflow-y: auto; border: 1px solid var(--border-color); border-radius: 0.5rem;">
+                <!-- Lista de produtos para seleção -->
+            </div>
+            <div class="modal-footer"><button id="save-association-btn" class="btn btn-success">Salvar Associação</button></div>
         </div>
     </div>
 
